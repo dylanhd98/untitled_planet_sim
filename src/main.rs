@@ -43,6 +43,8 @@ fn main() {
     });
 }
 
+
+//TODO: All of this
 mod graphics{
     mod shapes{
         #[derive(Copy, Clone)]
