@@ -6,6 +6,9 @@ uniform mat4 world;
 uniform mat4 view;
 uniform mat4 perspective;
 
+out vec3 normal;
+
 void main() {
-    gl_Position = world*view*perspective*vec4(position, 1.0);
+    normal = position;
+    gl_Position = perspective*view*world*vec4(position, 1.0);
 }
