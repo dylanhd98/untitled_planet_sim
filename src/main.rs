@@ -1,6 +1,7 @@
-fn main() {
-    use glium::{Surface,glutin};
+use glium::{Surface,glutin};
     use nalgebra_glm as glm;
+
+fn main() {
 
     //handles window and device events
     let mut event_loop = glutin::event_loop::EventLoop::new();
@@ -54,7 +55,7 @@ fn main() {
         //clears buffer
         target.clear_color_and_depth((0.0, 0.25, 0.5, 1.0), 1.0);
 
-        world = glm::rotate_y(&world, -0.0002);
+        world = glm::rotate_y(&world, -0.002);
         let world_mat:[[f32; 4]; 4] = world.into();
 
         target.draw(&positions, &index_buffer ,&program,  &glium::uniform! {world:world_mat, view:view, perspective: perspective}, &params).unwrap();
@@ -69,9 +70,8 @@ fn main() {
                 //closes window if close event
                 glutin::event::WindowEvent::CloseRequested => {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
-                    return;
                 },
-                _ => return,
+                _ => (),
             },
             _ => (),
         }
