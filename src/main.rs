@@ -1,8 +1,9 @@
 use glium::{Surface,glutin};
-    use nalgebra_glm as glm;
+use nalgebra_glm as glm;
+
+mod graphics;
 
 fn main() {
-
     //handles window and device events
     let mut event_loop = glutin::event_loop::EventLoop::new();
     //window specific
@@ -26,9 +27,17 @@ fn main() {
     );
     let perspective:[[f32; 4]; 4] = perspective.into();
 
-    let ico = graphics::shapes::icosahedron();
+    let ico = graphics::Shape::
+    icosahedron().subdivide(2).normalize();
 
-    let positions = glium::VertexBuffer::new(&display,&ico.vertices).unwrap();
+    let verts:Vec::<graphics::Vertex> = ico.vertices.iter()
+    .map(|v| 
+        graphics::Vertex{
+            position: [v.x,v.y,v.z]
+        })
+    .collect();
+
+    let positions = glium::VertexBuffer::new(&display,&verts).unwrap();
     let index_buffer = glium::IndexBuffer::new(&display,glium::index::PrimitiveType::TrianglesList, &ico.indices).unwrap();
 
     let params = glium::DrawParameters {
@@ -77,5 +86,3 @@ fn main() {
         }
     });
 }
-
-mod graphics;

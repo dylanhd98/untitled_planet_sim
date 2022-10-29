@@ -1,0 +1,209 @@
+#[derive(Copy, Clone)]
+pub struct Vertex {
+    pub position: [f32;3],
+}
+/*
+impl Vertex{
+    pub fn new(x:f32,y:f32,z:f32)->Vertex{
+        Vertex{
+            position:(x,y,z)
+        }
+    }
+}*/
+glium::implement_vertex!(Vertex,position);
+
+#[derive(Copy, Clone)]
+pub struct Normal {
+    normal: (f32, f32, f32)
+}
+glium::implement_vertex!(Normal, normal);
+
+use nalgebra_glm as glm;
+use std::collections::HashMap;
+
+pub struct Shape{
+    pub vertices:Vec::<glm::Vec3>,
+    pub indices:Vec::<u16>
+}
+
+impl Shape{
+    //makes every vertex unit length
+    
+    pub fn normalize(mut self)->Shape{
+        //replaces vertices with their normalzed selfs
+        self.vertices=self.vertices
+            .iter()
+            .map(|v| glm::normalize(v))
+            .collect();
+        self
+    }
+
+    //turns every triangle into 4 smaller ones
+    //only works if all indexing is done in the same direction of rotation
+    pub fn subdivide(mut self,iterations:u8)->Shape{
+        //indices length is just triangle amount*3
+        //thus, new indices will be 4 times as large, 4 times more triangles
+        //similarly, number of vertices will double
+        //this is calculated here to prevent constant memory realocation
+        //TODO: FUTURE ME VERIFY IF THIS IS RIGHT
+        let mut new_indices:Vec::<u16> = Vec::with_capacity(self.indices.len()*4);
+
+        //for every triangle edge, calculate midpoint,add to new vertices, store index in dictionary with edge indices as the key
+        //if edge midpoint already calculated, skip
+        //prevents unessisary calculation and duplicate midpoints. 
+        //this was an issue in the c# version solved by finding and removing all duplicates after the fact, exponensially slowing down the process
+        //NOTE: ALTERNATIVLY COULD HAVE 2D ARRAY OF ALL POTENTIAL COMBOS OF INDICES FULL OF OPTION ENUMS 
+        let mut midpoints = HashMap::<(u16,u16),u16>::new();
+        //for every triangle (every group of 3 indices), check if already calculated
+        for tri in self.indices.chunks(3){
+            println!("{:?}",tri);
+            for i in 0..3{
+                let edge = (tri[i],tri[(i+1)%3]);
+                //if edge isnt in dictionary, calculate midpoint, add to vertices, store index in dictionary
+                midpoints.entry(edge).or_insert({
+                    let mid = (self.vertices[edge.0 as usize]+self.vertices[edge.1 as usize])*0.5;
+                    self.vertices.push(mid);
+                    //self.vertices.len()-1 as u16
+                    u16::try_from(self.vertices.len()-1).unwrap()
+                });
+            }
+        }
+        
+        self
+    }
+
+
+    pub fn new(vertices:Vec::<glm::Vec3>,indices:Vec::<u16>)->Shape{
+        Shape{
+            vertices,
+            indices
+        }
+    }
+
+    pub fn icosahedron()->Shape{
+        let ratio = (1.0+f32::sqrt(5.0))/2.0;//golden ratio
+    
+        let vertices:Vec::<glm::Vec3> = vec![
+            glm::vec3(-1.0,ratio,0.0),
+            glm::vec3(1.0,ratio,0.0),
+            glm::vec3(-1.0,-ratio,0.0),
+            glm::vec3(1.0,-ratio,0.0),
+    
+            glm::vec3(0.0,-1.0,ratio),
+            glm::vec3(0.0,1.0,ratio),
+            glm::vec3(0.0,-1.0,-ratio),
+            glm::vec3(0.0,1.0,-ratio),
+    
+            glm::vec3(ratio, 0.0,-1.0),
+            glm::vec3(ratio, 0.0,1.0),
+            glm::vec3(-ratio, 0.0,-1.0),
+            glm::vec3(-ratio, 0.0,1.0),
+        ];
+    
+        let indices:Vec::<u16> = vec![
+            //tris surrounding point 0
+            0,11,5,
+            0,5,1,
+            0,1,7,
+            0,7,10,
+            0,10,11,
+            //tris connected to above
+            1,5,9,
+            5,11,4,
+            11,10,2,
+            10,7,6,
+            7,1,8,
+            //tris surrounding 3
+            3,9,4,
+            3,4,2,
+            3,2,6,
+            3,6,8,
+            3,8,9,
+            //tris connected to above
+            4,9,5,
+            2,4,11,
+            6,2,10,
+            8,6,7,
+            9,8,1
+        ];
+    
+        Shape{
+            vertices,
+            indices
+        }
+    
+    }
+    
+    pub fn cube()->Shape{
+    
+        let vertices:Vec::<glm::Vec3> = vec![
+            glm::vec3(1.0,1.0,1.0),
+            glm::vec3(-1.0,1.0,1.0),
+            glm::vec3(1.0,-1.0,1.0),
+            glm::vec3(-1.0,-1.0,1.0),
+    
+            glm::vec3(1.0,1.0,-1.0),
+            glm::vec3(-1.0,1.0,-1.0),
+            glm::vec3(1.0,-1.0,-1.0),
+            glm::vec3(-1.0,-1.0,-1.0)
+        ];
+    
+        let indices:Vec::<u16> = vec![
+            //front face
+            0,1,2,
+            3,2,1,
+    
+            //back face
+            6,5,4,
+            5,6,7,
+    
+            //top face
+            0,5,1,
+            0,4,5,
+    
+            //bottom face
+            3,7,2,
+            7,6,3,
+    
+            //left face
+            5,3,1,
+            5,7,3,
+            
+            //right face
+            0,2,4,
+            2,6,4,
+        ];
+    
+        Shape{
+            vertices,
+            indices
+        }
+    }
+
+    pub fn heart()->Shape{
+    
+        let vertices:Vec::<glm::Vec3> = vec![
+            glm::vec3(0.0,0.5,0.0),
+
+            glm::vec3(0.5,1.0,0.0),
+            glm::vec3(-0.5,1.0,0.0),
+
+            glm::vec3(1.0,0.8,0.0),
+            glm::vec3(-1.0,0.8,0.0),
+
+            glm::vec3(0.0,-1.0,0.0)
+        ];
+    
+        let indices:Vec::<u16> = vec![
+            0,1,3,
+            0,4,2,
+            5,0,3,
+            5,4,0
+        ];
+    
+        Shape{
+            vertices,
+            indices
+        }
+    }
+}
