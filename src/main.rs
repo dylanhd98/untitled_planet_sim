@@ -31,7 +31,7 @@ fn main() {
     let perspective:[[f32; 4]; 4] = perspective.into();
 
     let ico = graphics::Shape::
-    icosahedron().subdivide(1).normalize();
+    icosahedron().subdivide(5).normalize();
 
     let verts:Vec::<graphics::Vertex> = ico.vertices.iter()
     .map(|v| 
@@ -58,8 +58,8 @@ fn main() {
             write: true,
             .. Default::default()
         },
-        polygon_mode: glium::draw_parameters::PolygonMode::Line,
-        //backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+        //polygon_mode: glium::draw_parameters::PolygonMode::Line,
+        backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         .. Default::default()
     };
 

@@ -13,6 +13,15 @@ glium::implement_vertex!(Color,color);
 use nalgebra_glm as glm;
 use std::collections::HashMap;
 
+fn order_tuple(a:u16,b:u16)->(u16,u16){
+    if a>b{
+        (a,b)
+    }
+    else{
+        (b,a)
+    }
+}
+
 pub struct Shape{
     pub vertices:Vec::<glm::Vec3>,
     pub indices:Vec::<u16>
@@ -47,33 +56,33 @@ impl Shape{
             //for every triangle (every group of 3 indices), check if already calculated
             for tri in self.indices.chunks(3){
                 for i in 0..3{
-                    let edge = (tri[i],tri[(i+1)%3]);
+                    let edge = order_tuple(tri[i],tri[(i+1)%3]);
                     //if edge isnt in dictionary, calculate midpoint, add to vertices, store index in dictionary
                     midpoints.entry(edge).or_insert({
                         let mid = (self.vertices[edge.0 as usize]+self.vertices[edge.1 as usize])*0.5;
-                        self.vertices.push(mid);
-                        u16::try_from(self.vertices.len()-1).unwrap()
+                        self.vertices.push(mid);//adds midpoint as vertex
+                        u16::try_from(self.vertices.len()-1).expect("More vertices than datatype can represent")//return index value
                     });
-                    println!("edge:{:?} value:{}",edge,midpoints[&edge]);
+                    //println!("edge:{:?} midindex:{} midvalue:{:?}",edge,midpoints[&edge],self.vertices[midpoints[&edge] as usize]);
                 }
                 //once all midpoints are present in dictionary, add new indices
                 //TODO:FIND MORE CONCISE WAY TO DO THIS
                 //top tri
                 new_indices.push(tri[0]);
-                new_indices.push(midpoints[&(tri[0],tri[1])]);
-                new_indices.push(midpoints[&(tri[2],tri[0])]);
+                new_indices.push(midpoints[&order_tuple(tri[0],tri[1])]);
+                new_indices.push(midpoints[&order_tuple(tri[2],tri[0])]);
                 //middle tri
-                new_indices.push(midpoints[&(tri[0],tri[1])]);
-                new_indices.push(midpoints[&(tri[1],tri[2])]);
-                new_indices.push(midpoints[&(tri[2],tri[0])]);
+                new_indices.push(midpoints[&order_tuple(tri[0],tri[1])]);
+                new_indices.push(midpoints[&order_tuple(tri[1],tri[2])]);
+                new_indices.push(midpoints[&order_tuple(tri[2],tri[0])]);
                 //bottom right tri
                 new_indices.push(tri[1]);
-                new_indices.push(midpoints[&(tri[1],tri[2])]);
-                new_indices.push(midpoints[&(tri[0],tri[1])]);
+                new_indices.push(midpoints[&order_tuple(tri[1],tri[2])]);
+                new_indices.push(midpoints[&order_tuple(tri[0],tri[1])]);
                 //bottom left tri
                 new_indices.push(tri[2]);
-                new_indices.push(midpoints[&(tri[2],tri[0])]);
-                new_indices.push(midpoints[&(tri[1],tri[2])]);
+                new_indices.push(midpoints[&order_tuple(tri[2],tri[0])]);
+                new_indices.push(midpoints[&order_tuple(tri[1],tri[2])]);
             }
             self.indices = new_indices;
         }
