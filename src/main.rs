@@ -2,11 +2,10 @@ use glium::{Surface,glutin};
 use nalgebra_glm as glm;
 use rand::Rng;
 
+mod planet;
 mod graphics;
 
 fn main() {
-    let mut rng = rand::thread_rng();
-
     //handles window and device events
     let mut event_loop = glutin::event_loop::EventLoop::new();
     //window specific
@@ -15,6 +14,8 @@ fn main() {
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     //creates display with above attributes
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
+
+    let planet = planet::Planet::new(&display,4);
 
     let mut world = glm::translation(&glm::Vec3::new(0.0,0.0,-5.0));
     //let world:[[f32; 4]; 4] = world.into();
@@ -30,35 +31,13 @@ fn main() {
     );
     let perspective:[[f32; 4]; 4] = perspective.into();
 
-    let ico = graphics::Shape::
-    icosahedron().subdivide(5).normalize();
-
-    let verts:Vec::<graphics::Vertex> = ico.vertices.iter()
-    .map(|v| 
-        graphics::Vertex{
-            position: [v.x,v.y,v.z]
-        })
-    .collect();
-
-    let mut colors:Vec::<graphics::Color> = Vec::with_capacity(ico.vertices.len());
-    for i in 0..ico.vertices.len(){
-        let val = rng.gen_range(0..=1) as f32;
-        colors.push(graphics::Color{
-            color: [val,val,val]
-        });
-    }
-
-    let positions = glium::VertexBuffer::new(&display,&verts).unwrap();
-    let colors = glium::VertexBuffer::new(&display,&colors).unwrap();
-    let index_buffer = glium::IndexBuffer::new(&display,glium::index::PrimitiveType::TrianglesList, &ico.indices).unwrap();
-
     let params = glium::DrawParameters {
         depth: glium::Depth {
             test: glium::draw_parameters::DepthTest::IfLess,
             write: true,
             .. Default::default()
         },
-        //polygon_mode: glium::draw_parameters::PolygonMode::Line,
+        polygon_mode: glium::draw_parameters::PolygonMode::Fill,
         backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         .. Default::default()
     };
@@ -80,7 +59,7 @@ fn main() {
         world = glm::rotate_y(&world, -0.0002);
         let world_mat:[[f32; 4]; 4] = world.into();
 
-        target.draw((&positions,&colors), &index_buffer ,&program,  &glium::uniform! {world:world_mat, view:view, perspective: perspective}, &params).unwrap();
+        target.draw((&positions,&color_buffer), &index_buffer ,&program,  &glium::uniform! {world:world_mat, view:view, perspective: perspective}, &params).unwrap();
 
         //finish drawing and draws to window
         target.finish().unwrap();
