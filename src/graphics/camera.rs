@@ -1,3 +1,2 @@
-struct CameraData{
+use nalgebra_glm as glm;
 
-}

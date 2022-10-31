@@ -19,15 +19,24 @@ glium::implement_vertex!(TexCoords,tex_coords);
 use nalgebra_glm as glm;
 use std::collections::HashMap;
 
-mod camera;
-
 fn order_edge(a:u32,b:u32)->(u32,u32){
     if a>b{
         return (a,b)
     }
     (b,a)
 }
-
+pub struct Camera{
+    pub perspective:[[f32; 4]; 4],
+    pub view:[[f32; 4]; 4],
+}
+impl Camera{
+    pub fn new(perspective:[[f32; 4]; 4],view:[[f32; 4]; 4])->Camera{
+        Camera{
+            perspective,
+            view
+        }
+    }
+}
 //non graphics related shape
 pub struct Shape{
     pub vertices:Vec::<glm::Vec3>,

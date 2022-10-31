@@ -15,10 +15,7 @@ fn main() {
     //creates display with above attributes
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-    let planet = planet::Planet::new(&display,4);
-
-    let mut world = glm::translation(&glm::Vec3::new(0.0,0.0,-5.0));
-    //let world:[[f32; 4]; 4] = world.into();
+    let planet = planet::Planet::new(&display,"../resources/images/grad1.png",4);
 
     let view = glm::look_at(
         &glm::Vec3::new(0.0,-3.0,3.0),//eye position
@@ -30,6 +27,8 @@ fn main() {
         4.0 / 3.0, 3.14 / 4.0, 0.01, 10000.0  
     );
     let perspective:[[f32; 4]; 4] = perspective.into();
+
+    let cam = graphics::Camera::new(perspective,view);
 
     let params = glium::DrawParameters {
         depth: glium::Depth {
@@ -56,10 +55,7 @@ fn main() {
         //clears buffer
         target.clear_color_and_depth((0.0, 0.25, 0.5, 1.0), 1.0);
 
-        world = glm::rotate_y(&world, -0.0002);
-        let world_mat:[[f32; 4]; 4] = world.into();
-
-        target.draw((&positions,&color_buffer), &index_buffer ,&program,  &glium::uniform! {world:world_mat, view:view, perspective: perspective}, &params).unwrap();
+        planet.draw(&mut target, &program, &params, &cam);
 
         //finish drawing and draws to window
         target.finish().unwrap();
