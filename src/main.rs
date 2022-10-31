@@ -1,6 +1,6 @@
 use glium::{Surface,glutin};
 use nalgebra_glm as glm;
-use rand::Rng;
+use std::io::Cursor;
 
 mod planet;
 mod graphics;
@@ -15,18 +15,27 @@ fn main() {
     //creates display with above attributes
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-    let planet = planet::Planet::new(&display,"../resources/images/grad1.png",4);
+    let surface_texture = {
+        //loads data from file
+        let image = image::load(Cursor::new(&include_bytes!("../resources/images/lookup.png")),
+                                image::ImageFormat::Png).unwrap().to_rgba8();
+        let image_dimensions = image.dimensions();
+        //creates compatible image for glium
+        let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+        glium::texture::SrgbTexture2d::new(&display, image).unwrap()
+    };
 
-    let view = glm::look_at(
-        &glm::Vec3::new(0.0,-3.0,3.0),//eye position
+    let planet = planet::Planet::new(&display,surface_texture,5);
+
+    let view:[[f32; 4]; 4] = glm::look_at(
+        &glm::Vec3::new(0.0,0.0,4.0),//eye position
         &glm::Vec3::new(0.0,0.0,-5.0),//looking at
-        &glm::Vec3::new(0.0,1.0,0.0));//up
-    let view:[[f32; 4]; 4] = view.into();
+        &glm::Vec3::new(0.0,1.0,0.0))//up
+        .into();
 
-    let perspective = glm::perspective(
-        4.0 / 3.0, 3.14 / 4.0, 0.01, 10000.0  
-    );
-    let perspective:[[f32; 4]; 4] = perspective.into();
+    let perspective:[[f32; 4]; 4] = glm::perspective(
+        4.0 / 3.0, 3.14 / 4.0, 0.01, 10000.0)
+        .into();
 
     let cam = graphics::Camera::new(perspective,view);
 
@@ -53,7 +62,7 @@ fn main() {
         //creates buffer to store image in before drawing to window
         let mut target = display.draw();
         //clears buffer
-        target.clear_color_and_depth((0.0, 0.25, 0.5, 1.0), 1.0);
+        target.clear_color_and_depth((0.0, 0.01, 0.01, 1.0), 1.0);
 
         planet.draw(&mut target, &program, &params, &cam);
 
