@@ -36,7 +36,14 @@ impl Planet{
         }
     }
 
-    pub fn draw(){
-
+    pub fn draw(target:&glium::Display, program:&glium::Program, params:&glium::DrawParameters,){
+        let uniform = glium::uniform! {
+            matrix: [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [ 0.9 , 0.0, 0.0, 1.0f32],
+            ],
+        };
     }
 }
