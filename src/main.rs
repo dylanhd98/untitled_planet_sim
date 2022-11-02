@@ -9,7 +9,7 @@ fn main() {
     //handles window and device events
     let mut event_loop = glutin::event_loop::EventLoop::new();
     //window specific
-    let wb = glutin::window::WindowBuilder::new();
+    let wb = glutin::window::WindowBuilder::new().with_title("Untitled Planet Sim");
     //opengl specific
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     //creates display with above attributes
@@ -25,12 +25,12 @@ fn main() {
         glium::texture::SrgbTexture2d::new(&display, image).unwrap()
     };
 
-    let planet = planet::Planet::new(&display,surface_texture,5);
+    let planet = planet::Planet::new(&display,surface_texture,2);
 
     let view:[[f32; 4]; 4] = glm::look_at(
-        &glm::Vec3::new(0.0,0.0,4.0),//eye position
-        &glm::Vec3::new(0.0,0.0,-5.0),//looking at
-        &glm::Vec3::new(0.0,1.0,0.0))//up
+        &glm::vec3(0.0,0.0,4.0),//eye position
+        &glm::vec3(0.0,0.0,-5.0),//looking at
+        &glm::vec3(0.0,1.0,0.0))//up
         .into();
 
     let perspective:[[f32; 4]; 4] = glm::perspective(

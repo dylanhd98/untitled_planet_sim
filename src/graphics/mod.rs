@@ -1,20 +1,10 @@
 #[derive(Copy, Clone)]
-pub struct Vertex {
+pub struct PosNormTex {
     pub position: [f32;3],
-}
-glium::implement_vertex!(Vertex,position);
-
-#[derive(Copy, Clone)]
-pub struct Color {
-    pub color: [f32;3],
-}
-glium::implement_vertex!(Color,color);
-
-#[derive(Copy, Clone)]
-pub struct TexCoords {
+    pub normal : [f32;3],
     pub tex_coords: [f32;2],
 }
-glium::implement_vertex!(TexCoords,tex_coords);
+glium::implement_vertex!(PosNormTex,position,normal,tex_coords);
 
 use nalgebra_glm as glm;
 use std::collections::HashMap;
@@ -25,6 +15,7 @@ fn order_edge(a:u32,b:u32)->(u32,u32){
     }
     (b,a)
 }
+
 pub struct Camera{
     pub perspective:[[f32; 4]; 4],
     pub view:[[f32; 4]; 4],
@@ -37,12 +28,12 @@ impl Camera{
         }
     }
 }
+
 //non graphics related shape
 pub struct Shape{
     pub vertices:Vec::<glm::Vec3>,
     pub indices:Vec::<u32>
 }
-
 impl Shape{
     //makes every vertex unit length
     pub fn normalize(mut self)->Shape{
