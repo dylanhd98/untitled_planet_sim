@@ -25,7 +25,7 @@ fn main() {
         glium::texture::SrgbTexture2d::new(&display, image).unwrap()
     };
 
-    let planet = planet::Planet::new(&display,surface_texture,2);
+    let planet = planet::Planet::new(&display,surface_texture,7);
 
     let view:[[f32; 4]; 4] = glm::look_at(
         &glm::vec3(0.0,0.0,4.0),//eye position
@@ -37,7 +37,7 @@ fn main() {
         4.0 / 3.0, 3.14 / 4.0, 0.01, 10000.0)
         .into();
 
-    let cam = graphics::Camera::new(perspective,view);
+    let mut cam = graphics::Camera::new(perspective,view);
 
     let params = glium::DrawParameters {
         depth: glium::Depth {
@@ -72,7 +72,6 @@ fn main() {
         //handle window events
         match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
-
                 //closes window if close event
                 glutin::event::WindowEvent::CloseRequested => {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;

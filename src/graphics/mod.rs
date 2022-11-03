@@ -9,13 +9,6 @@ glium::implement_vertex!(PosNormTex,position,normal,tex_coords);
 use nalgebra_glm as glm;
 use std::collections::HashMap;
 
-fn order_edge(a:u32,b:u32)->(u32,u32){
-    if a>b{
-        return (a,b)
-    }
-    (b,a)
-}
-
 pub struct Camera{
     pub perspective:[[f32; 4]; 4],
     pub view:[[f32; 4]; 4],
@@ -27,6 +20,21 @@ impl Camera{
             view
         }
     }
+}
+
+//struct containing mesh buffers and data that goes into them
+pub struct Mesh{
+    vertices :glium::VertexBuffer<PosNormTex>,
+    indices: glium::IndexBuffer<u32>,
+
+
+}
+
+fn order_edge(a:u32,b:u32)->(u32,u32){
+    if a>b{
+        return (a,b)
+    }
+    (b,a)
 }
 
 //non graphics related shape

@@ -14,5 +14,6 @@ uniform mat4 perspective;
 void main() {
     v_tex_coords = tex_coords;
     v_normal = transpose(inverse(mat3(world))) * normal;
-    gl_Position = perspective*view*world*vec4(position, 1.0);
+    
+    gl_Position = perspective*view*world*vec4(position, 1.0);  
 }
