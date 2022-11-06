@@ -1,33 +1,25 @@
 #[derive(Copy, Clone)]
-pub struct PosNormTex {
+pub struct PosNorm {
     pub position: [f32;3],
     pub normal : [f32;3],
-    pub tex_coords: [f32;2],
 }
-glium::implement_vertex!(PosNormTex,position,normal,tex_coords);
+glium::implement_vertex!(PosNorm,position,normal);
 
 use nalgebra_glm as glm;
 use std::collections::HashMap;
 
 pub struct Camera{
-    pub perspective:[[f32; 4]; 4],
-    pub view:[[f32; 4]; 4],
+    pub perspective:glm::Mat4,
+    pub view:glm::Mat4,
 }
 impl Camera{
-    pub fn new(perspective:[[f32; 4]; 4],view:[[f32; 4]; 4])->Camera{
+    pub fn new(perspective:glm::Mat4,view:glm::Mat4)->Camera{
         Camera{
             perspective,
             view
         }
     }
-}
-
-//struct containing mesh buffers and data that goes into them
-pub struct Mesh{
-    vertices :glium::VertexBuffer<PosNormTex>,
-    indices: glium::IndexBuffer<u32>,
-
-
+    
 }
 
 fn order_edge(a:u32,b:u32)->(u32,u32){
@@ -37,7 +29,7 @@ fn order_edge(a:u32,b:u32)->(u32,u32){
     (b,a)
 }
 
-//non graphics related shape
+//non graphics related shape, pure geometry info
 pub struct Shape{
     pub vertices:Vec::<glm::Vec3>,
     pub indices:Vec::<u32>

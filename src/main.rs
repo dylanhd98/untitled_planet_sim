@@ -25,17 +25,16 @@ fn main() {
         glium::texture::SrgbTexture2d::new(&display, image).unwrap()
     };
 
-    let planet = planet::Planet::new(&display,surface_texture,7);
+    let mut planet = planet::Planet::new(&display,surface_texture,5);
 
-    let view:[[f32; 4]; 4] = glm::look_at(
+    let view = glm::look_at(
         &glm::vec3(0.0,0.0,4.0),//eye position
         &glm::vec3(0.0,0.0,-5.0),//looking at
-        &glm::vec3(0.0,1.0,0.0))//up
-        .into();
-
-    let perspective:[[f32; 4]; 4] = glm::perspective(
-        4.0 / 3.0, 3.14 / 4.0, 0.01, 10000.0)
-        .into();
+        &glm::vec3(0.0,1.0,0.0));//up
+        
+    let dimensions = display.get_framebuffer_dimensions();
+    let perspective = glm::perspective(
+        dimensions.0 as f32/ dimensions.1 as f32, 3.14 / 4.0, 0.01, 1024.0);
 
     let mut cam = graphics::Camera::new(perspective,view);
 
@@ -55,14 +54,17 @@ fn main() {
     //loop forever until close event
     event_loop.run(move |event, _, control_flow| {
 
+        //defines time per frame
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-
+        
         //creates buffer to store image in before drawing to window
         let mut target = display.draw();
         //clears buffer
         target.clear_color_and_depth((0.0, 0.01, 0.01, 1.0), 1.0);
+
+        planet.update(0.001);
 
         planet.draw(&mut target, &program, &params, &cam);
 
@@ -72,6 +74,14 @@ fn main() {
         //handle window events
         match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
+                //if key pressed
+                glutin::event::WindowEvent::KeyboardInput { device_id, input, is_synthetic }=>{
+                    match input.virtual_keycode{
+                        Some(glutin::event::VirtualKeyCode::A)=> cam.view = glm::rotate_y(&cam.view, 0.1),
+                        Some(glutin::event::VirtualKeyCode::D)=> cam.view = glm::rotate_y(&cam.view, -0.1),
+                        _=>()
+                    }
+                }
                 //closes window if close event
                 glutin::event::WindowEvent::CloseRequested => {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
