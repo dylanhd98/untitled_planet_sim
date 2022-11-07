@@ -6,7 +6,8 @@ in vec3 normal;
 
 //cell data in
 in float height;
-in float vegetation;
+in float humidity;
+in float temperature;
 
 //data for frag
 out vec3 v_normal;
@@ -19,8 +20,9 @@ uniform mat4 view;
 uniform mat4 perspective;
 
 void main() {
-    v_tex_coords = vec2((1+vegetation)/2.0,0.5);
+    v_tex_coords = vec2((1.0+humidity)*0.5,temperature);
     v_height = height;
+
     vec3 new_pos = position;
     if(height>0.0){
         new_pos *= (1+(height/20));

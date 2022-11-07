@@ -9,8 +9,10 @@ use nalgebra_glm as glm;
 use std::collections::HashMap;
 
 pub struct Camera{
+    //matrices
     pub perspective:glm::Mat4,
     pub view:glm::Mat4,
+
 }
 impl Camera{
     pub fn new(perspective:glm::Mat4,view:glm::Mat4)->Camera{

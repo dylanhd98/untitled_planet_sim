@@ -14,7 +14,7 @@ void main() {
     float brightness = max(0.1,dot(to_light,v_normal));
 
     if(v_height<0.0){
-        color = vec4(0.0,0.0,0.15,1.0)* brightness;
+        color = mix(vec4(0.0,0.02,0.15,1.0),vec4(0.0,0.0,0.10,1.0),abs(v_height*0.5))* brightness;
     }
     else{
         color = texture(tex, v_tex_coords)*brightness;
