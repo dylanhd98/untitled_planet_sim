@@ -31,8 +31,9 @@ fn main() {
     
     //creates new camera
     let mut cam = graphics::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
-        &glm::vec3(0.0,0.0,4.0), 
-        &glm::vec3(0.0,0.0,-5.0));
+        glm::vec3(0.0,0.0,5.0), 
+        glm::vec3(0.0,0.0,0.0),
+        glm::vec3(0.0,1.0,0.0));
 
     //parameters that specify how rendering takes place
     let params = glium::DrawParameters {
@@ -63,8 +64,8 @@ fn main() {
                     //if key pressed
                     glutin::event::WindowEvent::KeyboardInput { device_id, input, is_synthetic }=>{
                         match input.virtual_keycode{
-                            Some(glutin::event::VirtualKeyCode::A)=> cam.view = glm::rotate_y(&cam.view, 0.03),
-                            Some(glutin::event::VirtualKeyCode::D)=> cam.view = glm::rotate_y(&cam.view, -0.03),
+                            Some(glutin::event::VirtualKeyCode::A)=> cam.pos = glm::rotate_y_vec3(&cam.pos,-0.03),
+                            Some(glutin::event::VirtualKeyCode::D)=> cam.pos = glm::rotate_y_vec3(&cam.pos,0.03),
                             _=>()
                         }
                     }
@@ -77,7 +78,7 @@ fn main() {
 
             //once events are handled, this runs
             glutin::event::Event::MainEventsCleared=>{
-
+                cam.update_view();
                 //LOGIC
                 planet.update(0.001);
 
