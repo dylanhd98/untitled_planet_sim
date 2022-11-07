@@ -15,10 +15,15 @@ pub struct Camera{
 
 }
 impl Camera{
-    pub fn new(perspective:glm::Mat4,view:glm::Mat4)->Camera{
+    //only uses these parameters as that fits my general use
+    pub fn new(ratio:f32, pos: &glm::Vec3, target: &glm::Vec3)->Camera{
         Camera{
-            perspective,
-            view
+            //aspect ratio, fov, near field, far field
+            perspective : glm::perspective(ratio, 3.14 / 4.0, 0.01, 1024.0),
+            view: glm::look_at(
+                &pos,//eye position
+                &target,//looking at
+                &glm::vec3(0.0,1.0,0.0))//up
         }
     }
     

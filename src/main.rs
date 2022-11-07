@@ -27,17 +27,12 @@ fn main() {
 
     let mut planet = planet::Planet::new(&display,surface_texture,5);
 
-    let view = glm::look_at(
-        &glm::vec3(0.0,0.0,4.0),//eye position
-        &glm::vec3(0.0,0.0,-5.0),//looking at
-        &glm::vec3(0.0,1.0,0.0));//up
-        
     let dimensions = display.get_framebuffer_dimensions();
-    let perspective = glm::perspective(
-        dimensions.0 as f32/ dimensions.1 as f32, 3.14 / 4.0, 0.01, 1024.0);
-
+    
     //creates new camera
-    let mut cam = graphics::Camera::new(perspective,view);
+    let mut cam = graphics::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
+        &glm::vec3(0.0,0.0,4.0), 
+        &glm::vec3(0.0,0.0,-5.0));
 
     //parameters that specify how rendering takes place
     let params = glium::DrawParameters {
@@ -60,7 +55,6 @@ fn main() {
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-        
         //handle window events
         match event {
             //checking for window events

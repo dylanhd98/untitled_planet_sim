@@ -95,7 +95,7 @@ impl PlanetCells{
 pub struct Planet{
     texture: glium::texture::SrgbTexture2d,
 
-    mesh: PlanetBuffers,
+    buffers: PlanetBuffers,
 
     cells: PlanetCells,
 
@@ -126,7 +126,7 @@ impl Planet{
         Planet{
             texture,
 
-            mesh: 
+            buffers: 
             PlanetBuffers{
                 //buffer containing base shape of planet, most likely the sphere
                 shape_data: glium::VertexBuffer::new(display,&planet_vertices).unwrap(),
@@ -155,7 +155,7 @@ impl Planet{
         self.to_sun= glm::rotate_y_vec3(&self.to_sun, days);
         
 
-        self.mesh.planet_data.write(&self.cells.get_cell_data());
+        self.buffers.planet_data.write(&self.cells.get_cell_data());
         //self.mesh.vertices.write();
     }
 
@@ -172,6 +172,6 @@ impl Planet{
             to_light: [self.to_sun.x,self.to_sun.y,self.to_sun.z]
         };
 
-        target.draw((&self.mesh.shape_data,&self.mesh.planet_data),&self.mesh.indices,program,&uniform,params).unwrap();
+        target.draw((&self.buffers.shape_data,&self.buffers.planet_data),&self.buffers.indices,program,&uniform,params).unwrap();
     }
 }

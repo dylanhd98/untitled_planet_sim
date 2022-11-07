@@ -25,7 +25,7 @@ void main() {
 
     vec3 new_pos = position;
     if(height>0.0){
-        new_pos *= (1+(height/20));
+        new_pos *= (1+(height/15));
     }
     //v_normal = transpose(inverse(mat3(world))) * normal;
     v_normal = normal;
