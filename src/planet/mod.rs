@@ -1,6 +1,5 @@
 use glium::{Surface,glutin};
 use nalgebra_glm as glm;
-use rand::Rng;
 use noise::{NoiseFn, Perlin, Seedable};
 
 use crate::graphics;
@@ -38,6 +37,14 @@ pub struct PlanetCell {
 }
 glium::implement_vertex!(PlanetCell,height,humidity,temperature);
 
+pub struct Plate{
+    cells: Vec<u32>,
+    axis: glm::Vec3,
+    density: f32,
+    speed: f32,
+}
+
+
 pub struct Planet{
     texture: glium::texture::SrgbTexture2d,
 
@@ -51,7 +58,7 @@ pub struct Planet{
 }
 impl Planet{
     pub fn new(display:&glium::Display, texture:glium::texture::SrgbTexture2d, iterations :u8)->Planet{
-        let perlin = Perlin::new(1);
+        let perlin = Perlin::new(2000);
 
         let axis = glm::vec3(0.0,1.0,1.0).normalize();
         //generates base shape
