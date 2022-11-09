@@ -4,6 +4,7 @@ use std::io::Cursor;
 
 mod planet;
 mod graphics;
+mod ui;
 
 fn main() {
     //handles window and device events
@@ -22,21 +23,23 @@ fn main() {
         let image_dimensions = image.dimensions();
         //creates compatible image for glium
         let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+
         glium::texture::SrgbTexture2d::new(&display, image).unwrap()
     };
 
-    let mut planet = planet::Planet::new(&display,surface_texture,5);
+    let mut planet = planet::Planet::new(&display,surface_texture,6);
 
     let dimensions = display.get_framebuffer_dimensions();
     
     //creates new camera
-    let mut cam = graphics::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
+    let mut cam = graphics::camera::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
         glm::vec3(0.0,0.0,5.0), 
         glm::vec3(0.0,0.0,0.0),
         glm::vec3(0.0,1.0,0.0));
 
     //parameters that specify how rendering takes place
     let params = glium::DrawParameters {
+        
         depth: glium::Depth {
             test: glium::draw_parameters::DepthTest::IfLess,
             write: true,
@@ -47,8 +50,9 @@ fn main() {
         .. Default::default()
     };
 
-    //gets shaders from files
-    let program = glium::Program::from_source(&display, include_str!("../resources/shaders/vert.glsl"), include_str!("../resources/shaders/frag.glsl"), None).unwrap();
+    //compiles shaders from files
+    let planet_shader = glium::Program::from_source(&display, include_str!("../resources/shaders/planet/vert.glsl"), include_str!("../resources/shaders/planet/frag.glsl"), None).unwrap();
+    let skybox_shader = glium::Program::from_source(&display, include_str!("../resources/shaders/skybox/vert.glsl"), include_str!("../resources/shaders/skybox/frag.glsl"), None).unwrap();
 
     //loop forever until close event
     event_loop.run(move |event, _, control_flow| {
@@ -56,6 +60,8 @@ fn main() {
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
+
+
         //handle window events
         match event {
             //checking for window events
@@ -64,8 +70,13 @@ fn main() {
                     //if key pressed
                     glutin::event::WindowEvent::KeyboardInput { device_id, input, is_synthetic }=>{
                         match input.virtual_keycode{
-                            Some(glutin::event::VirtualKeyCode::A)=> cam.pos = glm::rotate_y_vec3(&cam.pos,-0.03),
-                            Some(glutin::event::VirtualKeyCode::D)=> cam.pos = glm::rotate_y_vec3(&cam.pos,0.03),
+                            //zoom in and out
+                            Some(glutin::event::VirtualKeyCode::E)=> cam.pos *= 0.95,
+                            Some(glutin::event::VirtualKeyCode::Q)=> cam.pos *= 1.05,
+
+                            //look left and right
+                            Some(glutin::event::VirtualKeyCode::A)=> cam.pos = glm::rotate_y_vec3(&cam.pos,-0.05),
+                            Some(glutin::event::VirtualKeyCode::D)=> cam.pos = glm::rotate_y_vec3(&cam.pos,0.05),
                             _=>()
                         }
                     }
@@ -78,18 +89,18 @@ fn main() {
 
             //once events are handled, this runs
             glutin::event::Event::MainEventsCleared=>{
-                cam.update_view();
+        
                 //LOGIC
+                cam.update_view();
                 planet.update(0.001);
 
                 //RENDERING
                 //creates buffer to store image in before drawing to window
                 let mut target = display.draw();
-                //clears buffer
-                target.clear_color_and_depth((0.0, 0.01, 0.01, 1.0), 1.0);
-
-                planet.draw(&mut target, &program, &params, &cam);
-
+                //clears buffer for colors and depth
+                target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
+                //draw planet
+                planet.draw(&mut target, &planet_shader, &params, &cam);
                 //finish drawing and draws to window
                 target.finish().unwrap();
             },

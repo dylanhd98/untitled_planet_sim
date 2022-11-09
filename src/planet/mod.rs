@@ -1,8 +1,13 @@
+//external crates
 use glium::{Surface,glutin};
 use nalgebra_glm as glm;
 use noise::{NoiseFn, Perlin, Seedable};
 
+//other internal modules
 use crate::graphics;
+
+//child modules
+
 
 fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistance:f32, lacunarity:f32)->f32{
     let mut noise_value = 0.0;
@@ -58,9 +63,9 @@ pub struct Planet{
 }
 impl Planet{
     pub fn new(display:&glium::Display, texture:glium::texture::SrgbTexture2d, iterations :u8)->Planet{
-        let perlin = Perlin::new(2000);
+        let perlin = Perlin::new(1);
 
-        let axis = glm::vec3(0.0,1.0,1.0).normalize();
+        let axis = glm::vec3(0.0,1.0,0.5).normalize();
         //generates base shape
         let base_shape = graphics::Shape::icosahedron()
             .subdivide(iterations)
@@ -113,7 +118,7 @@ impl Planet{
         //latitude that gets maximum sunlight from the sun
         let sun_max = glm::dot(&self.to_sun, &self.axis);
         self.cells.iter_mut()
-            .for_each(|c| c.temperature = (1.0-f32::abs(c.latitude-sun_max))/30.0);
+            .for_each(|c| c.temperature = (1.0-c.height)* glm::max2_scalar(1.0-f32::abs(sun_max-c.latitude), 0.0));
 
         self.to_sun= glm::rotate_y_vec3(&self.to_sun, 0.001745329);
         
@@ -121,7 +126,7 @@ impl Planet{
         self.buffers.planet_data.write(&self.cells);
     }
 
-    pub fn draw(&self, target:&mut glium::Frame, program:&glium::Program, params:&glium::DrawParameters,cam:&graphics::Camera){
+    pub fn draw(&self, target:&mut glium::Frame, program:&glium::Program, params:&glium::DrawParameters,cam:&graphics::camera::Camera){
         //let translation:[[f32;4];4] =  glm::translation(&glm::vec3(0.0,0.0,0.0)).into();
         let pers:[[f32;4];4] = cam.perspective.into();
         let view:[[f32;4];4] = cam.view.into();
@@ -130,7 +135,7 @@ impl Planet{
             view: view,
             //world: translation,
 
-            tex: &self.texture,
+            tex: glium::uniforms::Sampler::new(&self.texture).wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
             to_light: [self.to_sun.x,self.to_sun.y,self.to_sun.z]
         };
 
