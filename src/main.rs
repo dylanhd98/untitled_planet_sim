@@ -1,6 +1,7 @@
 use glium::{Surface,glutin};
 use nalgebra_glm as glm;
 use std::io::Cursor;
+use std::time::{Duration, Instant};
 
 mod planet;
 mod graphics;
@@ -16,6 +17,7 @@ fn main() {
     //creates display with above attributes
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
+    //loads texture to use for planet lookup
     let surface_texture = {
         //loads data from file
         let image = image::load(Cursor::new(&include_bytes!("../resources/images/lookup.png")),
@@ -29,9 +31,8 @@ fn main() {
 
     let mut planet = planet::Planet::new(&display,surface_texture,6);
 
-    let dimensions = display.get_framebuffer_dimensions();
-    
     //creates new camera
+    let dimensions = display.get_framebuffer_dimensions();
     let mut cam = graphics::camera::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
         glm::vec3(0.0,0.0,5.0), 
         glm::vec3(0.0,0.0,0.0),
@@ -50,18 +51,24 @@ fn main() {
         .. Default::default()
     };
 
+    let mut frame_time = Instant::now();
+
     //compiles shaders from files
     let planet_shader = glium::Program::from_source(&display, include_str!("../resources/shaders/planet/vert.glsl"), include_str!("../resources/shaders/planet/frag.glsl"), None).unwrap();
     let skybox_shader = glium::Program::from_source(&display, include_str!("../resources/shaders/skybox/vert.glsl"), include_str!("../resources/shaders/skybox/frag.glsl"), None).unwrap();
 
     //loop forever until close event
     event_loop.run(move |event, _, control_flow| {
+
+        let delta_time = frame_time.elapsed().as_secs_f32();
+        frame_time = Instant::now();
+        println!("deltatime: {}",delta_time);
+
         //defines time per frame
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-
-
+        
         //handle window events
         match event {
             //checking for window events
@@ -89,7 +96,6 @@ fn main() {
 
             //once events are handled, this runs
             glutin::event::Event::MainEventsCleared=>{
-        
                 //LOGIC
                 cam.update_view();
                 planet.update(0.001);

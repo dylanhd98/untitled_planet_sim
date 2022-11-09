@@ -78,7 +78,7 @@ impl Planet{
                     latitude: glm::dot(v,&axis),
                     height: octive_noise(perlin, &v, 2.5, 7, 0.6, 2.5),
                     humidity: octive_noise(perlin, &(v+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),
-                    temperature: 0.5
+                    temperature: 0.5,
                 }
             )
             .collect();
