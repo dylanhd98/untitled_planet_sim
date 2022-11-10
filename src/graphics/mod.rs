@@ -19,8 +19,6 @@ pub struct PosNorm {
 }
 glium::implement_vertex!(PosNorm,position,normal);
 
-
-
 fn order_edge(a:u32,b:u32)->(u32,u32){
     if a>b{
         return (a,b)

@@ -29,7 +29,7 @@ fn main() {
         glium::texture::SrgbTexture2d::new(&display, image).unwrap()
     };
 
-    let mut planet = planet::Planet::new(&display,surface_texture,6);
+    let mut planet = planet::Planet::new(&display,surface_texture,7);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();
@@ -54,15 +54,17 @@ fn main() {
     let mut frame_time = Instant::now();
 
     //compiles shaders from files
-    let planet_shader = glium::Program::from_source(&display, include_str!("../resources/shaders/planet/vert.glsl"), include_str!("../resources/shaders/planet/frag.glsl"), None).unwrap();
-    let skybox_shader = glium::Program::from_source(&display, include_str!("../resources/shaders/skybox/vert.glsl"), include_str!("../resources/shaders/skybox/frag.glsl"), None).unwrap();
+    let planet_shader = glium::Program::from_source(&display, include_str!("../resources/shaders/planet/vert.glsl"), include_str!("../resources/shaders/planet/frag.glsl"),
+    Some(include_str!("../resources/shaders/planet/geom.glsl"))).unwrap();
+    let skybox_shader = glium::Program::from_source(&display, include_str!("../resources/shaders/skybox/vert.glsl"), include_str!("../resources/shaders/skybox/frag.glsl"),
+     None).unwrap();
 
     //loop forever until close event
     event_loop.run(move |event, _, control_flow| {
 
         let delta_time = frame_time.elapsed().as_secs_f32();
         frame_time = Instant::now();
-        println!("deltatime: {}",delta_time);
+        //println!("deltatime: {}",delta_time);
 
         //defines time per frame
         let next_frame_time = std::time::Instant::now() +
@@ -83,7 +85,7 @@ fn main() {
 
                             //look left and right
                             Some(glutin::event::VirtualKeyCode::A)=> cam.pos = glm::rotate_y_vec3(&cam.pos,-0.05),
-                            Some(glutin::event::VirtualKeyCode::D)=> cam.pos = glm::rotate_y_vec3(&cam.pos,0.05),
+                            Some(glutin::event::VirtualKeyCode::D)=> cam.pos = glm::rotate_y_vec3(&cam.pos, 0.05),
                             _=>()
                         }
                     }

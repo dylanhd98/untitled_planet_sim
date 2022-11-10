@@ -28,7 +28,7 @@ fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistan
     noise_value
 }
 struct PlanetBuffers{
-    shape_data :glium::VertexBuffer<graphics::PosNorm>,
+    shape_data :glium::VertexBuffer<graphics::VertexPos>,
     planet_data: glium::VertexBuffer<PlanetCell>,
     indices: glium::IndexBuffer<u32>,
 }
@@ -84,11 +84,10 @@ impl Planet{
             .collect();
 
         //generates mesh vertices from base shape
-        let planet_vertices:Vec<graphics::PosNorm> = base_shape.vertices
+        let planet_vertices:Vec<graphics::VertexPos> = base_shape.vertices
             .iter()
-            .map(|v| graphics::PosNorm{
+            .map(|v| graphics::VertexPos{
                 position:[v.x,v.y,v.z],
-                normal: [v.x,v.y,v.z]
              })
             .collect();
 
@@ -120,7 +119,7 @@ impl Planet{
         self.cells.iter_mut()
             .for_each(|c| c.temperature = (1.0-c.height)* glm::max2_scalar(1.0-f32::abs(sun_max-c.latitude), 0.0));
 
-        self.to_sun= glm::rotate_y_vec3(&self.to_sun, 0.001745329);
+        self.to_sun= glm::rotate_y_vec3(&self.to_sun, 0.01);
         
 
         self.buffers.planet_data.write(&self.cells);

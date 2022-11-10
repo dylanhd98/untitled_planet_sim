@@ -11,7 +11,7 @@ uniform sampler2D tex;
 uniform vec3 to_light;
 
 void main() {
-    float brightness = max(0.2,dot(to_light,v_normal));
+    float brightness = max(dot(to_light,v_normal),0.1);
 
     if(v_height<0.0){
         color = mix(vec4(0.0,0.02,0.15,1.0),vec4(0.0,0.0,0.10,1.0),abs(v_height*0.5))* brightness;
