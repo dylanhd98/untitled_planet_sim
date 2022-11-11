@@ -2,15 +2,17 @@
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
-
-out vec3 v_normal;
-out vec2 v_tex_coords;
-out float v_height;
-
+//in from vertex
 in VS_OUT {
     vec2 tex_coords;
     float height;
 } gs_in[];
+
+//out for frag
+out vec3 v_normal;
+out vec2 v_tex_coords;
+out float v_height;
+
 
 void main() {    
     vec3 v0 = gl_in[0].gl_Position.xyz;

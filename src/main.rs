@@ -62,7 +62,7 @@ fn main() {
     //loop forever until close event
     event_loop.run(move |event, _, control_flow| {
 
-        let delta_time = frame_time.elapsed().as_secs_f32();
+        let delta_time = frame_time.elapsed().as_millis();
         frame_time = Instant::now();
         //println!("deltatime: {}",delta_time);
 

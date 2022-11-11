@@ -19,8 +19,4 @@ void main() {
     else{
         color = texture(tex, v_tex_coords)*brightness;
     }
-
-    
-    //color = vec4(vec3(v_height),1.0);
-    //color = texture(tex, v_tex_coords)*dot(to_light,v_normal);
 }
