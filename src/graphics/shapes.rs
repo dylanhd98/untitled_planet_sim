@@ -51,23 +51,25 @@ impl Shape{
                     });
                 }
                 //all midpoints should be present in dictionary, add new indices
-                //TODO:FIND MORE CONCISE WAY TO DO THIS
-                //middle tri
-                new_indices.push(midpoints[&order_edge(tri[0],tri[1])]);
-                new_indices.push(midpoints[&order_edge(tri[1],tri[2])]);
-                new_indices.push(midpoints[&order_edge(tri[2],tri[0])]);
-                //top tri
-                new_indices.push(tri[0]);
-                new_indices.push(midpoints[&order_edge(tri[0],tri[1])]);
-                new_indices.push(midpoints[&order_edge(tri[2],tri[0])]);
-                //bottom right tri
-                new_indices.push(tri[1]);
-                new_indices.push(midpoints[&order_edge(tri[1],tri[2])]);
-                new_indices.push(midpoints[&order_edge(tri[0],tri[1])]);
-                //bottom left tri
-                new_indices.push(tri[2]);
-                new_indices.push(midpoints[&order_edge(tri[2],tri[0])]);
-                new_indices.push(midpoints[&order_edge(tri[1],tri[2])]);
+                //TODO:FIND IF PUSHING EACH INDIVIDUALLY IS MORE EFFICIENT, ALTHOUGH I IMAGINE NOT
+                new_indices.append(&mut vec![
+                    //middle tri
+                    midpoints[&order_edge(tri[0],tri[1])],
+                    midpoints[&order_edge(tri[1],tri[2])],
+                    midpoints[&order_edge(tri[2],tri[0])],
+                    //top tri
+                    tri[0],
+                    midpoints[&order_edge(tri[0],tri[1])],
+                    midpoints[&order_edge(tri[2],tri[0])],
+                    //bottom right tri
+                    tri[1],
+                    midpoints[&order_edge(tri[1],tri[2])],
+                    midpoints[&order_edge(tri[0],tri[1])],
+                    //bottom left tri
+                    tri[2],
+                    midpoints[&order_edge(tri[2],tri[0])],
+                    midpoints[&order_edge(tri[1],tri[2])],
+                ]);
             }
             self.indices = new_indices;
         }

@@ -37,13 +37,11 @@ void main() {
     gl_Position = gl_in[1].gl_Position;
     v_tex_coords = gs_in[1].tex_coords;
     v_height = gs_in[1].height;
-    
     EmitVertex();
     
     gl_Position = gl_in[2].gl_Position;
     v_tex_coords = gs_in[2].tex_coords;
     v_height = gs_in[2].height;
-    
     EmitVertex();
 
     EndPrimitive();

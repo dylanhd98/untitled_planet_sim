@@ -63,16 +63,12 @@ fn main() {
 
     //loop forever until close event
     event_loop.run(move |event, _, control_flow| {
-
-        let delta_time = frame_time.elapsed().as_secs_f32();
-        frame_time = Instant::now();
-        //println!("{:?}",delta_time);
-
         //defines time per frame
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-        
+
+
         //handle window events
         match event {
             //checking for window events
@@ -95,7 +91,7 @@ fn main() {
                     //handle resizing
                     glutin::event::WindowEvent::Resized( new_size) =>{
                         cam.update_ratio(new_size.width as f32/ new_size.height as f32);
-                    }
+                    },
 
                     //closes window if close event
                     glutin::event::WindowEvent::CloseRequested => {
@@ -107,9 +103,15 @@ fn main() {
 
             //once events are handled, this runs
             glutin::event::Event::MainEventsCleared=>{
+                //reset the delta_time at the start of frame
+                let delta_time = frame_time.elapsed().as_secs_f32();
+                frame_time = Instant::now();
+
                 //LOGIC
+                //updates camera view based on new pos specified by user input
                 cam.update_view();
-                planet.update(1.0);
+                //updates planet with the specification of how many days pass per frame
+                planet.update(delta_time*60.0);//60 days per second, placeholder
 
                 //RENDERING
                 //creates buffer to store image in before drawing to window
