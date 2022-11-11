@@ -10,6 +10,7 @@ in float temperature;
 
 //data for geometry shader
 out VS_OUT {
+    vec3 pos;
     vec2 tex_coords;
     float height;
 } vs_out;
@@ -28,6 +29,7 @@ void main() {
     if(height>0.0){
         new_pos *= (1+(height/25));
     }
+    vs_out.pos = new_pos;
 
     //v_normal = transpose(inverse(mat3(world))) * normal;
     //v_normal = normal;

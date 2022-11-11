@@ -1,8 +1,8 @@
 #version 330
 
+//in from geometry shader
 in vec3 v_normal;
 in vec2 v_tex_coords;
-
 in float v_height;
 
 out vec4 color;
@@ -19,4 +19,6 @@ void main() {
     else{
         color = texture(tex, v_tex_coords)*brightness;
     }
+
+   //color = vec4(vec3(v_normal),1.0);
 }

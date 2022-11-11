@@ -9,6 +9,7 @@ use crate::graphics;
 //child modules
 
 
+//handles perlin noise for generating base
 fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistance:f32, lacunarity:f32)->f32{
     let mut noise_value = 0.0;
     let mut amplitude = 1.0;
@@ -27,12 +28,15 @@ fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistan
     }
     noise_value
 }
+
+//buffer containing all thigs needed for rendering
 struct PlanetBuffers{
     shape_data :glium::VertexBuffer<graphics::VertexPos>,
     planet_data: glium::VertexBuffer<PlanetCell>,
     indices: glium::IndexBuffer<u32>,
 }
 
+//data for each cell on the planet, can be written directly to the planetbuffer, although only the neccisary parts are
 #[derive(Copy, Clone)]
 pub struct PlanetCell {
     pub latitude:f32,
@@ -42,6 +46,7 @@ pub struct PlanetCell {
 }
 glium::implement_vertex!(PlanetCell,height,humidity,temperature);
 
+//data for every plate
 pub struct Plate{
     cells: Vec<u32>,
     axis: glm::Vec3,
@@ -67,7 +72,7 @@ impl Planet{
 
         let axis = glm::vec3(0.0,1.0,0.5).normalize();
         //generates base shape
-        let base_shape = graphics::Shape::icosahedron()
+        let base_shape = graphics::shapes::Shape::icosahedron()
             .subdivide(iterations)
             .normalize();
 
@@ -119,7 +124,8 @@ impl Planet{
         self.cells.iter_mut()
             .for_each(|c| c.temperature = (1.0-c.height)* glm::max2_scalar(1.0-f32::abs(sun_max-c.latitude), 0.0));
 
-        self.to_sun= glm::rotate_y_vec3(&self.to_sun, 0.01);
+        //one year is 360 days here for simplicity, therefore number of days is converted to radians
+        self.to_sun= glm::rotate_y_vec3(&self.to_sun, days*(std::f32::consts::PI/180.0));
         
 
         self.buffers.planet_data.write(&self.cells);

@@ -15,7 +15,7 @@ impl Camera{
     pub fn new(ratio:f32, pos: glm::Vec3, target: glm::Vec3, up: glm::Vec3)->Camera{
         Camera{
             //aspect ratio, fov, near field, far field
-            perspective : glm::perspective(ratio, 3.14 / 4.0, 0.01, 1024.0),
+            perspective : glm::perspective(ratio, std::f32::consts::PI / 4.0, 0.01, 1024.0),
             view: glm::look_at(
                 &pos,//eye position
                 &target,//looking at
@@ -25,6 +25,10 @@ impl Camera{
             target,
             up,
         }
+    }
+
+    pub fn update_ratio(&mut self,ratio:f32){
+        self.perspective = glm::perspective(ratio, std::f32::consts::PI / 4.0, 0.01, 1024.0);
     }
     
     //updates matrices

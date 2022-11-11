@@ -10,7 +10,7 @@ struct Skybox{
 impl Skybox{
     
     pub fn new(display: &glium::Display)->Skybox{
-        let cube = super::Shape::cube();
+        let cube = super::shapes::Shape::cube();
 
         let cube_verts: Vec<super::VertexPos> = cube.vertices.iter()
             .map(|v| 

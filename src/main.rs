@@ -1,8 +1,10 @@
+//external crates
 use glium::{Surface,glutin};
 use nalgebra_glm as glm;
 use std::io::Cursor;
 use std::time::{Duration, Instant};
 
+//internal modules
 mod planet;
 mod graphics;
 mod ui;
@@ -29,7 +31,7 @@ fn main() {
         glium::texture::SrgbTexture2d::new(&display, image).unwrap()
     };
 
-    let mut planet = planet::Planet::new(&display,surface_texture,7);
+    let mut planet = planet::Planet::new(&display,surface_texture,6);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();
@@ -62,9 +64,9 @@ fn main() {
     //loop forever until close event
     event_loop.run(move |event, _, control_flow| {
 
-        let delta_time = frame_time.elapsed().as_millis();
+        let delta_time = frame_time.elapsed().as_secs_f32();
         frame_time = Instant::now();
-        //println!("deltatime: {}",delta_time);
+        //println!("{:?}",delta_time);
 
         //defines time per frame
         let next_frame_time = std::time::Instant::now() +
@@ -88,11 +90,18 @@ fn main() {
                             Some(glutin::event::VirtualKeyCode::D)=> cam.pos = glm::rotate_y_vec3(&cam.pos, 0.05),
                             _=>()
                         }
+                    },
+
+                    //handle resizing
+                    glutin::event::WindowEvent::Resized( new_size) =>{
+                        cam.update_ratio(new_size.width as f32/ new_size.height as f32);
                     }
+
                     //closes window if close event
                     glutin::event::WindowEvent::CloseRequested => {
                         *control_flow = glutin::event_loop::ControlFlow::Exit;
                     },
+
                     _ => (),
                 },
 
@@ -100,7 +109,7 @@ fn main() {
             glutin::event::Event::MainEventsCleared=>{
                 //LOGIC
                 cam.update_view();
-                planet.update(0.001);
+                planet.update(1.0);
 
                 //RENDERING
                 //creates buffer to store image in before drawing to window
