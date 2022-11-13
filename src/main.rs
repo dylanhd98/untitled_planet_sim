@@ -31,7 +31,7 @@ fn main() {
         glium::texture::SrgbTexture2d::new(&display, image).unwrap()
     };
 
-    let mut planet = planet::Planet::new(&display,surface_texture,1);
+    let mut planet = planet::Planet::new(&display,surface_texture,7);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();

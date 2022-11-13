@@ -76,13 +76,6 @@ impl Planet{
             .subdivide(iterations)
             .normalize();
 
-        let conns = base_shape.get_connections();
-
-        println!("{:#?}",conns);
-
-        println!("connection count>{:?} vetices>{:?}",conns.len(),base_shape.vertices.len());
-            
-
         //generates cells
         let cells:Vec<PlanetCell> = base_shape.vertices.iter()
             .map(|v|
@@ -94,6 +87,8 @@ impl Planet{
                 }
             )
             .collect();
+
+        let conns = base_shape.get_connections();
 
         //generates mesh vertices from base shape
         let planet_vertices:Vec<graphics::VertexPos> = base_shape.vertices

@@ -25,15 +25,10 @@ impl Shape{
             .for_each(|x|
                 {
                     //im using index should use vertex 
-                    println!("{:?}",x);
-                    connections[x[0] as usize].insert(x[1] as usize);
-                    connections[x[0] as usize].insert(x[2] as usize);
-
-                    connections[x[1] as usize].insert(x[2] as usize);
-                    connections[x[1] as usize].insert(x[0] as usize);
-
-                    connections[x[2] as usize].insert(x[0] as usize);
-                    connections[x[2] as usize].insert(x[1] as usize);
+                    for i in 0..3{
+                        connections[x[i] as usize].insert(x[(i+1)%3] as usize);
+                        connections[x[i] as usize].insert(x[(i+2)%3] as usize);
+                    }
                 }
             );
 
@@ -71,13 +66,15 @@ impl Shape{
             for tri in self.indices.chunks(3){
                 for i in 0..3{
                     let edge = order_edge(tri[i],tri[(i+1)%3]);
+
                     //if edge isnt in dictionary, calculate midpoint, add to vertices, store index in dictionary
-                    midpoints.entry(edge).or_insert({
+                    if midpoints.get(&edge)==None {
                         let mid = (self.vertices[edge.0 as usize]+self.vertices[edge.1 as usize])*0.5;
                         self.vertices.push(mid);//adds midpoint as vertex
-                        u32::try_from(self.vertices.len()-1).expect("More vertices than datatype can represent")//return index value
-                    });
+                        midpoints.insert(edge, u32::try_from(self.vertices.len()-1).expect("More vertices than datatype can represent"));
+                    }
                 }
+
                 //all midpoints should be present in dictionary, add new indices
                 //TODO:FIND IF PUSHING EACH INDIVIDUALLY IS MORE EFFICIENT, ALTHOUGH I IMAGINE NOT
                 new_indices.append(&mut vec![
