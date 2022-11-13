@@ -1,6 +1,6 @@
 //just a bunch of default shapes and operations that can be done one them
 use nalgebra_glm as glm;
-use std::collections::HashMap;
+use std::collections::{HashMap,HashSet};
 
 //used to just flip a tuple so two containing the same numbers are always identical, used in the hashmap during subdivision
 fn order_edge(a:u32,b:u32)->(u32,u32){
@@ -15,6 +15,33 @@ pub struct Shape{
     pub indices:Vec::<u32>
 }
 impl Shape{
+     
+    pub fn get_connections(&self)->Vec<Vec<usize>>{
+        //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
+        //iterate through indices, for every index, store other two in triangle into its hashmap
+        let mut connections:Vec::<HashSet<usize>> = vec![HashSet::new();self.vertices.len()];
+        
+        self.indices.chunks(3)
+            .for_each(|x|
+                {
+                    //im using index should use vertex 
+                    println!("{:?}",x);
+                    connections[x[0] as usize].insert(x[1] as usize);
+                    connections[x[0] as usize].insert(x[2] as usize);
+
+                    connections[x[1] as usize].insert(x[2] as usize);
+                    connections[x[1] as usize].insert(x[0] as usize);
+
+                    connections[x[2] as usize].insert(x[0] as usize);
+                    connections[x[2] as usize].insert(x[1] as usize);
+                }
+            );
+
+        connections.into_iter()
+            .map(|c| Vec::from_iter(c))
+            .collect()
+    }
+
     //makes every vertex unit length
     pub fn normalize(mut self)->Shape{
         //replaces vertices with their normalzed selfs
@@ -31,6 +58,7 @@ impl Shape{
         for i in 0..iterations{
             //indices length is just triangle amount*3
             //thus, new indices will be 4 times as large, 4 times more triangles
+            //
             //this is calculated here to prevent constant memory realocation
             //TODO: FUTURE ME VERIFY IF THIS IS RIGHT
             let mut new_indices:Vec::<u32> = Vec::with_capacity(self.indices.len()*4);

@@ -1,5 +1,4 @@
 //crates being used
-use nalgebra_glm as glm;
 
 //all the child modules
 pub mod skybox;
@@ -18,5 +17,3 @@ pub struct PosNorm {
     pub normal : [f32;3],
 }
 glium::implement_vertex!(PosNorm,position,normal);
-
-

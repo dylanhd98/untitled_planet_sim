@@ -76,6 +76,13 @@ impl Planet{
             .subdivide(iterations)
             .normalize();
 
+        let conns = base_shape.get_connections();
+
+        println!("{:#?}",conns);
+
+        println!("connection count>{:?} vetices>{:?}",conns.len(),base_shape.vertices.len());
+            
+
         //generates cells
         let cells:Vec<PlanetCell> = base_shape.vertices.iter()
             .map(|v|
@@ -122,7 +129,9 @@ impl Planet{
         //latitude that gets maximum sunlight from the sun
         let sun_max = glm::dot(&self.to_sun, &self.axis);
         self.cells.iter_mut()
-            .for_each(|c| c.temperature = (1.0-c.height)* glm::max2_scalar(1.0-f32::abs(sun_max-c.latitude), 0.0));
+            .for_each(|c| 
+                c.temperature = (1.0-c.height)* 
+                glm::max2_scalar(1.0-f32::abs(sun_max-c.latitude), 0.0));
 
         //one year is 360 days here for simplicity, therefore number of days is converted to radians
         self.to_sun= glm::rotate_y_vec3(&self.to_sun, days*(std::f32::consts::PI/180.0));
