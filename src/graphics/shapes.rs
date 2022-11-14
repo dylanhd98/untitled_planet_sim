@@ -24,7 +24,7 @@ impl Shape{
         self.indices.chunks(3)
             .for_each(|x|
                 {
-                    //im using index should use vertex 
+                    //adds connections of each vert in triangle to hashset
                     for i in 0..3{
                         connections[x[i] as usize].insert(x[(i+1)%3] as usize);
                         connections[x[i] as usize].insert(x[(i+2)%3] as usize);
@@ -76,7 +76,7 @@ impl Shape{
                 }
 
                 //all midpoints should be present in dictionary, add new indices
-                //TODO:FIND IF PUSHING EACH INDIVIDUALLY IS MORE EFFICIENT, ALTHOUGH I IMAGINE NOT
+                //TODO:FIND IF PUSHING EACH INDIVIDUALLY INSTEAD OF IN VEC IS MORE EFFICIENT, ALTHOUGH I IMAGINE NOT
                 new_indices.append(&mut vec![
                     //middle tri
                     midpoints[&order_edge(tri[0],tri[1])],

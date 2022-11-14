@@ -48,7 +48,6 @@ glium::implement_vertex!(PlanetCell,height,humidity,temperature);
 
 //data for every plate
 pub struct Plate{
-    cells: Vec<u32>,
     axis: glm::Vec3,
     density: f32,
     speed: f32,
@@ -70,14 +69,14 @@ impl Planet{
     pub fn new(display:&glium::Display, texture:glium::texture::SrgbTexture2d, iterations :u8)->Planet{
         let perlin = Perlin::new(1);
 
-        let axis = glm::vec3(0.0,1.0,0.5).normalize();
+        let axis = glm::vec3(0.0,1.0,0.25).normalize();
         //generates base shape
         let base_shape = graphics::shapes::Shape::icosahedron()
             .subdivide(iterations)
             .normalize();
 
         //generates cells
-        let cells:Vec<PlanetCell> = base_shape.vertices.iter()
+        let mut cells:Vec<PlanetCell> = base_shape.vertices.iter()
             .map(|v|
                 PlanetCell{
                     latitude: glm::dot(v,&axis),
@@ -88,7 +87,8 @@ impl Planet{
             )
             .collect();
 
-        let conns = base_shape.get_connections();
+        let cell_connections = base_shape.get_connections();
+
 
         //generates mesh vertices from base shape
         let planet_vertices:Vec<graphics::VertexPos> = base_shape.vertices
