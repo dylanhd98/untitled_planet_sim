@@ -13,11 +13,11 @@ uniform vec3 to_light;
 void main() {
     float brightness = max(dot(to_light,v_normal),0.1);
 
-    if(v_height<0.0){
-        color = mix(vec4(0.0,0.02,0.15,1.0),vec4(0.0,0.0,0.10,1.0),abs(v_height*0.5))* brightness;
+    if(v_height>0.0){
+        color = texture(tex, v_tex_coords)*brightness;
     }
     else{
-        color = texture(tex, v_tex_coords)*brightness;
+        color = mix(vec4(0.0,0.02,0.15,1.0),vec4(0.0,0.0,0.10,1.0),abs(v_height*0.5))* brightness;
     }
    //color = vec4(vec3(v_normal),1.0);
 }

@@ -87,8 +87,6 @@ impl Planet{
             )
             .collect();
 
-        let cell_connections = base_shape.get_connections();
-
 
         //generates mesh vertices from base shape
         let planet_vertices:Vec<graphics::VertexPos> = base_shape.vertices
