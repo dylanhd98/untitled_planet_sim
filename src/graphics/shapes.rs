@@ -9,13 +9,14 @@ fn order_edge(a:u32,b:u32)->(u32,u32){
     }
     (b,a)
 }
+
 //non graphics related shape, pure geometry info
 pub struct Shape{
     pub vertices:Vec::<glm::Vec3>,
     pub indices:Vec::<u32>
 }
 impl Shape{
-     
+    //get connections of every cell
     pub fn get_connections(&self)->Vec<Vec<usize>>{
         //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
         //iterate through indices, for every index, store other two in triangle into its hashmap
@@ -33,7 +34,7 @@ impl Shape{
             );
 
         connections.into_iter()
-            .map(|c| Vec::from_iter(c))
+            .map(Vec::from_iter)
             .collect()
     }
 
@@ -42,7 +43,7 @@ impl Shape{
         //replaces vertices with their normalzed selfs
         self.vertices=self.vertices
             .iter()
-            .map(|v| glm::normalize(v))
+            .map(glm::normalize)
             .collect();
         self
     }
@@ -68,7 +69,7 @@ impl Shape{
                     let edge = order_edge(tri[i],tri[(i+1)%3]);
 
                     //if edge isnt in dictionary, calculate midpoint, add to vertices, store index in dictionary
-                    if midpoints.get(&edge)==None {
+                    if midpoints.get(&edge).is_none() {
                         let mid = (self.vertices[edge.0 as usize]+self.vertices[edge.1 as usize])*0.5;
                         self.vertices.push(mid);//adds midpoint as vertex
                         midpoints.insert(edge, u32::try_from(self.vertices.len()-1).expect("More vertices than datatype can represent"));

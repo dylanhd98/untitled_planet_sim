@@ -116,7 +116,7 @@ fn main() {
                 //updates camera view based on new pos specified by user input
                 cam.update_view();
                 //updates planet with the specification of how many days pass per frame
-                planet.update(delta_time*60.0);//60 days per second, placeholder
+                planet.update(delta_time*1.0);//one year per second, placeholder
 
                 //RENDERING
                 //creates buffer to store image in before drawing to window

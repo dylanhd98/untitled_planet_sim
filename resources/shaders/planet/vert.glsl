@@ -27,7 +27,7 @@ void main() {
 
     vec3 new_pos = position;
     if(height>0.0){
-        new_pos *= (1+(height*0.05));
+        new_pos *= (1+(height*0.03));
     }
     vs_out.pos = new_pos;
 

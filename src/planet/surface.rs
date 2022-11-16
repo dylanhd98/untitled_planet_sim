@@ -36,12 +36,18 @@ fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistan
     noise_value
 }
 
+//data for every plate
+pub struct Plate{
+    axis: glm::Vec3,
+    density: f32,
+    speed: f32,
+}
 
 //data relating to the cell, arranges as structure of arrays
 pub struct Surface{
     pub contents: Vec<CellData>,
-    pub positions: Vec::<glm::Vec3>,
-    pub connections: Vec<Vec<usize>>
+    pub connections: Vec<Vec<usize>>,
+    pub positions: Vec::<glm::Vec3>, 
 }
 impl Surface{
     pub fn new(shape: &shapes::Shape)->Surface{
@@ -60,8 +66,8 @@ impl Surface{
 
         Surface{
             contents: cells,
-            positions: shape.vertices.clone(),//FUTURE ME, FIND IF THIS IS BEST WAY, LIKE HOW SHAPES BORROWING IS HANDLED, THIS SEEMS GOOD THOUGH
             connections: shape.get_connections(),
+            positions: shape.vertices.clone(),//FUTURE ME, FIND IF THIS IS BEST WAY, LIKE HOW SHAPES BORROWING IS HANDLED, THIS SEEMS GOOD THOUGH
         }
     }
 }

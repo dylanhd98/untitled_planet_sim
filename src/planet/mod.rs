@@ -1,5 +1,5 @@
 //external crates
-use glium::{Surface,glutin::{self, platform::unix::x11::ffi::SubpixelOrder}};
+use glium::{Surface,glutin};
 use nalgebra_glm as glm;
 
 //other internal modules
@@ -8,22 +8,11 @@ use crate::graphics;
 //child modules
 mod surface;
 
-
-
-//buffer containing all thigs needed for rendering
+//struct containing all thigs needed for rendering
 struct PlanetBuffers{
     shape_data :glium::VertexBuffer<graphics::VertexPos>,
     planet_data: glium::VertexBuffer<surface::CellData>,
     indices: glium::IndexBuffer<u32>,
-}
-
-
-
-//data for every plate
-pub struct Plate{
-    axis: glm::Vec3,
-    density: f32,
-    speed: f32,
 }
 
 
@@ -53,11 +42,11 @@ impl Planet{
 
         //maps vertices of base shape into format used in buffer
         let mapped_vertices:Vec<graphics::VertexPos> = base_shape.vertices
-        .iter()
-        .map(|v| graphics::VertexPos{
-            position:[v.x,v.y,v.z],
-         })
-        .collect();
+            .iter()
+            .map(|v| graphics::VertexPos{
+                position:[v.x,v.y,v.z],
+            })
+            .collect();
 
         Planet{
             texture,
@@ -80,18 +69,21 @@ impl Planet{
         }
     }
 
-    pub fn update(&mut self, days: f32){
+    pub fn update(&mut self, years: f32){
         //latitude that gets maximum sunlight from the sun
         let sun_max = glm::dot(&self.to_sun, &self.axis);
+
+        //updates cell temp
         self.surface.contents.iter_mut()
             .zip(self.surface.positions.iter())
             .for_each(|c|
                 c.0.temperature = (1.0-c.0.height)* 
                 glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(c.1,&self.axis)), 0.0));
 
-        //one year is 360 days here for simplicity, therefore number of days is converted to radians
-        self.to_sun= glm::rotate_y_vec3(&self.to_sun, days*(std::f32::consts::PI/180.0));
+        //one year is 360 days here for simplicity
+        self.to_sun= glm::rotate_y_vec3(&self.to_sun, years*(std::f32::consts::PI*2.0));
         
+        //write surface contents to planet buffer
         self.buffers.planet_data.write(&self.surface.contents);
     }
 
