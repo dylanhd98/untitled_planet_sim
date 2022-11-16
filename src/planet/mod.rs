@@ -7,7 +7,7 @@ use noise::{NoiseFn, Perlin, Seedable};
 use crate::graphics;
 
 //child modules
-
+mod surface;
 
 //handles perlin noise for generating base
 fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistance:f32, lacunarity:f32)->f32{
@@ -32,19 +32,11 @@ fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistan
 //buffer containing all thigs needed for rendering
 struct PlanetBuffers{
     shape_data :glium::VertexBuffer<graphics::VertexPos>,
-    planet_data: glium::VertexBuffer<PlanetCell>,
+    planet_data: glium::VertexBuffer<surface::PlanetCell>,
     indices: glium::IndexBuffer<u32>,
 }
 
-//data for each cell on the planet, can be written directly to the planetbuffer, although only the neccisary parts are
-#[derive(Copy, Clone)]
-pub struct PlanetCell {
-    pub latitude:f32,
-    pub height: f32,
-    pub humidity: f32,
-    pub temperature: f32
-}
-glium::implement_vertex!(PlanetCell,height,humidity,temperature);
+
 
 //data for every plate
 pub struct Plate{
@@ -59,7 +51,7 @@ pub struct Planet{
 
     buffers: PlanetBuffers,
 
-    cells: Vec<PlanetCell>,
+    cells: Vec<surface::PlanetCell>,
 
     axis: glm::Vec3,
 
@@ -76,9 +68,9 @@ impl Planet{
             .normalize();
 
         //generates cells
-        let mut cells:Vec<PlanetCell> = base_shape.vertices.iter()
+        let mut cells:Vec<surface::PlanetCell> = base_shape.vertices.iter()
             .map(|v|
-                PlanetCell{
+                surface::PlanetCell{
                     latitude: glm::dot(v,&axis),
                     height: octive_noise(perlin, &v, 2.5, 7, 0.6, 2.5),
                     humidity: octive_noise(perlin, &(v+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),

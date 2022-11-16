@@ -31,7 +31,7 @@ fn main() {
         glium::texture::SrgbTexture2d::new(&display, image).unwrap()
     };
 
-    let mut planet = planet::Planet::new(&display,surface_texture,7);
+    let mut planet = planet::Planet::new(&display,surface_texture,6);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();
@@ -56,9 +56,14 @@ fn main() {
     let mut frame_time = Instant::now();
 
     //compiles shaders from files
-    let planet_shader = glium::Program::from_source(&display, include_str!("../resources/shaders/planet/vert.glsl"), include_str!("../resources/shaders/planet/frag.glsl"),
+    let planet_shader = glium::Program::from_source(&display, 
+        include_str!("../resources/shaders/planet/vert.glsl"), 
+        include_str!("../resources/shaders/planet/frag.glsl"),
     Some(include_str!("../resources/shaders/planet/geom.glsl"))).unwrap();
-    let skybox_shader = glium::Program::from_source(&display, include_str!("../resources/shaders/skybox/vert.glsl"), include_str!("../resources/shaders/skybox/frag.glsl"),
+
+    let skybox_shader = glium::Program::from_source(&display, 
+        include_str!("../resources/shaders/skybox/vert.glsl"), 
+        include_str!("../resources/shaders/skybox/frag.glsl"),
      None).unwrap();
 
     //loop forever until close event
