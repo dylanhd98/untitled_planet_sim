@@ -1,7 +1,6 @@
 //external crates
-use glium::{Surface,glutin};
+use glium::{Surface,glutin::{self, platform::unix::x11::ffi::SubpixelOrder}};
 use nalgebra_glm as glm;
-use noise::{NoiseFn, Perlin, Seedable};
 
 //other internal modules
 use crate::graphics;
@@ -9,30 +8,12 @@ use crate::graphics;
 //child modules
 mod surface;
 
-//handles perlin noise for generating base
-fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistance:f32, lacunarity:f32)->f32{
-    let mut noise_value = 0.0;
-    let mut amplitude = 1.0;
-    let mut frequency = 1.0;
 
-    for _o in 0..octives{
-        let perlin_value = perlin.get([
-            (pos[0]/scale * frequency) as f64,
-            (pos[1]/scale *frequency) as f64,
-            (pos[2]/scale *frequency) as f64
-        ]) as f32;
-
-        noise_value += perlin_value*amplitude;
-        amplitude *= persistance;
-        frequency *= lacunarity;
-    }
-    noise_value
-}
 
 //buffer containing all thigs needed for rendering
 struct PlanetBuffers{
     shape_data :glium::VertexBuffer<graphics::VertexPos>,
-    planet_data: glium::VertexBuffer<surface::PlanetCell>,
+    planet_data: glium::VertexBuffer<surface::CellData>,
     indices: glium::IndexBuffer<u32>,
 }
 
@@ -51,7 +32,7 @@ pub struct Planet{
 
     buffers: PlanetBuffers,
 
-    cells: Vec<surface::PlanetCell>,
+    surface: surface::Surface,
 
     axis: glm::Vec3,
 
@@ -59,34 +40,24 @@ pub struct Planet{
 }
 impl Planet{
     pub fn new(display:&glium::Display, texture:glium::texture::SrgbTexture2d, iterations :u8)->Planet{
-        let perlin = Perlin::new(1);
-
+        
         let axis = glm::vec3(0.0,1.0,0.25).normalize();
+
         //generates base shape
         let base_shape = graphics::shapes::Shape::icosahedron()
             .subdivide(iterations)
             .normalize();
+        
+        //creates planet surface
+        let mut surface = surface::Surface::new(&base_shape);
 
-        //generates cells
-        let mut cells:Vec<surface::PlanetCell> = base_shape.vertices.iter()
-            .map(|v|
-                surface::PlanetCell{
-                    latitude: glm::dot(v,&axis),
-                    height: octive_noise(perlin, &v, 2.5, 7, 0.6, 2.5),
-                    humidity: octive_noise(perlin, &(v+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),
-                    temperature: 0.5,
-                }
-            )
-            .collect();
-
-
-        //generates mesh vertices from base shape
-        let planet_vertices:Vec<graphics::VertexPos> = base_shape.vertices
-            .iter()
-            .map(|v| graphics::VertexPos{
-                position:[v.x,v.y,v.z],
-             })
-            .collect();
+        //maps vertices of base shape into format used in buffer
+        let mapped_vertices:Vec<graphics::VertexPos> = base_shape.vertices
+        .iter()
+        .map(|v| graphics::VertexPos{
+            position:[v.x,v.y,v.z],
+         })
+        .collect();
 
         Planet{
             texture,
@@ -94,14 +65,14 @@ impl Planet{
             buffers: 
             PlanetBuffers{
                 //buffer containing base shape of planet, most likely the sphere
-                shape_data: glium::VertexBuffer::new(display,&planet_vertices).unwrap(),
+                shape_data: glium::VertexBuffer::new(display,&mapped_vertices).unwrap(),
                 //buffer containing cell data needed for rendering, dynamic as this will change frequently
-                planet_data: glium::VertexBuffer::dynamic(display, &cells).unwrap(),
+                planet_data: glium::VertexBuffer::dynamic(display, &surface.contents).unwrap(),
                 //indices, define triangles of planet
                 indices: glium::IndexBuffer::new(display,glium::index::PrimitiveType::TrianglesList, &base_shape.indices).unwrap(),
             },
 
-            cells: cells,
+            surface: surface,
 
             axis: axis,
 
@@ -110,19 +81,18 @@ impl Planet{
     }
 
     pub fn update(&mut self, days: f32){
-        //calc tempteretures 
         //latitude that gets maximum sunlight from the sun
         let sun_max = glm::dot(&self.to_sun, &self.axis);
-        self.cells.iter_mut()
-            .for_each(|c| 
-                c.temperature = (1.0-c.height)* 
-                glm::max2_scalar(1.0-f32::abs(sun_max-c.latitude), 0.0));
+        self.surface.contents.iter_mut()
+            .zip(self.surface.positions.iter())
+            .for_each(|c|
+                c.0.temperature = (1.0-c.0.height)* 
+                glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(c.1,&self.axis)), 0.0));
 
         //one year is 360 days here for simplicity, therefore number of days is converted to radians
         self.to_sun= glm::rotate_y_vec3(&self.to_sun, days*(std::f32::consts::PI/180.0));
         
-
-        self.buffers.planet_data.write(&self.cells);
+        self.buffers.planet_data.write(&self.surface.contents);
     }
 
     pub fn draw(&self, target:&mut glium::Frame, program:&glium::Program, params:&glium::DrawParameters,cam:&graphics::camera::Camera){
