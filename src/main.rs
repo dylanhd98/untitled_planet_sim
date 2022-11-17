@@ -12,9 +12,12 @@ fn main() {
     //handles window and device events
     let mut event_loop = glutin::event_loop::EventLoop::new();
     //window specific
-    let wb = glutin::window::WindowBuilder::new().with_title("Untitled Planet Sim");
+    let wb = glutin::window::WindowBuilder::new()
+        .with_inner_size(glium::glutin::dpi::LogicalSize::new(800.0, 450.0))
+        .with_title("Untitled Planet Sim");
     //opengl specific
-    let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
+    let cb = glutin::ContextBuilder::new()
+        .with_depth_buffer(24);
     //creates display with above attributes
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
@@ -35,7 +38,7 @@ fn main() {
 
     let mut years_per_second = 0.025;
 
-    let mut planet = planet::Planet::new(&display,surface_texture,6);
+    let mut planet = planet::Planet::new(&display,surface_texture,7);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();
@@ -96,9 +99,17 @@ fn main() {
                             Some(glutin::event::VirtualKeyCode::A)=> cam.pos = glm::rotate_y_vec3(&cam.pos,-0.05),
                             Some(glutin::event::VirtualKeyCode::D)=> cam.pos = glm::rotate_y_vec3(&cam.pos, 0.05),
 
-                            //look up and down, for these it creates a rotation axis that is the cross of Y and a vect pointing to origin from camera
-                            Some(glutin::event::VirtualKeyCode::W)=> cam.pos = glm::rotate_y_vec3(&cam.pos,-0.05),
-                            Some(glutin::event::VirtualKeyCode::S)=> cam.pos = glm::rotate_y_vec3(&cam.pos, 0.05),
+                            //look up and down, for these it creates a rotation axis that is tangent to Y and cam.pos
+                            Some(glutin::event::VirtualKeyCode::W)=> cam.pos ={
+                                let up = glm::vec3(0.0,1.0,0.0);
+                                let normal = glm::cross(&cam.pos,&up);
+                                glm::rotate_vec3(&cam.pos, 0.05, &normal)
+                            }, 
+                            Some(glutin::event::VirtualKeyCode::S)=> cam.pos = {
+                                let up = glm::vec3(0.0,1.0,0.0);
+                                let normal = glm::cross(&cam.pos,&up);
+                                glm::rotate_vec3(&cam.pos, -0.05, &normal)
+                            },
                             _=>()
                         }
                     },
@@ -128,6 +139,7 @@ fn main() {
                 //handles egui input and what results from it
                 egui_glium.run(&display, |egui_ctx| {
 
+                    //side panel for controls
                     egui::SidePanel::left("Left Panel").resizable(false)
                     .show(egui_ctx,|ui| {
                         ui.label("Years Per Second");
@@ -153,7 +165,7 @@ fn main() {
                 target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
                 //draw planet
                 planet.draw(&mut target, &planet_shader, &params, &cam);
-                //draw ui
+                //draw ui on top of all
                 egui_glium.paint(&display, &mut target);
                 //finish drawing and draws to window
                 target.finish().unwrap();
