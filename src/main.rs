@@ -7,7 +7,6 @@ use std::time::{Duration, Instant};
 //internal modules
 mod planet;
 mod graphics;
-mod ui;
 
 fn main() {
     //handles window and device events
@@ -115,8 +114,9 @@ fn main() {
                 //LOGIC
                 //updates camera view based on new pos specified by user input
                 cam.update_view();
+                
                 //updates planet with the specification of how many days pass per frame
-                planet.update(delta_time*1.0);//one year per second, placeholder
+                planet.update(delta_time*0.25);//quarter year per second, placeholder
 
                 //RENDERING
                 //creates buffer to store image in before drawing to window

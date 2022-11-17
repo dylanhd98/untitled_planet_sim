@@ -73,7 +73,7 @@ impl Planet{
         //latitude that gets maximum sunlight from the sun
         let sun_max = glm::dot(&self.to_sun, &self.axis);
 
-        //updates cell temp
+        //updates cell temp based on distance from sun_max
         self.surface.contents.iter_mut()
             .zip(self.surface.positions.iter())
             .for_each(|c|
