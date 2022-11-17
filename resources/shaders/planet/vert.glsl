@@ -20,6 +20,7 @@ out VS_OUT {
 //uniform mat4 world;
 uniform mat4 view;
 uniform mat4 perspective;
+uniform float terra_scale;
 
 void main() {
     vs_out.tex_coords = vec2((1.0+humidity)*0.5,temperature);
@@ -27,7 +28,7 @@ void main() {
 
     vec3 new_pos = position;
     if(height>0.0){
-        new_pos *= (1+(height*0.03));
+        new_pos *= (1+(height*terra_scale));
     }
     vs_out.pos = new_pos;
 

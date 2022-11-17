@@ -4,7 +4,7 @@ use nalgebra_glm as glm;
 use std::io::Cursor;
 use std::time::{Duration, Instant};
 
-//internal modules
+//child modules
 mod planet;
 mod graphics;
 
@@ -18,6 +18,9 @@ fn main() {
     //creates display with above attributes
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
+    //set up ui
+    let mut egui_glium = egui_glium::EguiGlium::new(&display, &event_loop);
+
     //loads texture to use for planet lookup
     let surface_texture = {
         //loads data from file
@@ -29,6 +32,8 @@ fn main() {
 
         glium::texture::SrgbTexture2d::new(&display, image).unwrap()
     };
+
+    let mut years_per_second = 0.025;
 
     let mut planet = planet::Planet::new(&display,surface_texture,6);
 
@@ -72,11 +77,13 @@ fn main() {
             std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
 
+        
 
         //handle window events
         match event {
             //checking for window events
             glutin::event::Event::WindowEvent { event, .. } => 
+                
                 match event {
                     //if key pressed
                     glutin::event::WindowEvent::KeyboardInput { device_id, input, is_synthetic }=>{
@@ -88,6 +95,10 @@ fn main() {
                             //look left and right
                             Some(glutin::event::VirtualKeyCode::A)=> cam.pos = glm::rotate_y_vec3(&cam.pos,-0.05),
                             Some(glutin::event::VirtualKeyCode::D)=> cam.pos = glm::rotate_y_vec3(&cam.pos, 0.05),
+
+                            //look up and down, for these it creates a rotation axis that is the cross of Y and a vect pointing to origin from camera
+                            Some(glutin::event::VirtualKeyCode::W)=> cam.pos = glm::rotate_y_vec3(&cam.pos,-0.05),
+                            Some(glutin::event::VirtualKeyCode::S)=> cam.pos = glm::rotate_y_vec3(&cam.pos, 0.05),
                             _=>()
                         }
                     },
@@ -102,21 +113,38 @@ fn main() {
                         *control_flow = glutin::event_loop::ControlFlow::Exit;
                     },
 
-                    _ => (),
+                    _ => {egui_glium.on_event(&event);},//if no other events, do egui event
                 },
 
             //once events are handled, this runs
             glutin::event::Event::MainEventsCleared=>{
+
                 //reset the delta_time at the start of frame
                 let delta_time = frame_time.elapsed().as_secs_f32();
                 frame_time = Instant::now();
+
+
+                //EGUI INPUT
+                //handles egui input and what results from it
+                egui_glium.run(&display, |egui_ctx| {
+
+                    egui::SidePanel::left("Left Panel").resizable(false)
+                    .show(egui_ctx,|ui| {
+                        ui.label("Years Per Second");
+                        ui.add(egui::Slider::new(&mut years_per_second, 0.0..=1000.0).logarithmic(true));
+                        ui.label("Terrain Scaling");
+                        ui.add(egui::Slider::new(&mut planet.render_data.scale, 0.0..=0.25));
+                    });
+
+                });
+
 
                 //LOGIC
                 //updates camera view based on new pos specified by user input
                 cam.update_view();
                 
                 //updates planet with the specification of how many days pass per frame
-                planet.update(delta_time*0.25);//quarter year per second, placeholder
+                planet.update(delta_time*years_per_second);//quarter year per second, placeholder
 
                 //RENDERING
                 //creates buffer to store image in before drawing to window
@@ -125,6 +153,8 @@ fn main() {
                 target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
                 //draw planet
                 planet.draw(&mut target, &planet_shader, &params, &cam);
+                //draw ui
+                egui_glium.paint(&display, &mut target);
                 //finish drawing and draws to window
                 target.finish().unwrap();
             },

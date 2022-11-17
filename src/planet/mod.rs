@@ -8,18 +8,22 @@ use crate::graphics;
 //child modules
 mod surface;
 
-//struct containing all thigs needed for rendering
-struct PlanetBuffers{
+//struct containing all things needed for rendering
+pub struct RenderData{
     shape_data :glium::VertexBuffer<graphics::VertexPos>,
     planet_data: glium::VertexBuffer<surface::CellData>,
     indices: glium::IndexBuffer<u32>,
+
+    //texture lookup for surface
+    texture: glium::texture::SrgbTexture2d,
+
+    //how esagerated the planet surface will be
+    pub scale: f32
 }
 
 
 pub struct Planet{
-    texture: glium::texture::SrgbTexture2d,
-
-    buffers: PlanetBuffers,
+    pub render_data: RenderData,
 
     surface: surface::Surface,
 
@@ -49,16 +53,18 @@ impl Planet{
             .collect();
 
         Planet{
-            texture,
-
-            buffers: 
-            PlanetBuffers{
+            render_data: 
+            RenderData{
                 //buffer containing base shape of planet, most likely the sphere
                 shape_data: glium::VertexBuffer::new(display,&mapped_vertices).unwrap(),
                 //buffer containing cell data needed for rendering, dynamic as this will change frequently
                 planet_data: glium::VertexBuffer::dynamic(display, &surface.contents).unwrap(),
                 //indices, define triangles of planet
                 indices: glium::IndexBuffer::new(display,glium::index::PrimitiveType::TrianglesList, &base_shape.indices).unwrap(),
+
+                texture,
+
+                scale: 0.025
             },
 
             surface: surface,
@@ -84,7 +90,7 @@ impl Planet{
         self.to_sun= glm::rotate_y_vec3(&self.to_sun, years*(std::f32::consts::PI*2.0));
         
         //write surface contents to planet buffer
-        self.buffers.planet_data.write(&self.surface.contents);
+        self.render_data.planet_data.write(&self.surface.contents);
     }
 
     pub fn draw(&self, target:&mut glium::Frame, program:&glium::Program, params:&glium::DrawParameters,cam:&graphics::camera::Camera){
@@ -96,10 +102,11 @@ impl Planet{
             view: view,
             //world: translation,
 
-            tex: glium::uniforms::Sampler::new(&self.texture).wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
-            to_light: [self.to_sun.x,self.to_sun.y,self.to_sun.z]
+            tex: glium::uniforms::Sampler::new(&self.render_data.texture).wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
+            to_light: [self.to_sun.x,self.to_sun.y,self.to_sun.z],
+            terra_scale: self.render_data.scale,
         };
 
-        target.draw((&self.buffers.shape_data,&self.buffers.planet_data),&self.buffers.indices,program,&uniform,params).unwrap();
+        target.draw((&self.render_data.shape_data,&self.render_data.planet_data),&self.render_data.indices,program,&uniform,params).unwrap();
     }
 }
