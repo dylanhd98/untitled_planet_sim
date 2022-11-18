@@ -32,13 +32,13 @@ fn main() {
         let image_dimensions = image.dimensions();
         //creates compatible image for glium
         let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-
+        
         glium::texture::SrgbTexture2d::new(&display, image).unwrap()
     };
 
     let mut years_per_second = 0.025;
 
-    let mut planet = planet::Planet::new(&display,surface_texture,7);
+    let mut planet = planet::Planet::new(&display,surface_texture,7,1);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();
@@ -142,6 +142,9 @@ fn main() {
                     //side panel for controls
                     egui::SidePanel::left("Left Panel").resizable(false)
                     .show(egui_ctx,|ui| {
+                        if ui.button("Create New Planet").clicked(){
+                            
+                        }
                         ui.label("Years Per Second");
                         ui.add(egui::Slider::new(&mut years_per_second, 0.0..=1000.0).logarithmic(true));
                         ui.label("Terrain Scaling");

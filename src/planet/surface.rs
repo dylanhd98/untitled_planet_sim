@@ -50,8 +50,8 @@ pub struct Surface{
     pub positions: Vec::<glm::Vec3>, 
 }
 impl Surface{
-    pub fn new(shape: &shapes::Shape)->Surface{
-        let perlin = Perlin::new(1);
+    pub fn new(shape: &shapes::Shape, seed:u32)->Surface{
+        let perlin = Perlin::new(seed);
 
         //generates cells
         let cells:Vec<CellData> = shape.vertices.iter()

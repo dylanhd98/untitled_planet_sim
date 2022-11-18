@@ -32,7 +32,7 @@ pub struct Planet{
     to_sun: glm::Vec3
 }
 impl Planet{
-    pub fn new(display:&glium::Display, texture:glium::texture::SrgbTexture2d, iterations :u8)->Planet{
+    pub fn new(display:&glium::Display, texture:glium::texture::SrgbTexture2d, iterations :u8,seed:u32)->Planet{
         
         let axis = glm::vec3(0.0,1.0,0.25).normalize();
 
@@ -42,7 +42,7 @@ impl Planet{
             .normalize();
         
         //creates planet surface
-        let mut surface = surface::Surface::new(&base_shape);
+        let mut surface = surface::Surface::new(&base_shape,seed);
 
         //maps vertices of base shape into format used in buffer
         let mapped_vertices:Vec<graphics::VertexPos> = base_shape.vertices
