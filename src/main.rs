@@ -37,8 +37,9 @@ fn main() {
     };
 
     let mut years_per_second = 0.025;
+    let mut iterations = 6;
 
-    let mut planet = planet::Planet::new(&display,surface_texture,7,1);
+    let mut planet = planet::Planet::new(&display,surface_texture,iterations,1);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();
@@ -79,8 +80,6 @@ fn main() {
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-
-        
 
         //handle window events
         match event {
@@ -134,22 +133,30 @@ fn main() {
                 let delta_time = frame_time.elapsed().as_secs_f32();
                 frame_time = Instant::now();
 
-
                 //EGUI INPUT
                 //handles egui input and what results from it
                 egui_glium.run(&display, |egui_ctx| {
 
                     //side panel for controls
                     egui::SidePanel::left("Left Panel").resizable(false)
-                    .show(egui_ctx,|ui| {
-                        if ui.button("Create New Planet").clicked(){
-                            
-                        }
-                        ui.label("Years Per Second");
-                        ui.add(egui::Slider::new(&mut years_per_second, 0.0..=1000.0).logarithmic(true));
-                        ui.label("Terrain Scaling");
-                        ui.add(egui::Slider::new(&mut planet.render_data.scale, 0.0..=0.25));
-                    });
+                        .show(egui_ctx,|ui| {
+                            ui.label("Years Per Second");
+                            ui.add(egui::Slider::new(&mut years_per_second, 0.0..=1000.0).logarithmic(true));
+                            ui.label("Terrain Scaling");
+                            ui.add(egui::Slider::new(&mut planet.render_data.scale, 0.0..=0.25));
+                        });
+
+                    /*     
+                    egui::Window::new("New Planet")
+                        .resizable(false)
+                        .collapsible(false)
+                        .title_bar(false)
+                        .show(egui_ctx, |ui|{
+                            ui.add(egui::Slider::new(&mut iterations, 0..=8).integer());
+                            if ui.button("create new").clicked(){
+                                //exture, iterations, seed)
+                            }
+                        });*/
 
                 });
 

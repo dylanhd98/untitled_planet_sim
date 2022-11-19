@@ -44,7 +44,7 @@ pub struct Plate{
 }
 
 //data relating to the cell, arranges as structure of arrays
-pub struct Surface{
+pub struct Surface{//TODO REPLACE CONNECTIONS WITH REFS
     pub contents: Vec<CellData>,
     pub connections: Vec<Vec<usize>>,
     pub positions: Vec::<glm::Vec3>, 
@@ -70,4 +70,5 @@ impl Surface{
             positions: shape.vertices.clone(),//FUTURE ME, FIND IF THIS IS BEST WAY, LIKE HOW SHAPES BORROWING IS HANDLED, THIS SEEMS GOOD THOUGH
         }
     }
+
 }
