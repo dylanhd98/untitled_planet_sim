@@ -43,19 +43,32 @@ pub struct Plate{
     speed: f32,
 }
 
-//data relating to the cell, arranges as structure of arrays
-pub struct Surface{//TODO REPLACE CONNECTIONS WITH REFS
-    pub contents: Vec<CellData>,
-    pub connections: Vec<Vec<usize>>,
-    pub positions: Vec::<glm::Vec3>, 
+//data relating to the cell
+pub struct Cell{
+    //what is contained within the cell
+    pub contents: CellData,
+    //all other cells the cell is connected too
+    pub connections: Vec<usize>,
+    //physical position of cell
+    pub position: glm::Vec3, 
+}
+
+//contanes all data for the surface of the planet
+pub struct Surface{
+    pub cells: Vec<Cell>,
 }
 impl Surface{
     pub fn new(shape: &shapes::Shape, seed:u32)->Surface{
-        let perlin = Perlin::new(seed);
-
-        //generates cells
-        let cells:Vec<CellData> = shape.vertices.iter()
-            .map(|v|
+        
+        //creates cells for surface
+        let cells:Vec<Cell> = {
+            let perlin = Perlin::new(seed);
+            //gets connections
+            let connections = shape.get_connections();
+            //generates cell data
+            let cells:Vec<CellData> = shape.vertices.iter()
+            .map(|v
+                |
                 CellData{
                     height: octive_noise(perlin, &v, 2.5, 7, 0.6, 2.5),
                     humidity: octive_noise(perlin, &(v+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),
@@ -63,12 +76,44 @@ impl Surface{
                 }
             )
             .collect();
+            
+            cells.into_iter()
+                .zip(connections.into_iter())
+                .zip(shape.vertices.clone().into_iter())
+                .map(|cell|
+                    Cell{
+                        contents: cell.0.0,
+                        connections: cell.0.1,
+                        position: cell.1
+                    }
+                )
+                .collect()
+        };
+
+        //creates plates for surface
+        let plates = vec![
+            Plate{
+                axis: glm::vec3(0.0,0.0,1.0),
+                density: 0.5,
+                speed: 1.0,
+            }
+        ];
 
         Surface{
-            contents: cells,
-            connections: shape.get_connections(),
-            positions: shape.vertices.clone(),//FUTURE ME, FIND IF THIS IS BEST WAY, LIKE HOW SHAPES BORROWING IS HANDLED, THIS SEEMS GOOD THOUGH
+            cells,
         }
     }
 
+    pub fn update(&mut self,years:f32){
+        for cell in self.cells.iter_mut(){
+            let surrounding_avg ={
+                cell.connections.iter()
+                .map(|conn|
+                    self.cells[*conn].contents.height)
+                .sum()
+            };
+
+            cell.contents.height = surrounding_avg;
+        }
+    }
 }

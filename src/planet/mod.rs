@@ -5,6 +5,8 @@ use nalgebra_glm as glm;
 //other internal modules
 use crate::graphics;
 
+use self::surface::CellData;
+
 //child modules
 mod surface;
 
@@ -52,13 +54,20 @@ impl Planet{
             })
             .collect();
 
+        //extract data needed for rendering out
+        let surface_contents:Vec<CellData> = surface.cells.iter()
+            .map(|c|
+            c.contents
+            )
+            .collect();
+
         Planet{
             render_data: 
             RenderData{
                 //buffer containing base shape of planet, most likely the sphere
                 shape_data: glium::VertexBuffer::new(display,&mapped_vertices).unwrap(),
                 //buffer containing cell data needed for rendering, dynamic as this will change frequently
-                planet_data: glium::VertexBuffer::dynamic(display, &surface.contents).unwrap(),
+                planet_data: glium::VertexBuffer::dynamic(display, &surface_contents).unwrap(),
                 //indices, define triangles of planet
                 indices: glium::IndexBuffer::new(display,glium::index::PrimitiveType::TrianglesList, &base_shape.indices).unwrap(),
 
@@ -80,17 +89,23 @@ impl Planet{
         let sun_max = glm::dot(&self.to_sun, &self.axis);
 
         //updates cell temp based on distance from sun_max
-        self.surface.contents.iter_mut()
-            .zip(self.surface.positions.iter())
+        self.surface.cells.iter_mut()
             .for_each(|c|
-                c.0.temperature = (1.0-c.0.height)* 
-                glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(c.1,&self.axis)), 0.0));
+                c.contents.temperature= (1.0-c.contents.height)* 
+                glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(&c.position,&self.axis)), 0.0));
 
         //one year is 360 days here for simplicity
         self.to_sun= glm::rotate_y_vec3(&self.to_sun, years*(std::f32::consts::PI*2.0));
         
+        //extract data needed for rendering out
+        let surface_contents:Vec<CellData> = self.surface.cells.iter()
+            .map(|c|
+            c.contents
+            )
+            .collect();
+
         //write surface contents to planet buffer
-        self.render_data.planet_data.write(&self.surface.contents);
+        self.render_data.planet_data.write(&surface_contents);
     }
 
     pub fn draw(&self, target:&mut glium::Frame, program:&glium::Program, params:&glium::DrawParameters,cam:&graphics::camera::Camera){
