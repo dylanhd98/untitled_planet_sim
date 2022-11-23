@@ -37,7 +37,7 @@ fn main() {
     };
 
     let mut years_per_second = 0.025;
-    let mut iterations = 6;
+    let mut iterations = 5;
 
     let mut planet = planet::Planet::new(&display,surface_texture,iterations,1);
 

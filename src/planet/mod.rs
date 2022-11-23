@@ -85,6 +85,8 @@ impl Planet{
     }
 
     pub fn update(&mut self, years: f32){
+        self.surface.update(years);
+
         //latitude that gets maximum sunlight from the sun
         let sun_max = glm::dot(&self.to_sun, &self.axis);
 

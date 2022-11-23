@@ -6,7 +6,7 @@ use nalgebra_glm as glm;
 use crate::graphics::shapes;
 
 
-//data for each cell on the planet, can be written directly to the planetbuffer
+//data for each cell on the planet
 #[derive(Copy, Clone)]
 pub struct CellData {
     pub height: f32,
@@ -105,15 +105,34 @@ impl Surface{
     }
 
     pub fn update(&mut self,years:f32){
-        for cell in self.cells.iter_mut(){
-            let surrounding_avg ={
-                cell.connections.iter()
-                .map(|conn|
-                    self.cells[*conn].contents.height)
-                .sum()
-            };
+        //for every cell translate pos, compare translation with neighbors pos
+        //closest neighbor to translated pos is selected
+        //copy selected data into cell
 
-            cell.contents.height = surrounding_avg;
+        //translate all pos->get all data at translated point-> copy new data into cells
+        let new_cell_data:Vec<CellData> = self.cells.iter()
+            .map(|c|
+                {
+                    //get new pos
+                    let new_pos = glm::rotate_y_vec3(&c.position,0.2);
+                    //find interpolated data at pos (for now just cell with most similar pos FUTURE ME CHANGE)
+                    let most_similar = c.connections.iter()
+                        //map to iter that contains (neighboring cell, similarity to c.pos)
+                        .map(|c| (c,glm::dot(&self.cells[*c].position, &glm::normalize(&new_pos))))
+                        //gets largest value, returns its index 
+                        .max_by(|x,y| x.1.partial_cmp(&y.1).unwrap()).unwrap().0;
+                    
+                    self.cells[*most_similar].contents
+                }
+            )
+            .collect();
+
+        //add new cell data to all cells
+
+        for cell in self.cells.iter_mut().zip(new_cell_data.into_iter()){
+            cell.0.contents = cell.1;
         }
+            
+
     }
 }
