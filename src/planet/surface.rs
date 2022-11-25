@@ -116,23 +116,23 @@ impl Surface{
                     //get new pos
                     let new_pos = glm::rotate_y_vec3(&c.position,0.2);
                     //find interpolated data at pos (for now just cell with most similar pos FUTURE ME CHANGE)
-                    let most_similar = c.connections.iter()
+                    let mut dot_prods:Vec<(&usize,f32)> = c.connections.iter()
                         //map to iter that contains (neighboring cell, similarity to c.pos)
                         .map(|c| (c,glm::dot(&self.cells[*c].position, &glm::normalize(&new_pos))))
-                        //gets largest value, returns its index 
-                        .max_by(|x,y| x.1.partial_cmp(&y.1).unwrap()).unwrap().0;
-                    
-                    self.cells[*most_similar].contents
+                        //make into list
+                        .collect();
+                    //sorts dot prods so most similar to pos(highest dot prod) are at start
+                    dot_prods.sort_by(|a,b| a.1.partial_cmp(&b.1).unwrap());
+                    //first two pos are the other two verts of triangle
+                    //given all 3 points in triangle, interpolate to find value of new pos
+                    self.cells[*dot_prods[0].0].contents
                 }
             )
             .collect();
 
         //add new cell data to all cells
-
         for cell in self.cells.iter_mut().zip(new_cell_data.into_iter()){
             cell.0.contents = cell.1;
         }
-            
-
     }
 }
