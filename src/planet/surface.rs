@@ -1,3 +1,5 @@
+use std::vec;
+
 //external crates
 use noise::{NoiseFn, Perlin, Seedable};
 use nalgebra_glm as glm;
@@ -110,11 +112,17 @@ impl Surface{
         //copy selected data into cell
 
         //translate all pos->get all data at translated point-> copy new data into cells
-        let new_cell_data:Vec<CellData> = self.cells.iter()
+        let new_cell_data:Vec<f32> = self.cells.iter()
             .map(|c|
                 {
                     //get new pos
-                    let new_pos = glm::rotate_y_vec3(&c.position,0.2);
+                    let mut new_pos = glm::rotate_y_vec3(&c.position,0.002);
+
+                    /*if (glm::dot(&(new_pos-c.position),&(new_pos-c.position)) < 0.0000001){
+                        //println!("old->{:?} new->{:?}",c.position,new_pos);
+                        new_pos=c.position;
+                    }*/
+
                     //find interpolated data at pos (for now just cell with most similar pos FUTURE ME CHANGE)
                     let mut dot_prods:Vec<(&usize,f32)> = c.connections.iter()
                         //map to iter that contains (neighboring cell, similarity to c.pos)
@@ -125,14 +133,34 @@ impl Surface{
                     dot_prods.sort_by(|a,b| a.1.partial_cmp(&b.1).unwrap());
                     //first two pos are the other two verts of triangle
                     //given all 3 points in triangle, interpolate to find value of new pos
-                    self.cells[*dot_prods[0].0].contents
+
+                    //lazy non barycentric interpolation FUTURE ME DO THIS, I DONT FULL UNDERSTNAD WHY IM NOT DOING IT NOW BUT STILL
+                    
+                    //get weights - 1/distance to point
+                    let tri_weights = vec![
+                        1.0/glm::length(&(new_pos-c.position)),
+                        1.0/glm::length(&(new_pos-self.cells[*dot_prods[0].0].position)),
+                        1.0/glm::length(&(new_pos-self.cells[*dot_prods[1].0].position))
+                    ];
+
+                    let height = ((tri_weights[0]*c.contents.height)+
+                    (tri_weights[1]*self.cells[*dot_prods[0].0].contents.height)+
+                    (tri_weights[2]*self.cells[*dot_prods[1].0].contents.height))
+                    /
+                    (tri_weights[0]+tri_weights[1]+tri_weights[2]);
+
+                    if height < -0.8{
+                        println!("height->{}\nold pos->{}\nnew pos->{}tri_weights->{:?}",height,c.position,new_pos,tri_weights);
+                    }
+
+                    height
                 }
             )
             .collect();
 
         //add new cell data to all cells
         for cell in self.cells.iter_mut().zip(new_cell_data.into_iter()){
-            cell.0.contents = cell.1;
+            cell.0.contents.height = cell.1;
         }
     }
 }
