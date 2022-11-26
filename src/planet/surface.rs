@@ -116,17 +116,12 @@ impl Surface{
             .map(|c|
                 {
                     //get new pos
-                    let mut new_pos = glm::rotate_y_vec3(&c.position,0.002);
-
-                    /*if (glm::dot(&(new_pos-c.position),&(new_pos-c.position)) < 0.0000001){
-                        //println!("old->{:?} new->{:?}",c.position,new_pos);
-                        new_pos=c.position;
-                    }*/
+                    let mut new_pos = glm::rotate_z_vec3(&c.position,0.05);
 
                     //find interpolated data at pos (for now just cell with most similar pos FUTURE ME CHANGE)
                     let mut dot_prods:Vec<(&usize,f32)> = c.connections.iter()
-                        //map to iter that contains (neighboring cell, similarity to c.pos)
-                        .map(|c| (c,glm::dot(&self.cells[*c].position, &glm::normalize(&new_pos))))
+                        //map to iter that contains (neighboring cell, distance to new pos)
+                        .map(|c| (c,glm::magnitude(&(glm::normalize(&new_pos)-self.cells[*c].position))))
                         //make into list
                         .collect();
                     //sorts dot prods so most similar to pos(highest dot prod) are at start
@@ -134,7 +129,7 @@ impl Surface{
                     //first two pos are the other two verts of triangle
                     //given all 3 points in triangle, interpolate to find value of new pos
 
-                    //lazy non barycentric interpolation FUTURE ME DO THIS, I DONT FULL UNDERSTNAD WHY IM NOT DOING IT NOW BUT STILL
+                    //lazy non barycentric interpolation FUTURE ME DO THIS, I DONT FULLY UNDERSTNAD WHY IM NOT DOING IT NOW BUT STILL
                     
                     //get weights - 1/distance to point
                     let tri_weights = vec![
@@ -160,7 +155,7 @@ impl Surface{
 
         //add new cell data to all cells
         for cell in self.cells.iter_mut().zip(new_cell_data.into_iter()){
-            cell.0.contents.height = cell.1;
+            cell.0.contents.height += (cell.1-cell.0.contents.height)*0.9;
         }
     }
 }
