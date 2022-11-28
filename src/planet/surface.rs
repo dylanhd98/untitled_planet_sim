@@ -116,46 +116,36 @@ impl Surface{
             .map(|c|
                 {
                     //get new pos
-                    let mut new_pos = glm::rotate_z_vec3(&c.position,0.05);
+                    let mut new_pos = glm::rotate_y_vec3(&c.position,0.5);
 
-                    //find interpolated data at pos (for now just cell with most similar pos FUTURE ME CHANGE)
-                    let mut dot_prods:Vec<(&usize,f32)> = c.connections.iter()
+                    //find interpolated data at pos 
+                    let mut distnaces:Vec<(&usize,f32)> = c.connections.iter()
                         //map to iter that contains (neighboring cell, distance to new pos)
                         .map(|c| (c,glm::magnitude(&(glm::normalize(&new_pos)-self.cells[*c].position))))
                         //make into list
                         .collect();
-                    //sorts dot prods so most similar to pos(highest dot prod) are at start
-                    dot_prods.sort_by(|a,b| a.1.partial_cmp(&b.1).unwrap());
+                    //sorts ddistances to cell pos
+                    distnaces.sort_by(|a,b| a.1.partial_cmp(&b.1).unwrap());
                     //first two pos are the other two verts of triangle
                     //given all 3 points in triangle, interpolate to find value of new pos
 
-                    //lazy non barycentric interpolation FUTURE ME DO THIS, I DONT FULLY UNDERSTNAD WHY IM NOT DOING IT NOW BUT STILL
-                    
-                    //get weights - 1/distance to point
-                    let tri_weights = vec![
-                        1.0/glm::length(&(new_pos-c.position)),
-                        1.0/glm::length(&(new_pos-self.cells[*dot_prods[0].0].position)),
-                        1.0/glm::length(&(new_pos-self.cells[*dot_prods[1].0].position))
-                    ];
+                    //calculate barycentric coords of point
+                    let w1:f32 = 0.75;//weight for a to b
+                    let w2:f32 = 0.25;//weight for a to c
 
-                    let height = ((tri_weights[0]*c.contents.height)+
-                    (tri_weights[1]*self.cells[*dot_prods[0].0].contents.height)+
-                    (tri_weights[2]*self.cells[*dot_prods[1].0].contents.height))
-                    /
-                    (tri_weights[0]+tri_weights[1]+tri_weights[2]);
 
-                    if height < -0.8{
-                        println!("height->{}\nold pos->{}\nnew pos->{}tri_weights->{:?}",height,c.position,new_pos,tri_weights);
-                    }
 
-                    height
+                    //interpolate height with those coords
+                    let atob = glm::lerp_scalar(c.contents.height,self.cells[*distnaces[0].0].contents.height , w1);
+                    let abtoc = glm::lerp_scalar(atob,self.cells[*distnaces[1].0].contents.height , w2);
+                    abtoc
                 }
             )
             .collect();
 
         //add new cell data to all cells
         for cell in self.cells.iter_mut().zip(new_cell_data.into_iter()){
-            cell.0.contents.height += (cell.1-cell.0.contents.height)*0.9;
+            cell.0.contents.height += (cell.1-cell.0.contents.height);
         }
     }
 }
