@@ -130,15 +130,12 @@ impl Surface{
                     //given all 3 points in triangle, interpolate to find value of new pos
 
                     //calculate barycentric coords of point
-                    let w1:f32 = 0.75;//weight for a to b
-                    let w2:f32 = 0.25;//weight for a to c
-
-
+                    let beta:f32 = 0.50;//weight for b
+                    let gamma:f32 = 0.50;//weight for  c
+                    let alpha = 1.0-beta-gamma;//weight for a
 
                     //interpolate height with those coords
-                    let atob = glm::lerp_scalar(c.contents.height,self.cells[*distnaces[0].0].contents.height , w1);
-                    let abtoc = glm::lerp_scalar(atob,self.cells[*distnaces[1].0].contents.height , w2);
-                    abtoc
+                    self.cells[*distnaces[0].0].contents.height*beta + self.cells[*distnaces[1].0].contents.height*gamma + c.contents.height*alpha
                 }
             )
             .collect();
