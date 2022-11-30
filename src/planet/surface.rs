@@ -119,13 +119,13 @@ impl Surface{
                     let mut new_pos = glm::rotate_y_vec3(&c.position,0.5);
 
                     //find interpolated data at pos 
-                    let mut distnaces:Vec<(&usize,f32)> = c.connections.iter()
+                    let mut distances:Vec<(&usize,f32)> = c.connections.iter()
                         //map to iter that contains (neighboring cell, distance to new pos)
                         .map(|c| (c,glm::magnitude(&(glm::normalize(&new_pos)-self.cells[*c].position))))
                         //make into list
                         .collect();
-                    //sorts ddistances to cell pos
-                    distnaces.sort_by(|a,b| a.1.partial_cmp(&b.1).unwrap());
+                    //sorts distances to cell pos
+                    distances.sort_by(|a,b| a.1.partial_cmp(&b.1).unwrap());
                     //first two pos are the other two verts of triangle
                     //given all 3 points in triangle, interpolate to find value of new pos
 
@@ -135,7 +135,7 @@ impl Surface{
                     let alpha = 1.0-beta-gamma;//weight for a
 
                     //interpolate height with those coords
-                    self.cells[*distnaces[0].0].contents.height*beta + self.cells[*distnaces[1].0].contents.height*gamma + c.contents.height*alpha
+                    self.cells[*distances[0].0].contents.height*beta + self.cells[*distances[1].0].contents.height*gamma + c.contents.height*alpha
                 }
             )
             .collect();
