@@ -7,7 +7,6 @@ use nalgebra_glm as glm;
 //internal crates
 use crate::graphics::shapes;
 
-
 //data for each cell on the planet
 #[derive(Copy, Clone)]
 pub struct CellData {
@@ -58,6 +57,7 @@ pub struct Cell{
 //contanes all data for the surface of the planet
 pub struct Surface{
     pub cells: Vec<Cell>,
+    pub plates: Vec<Plate>
 }
 impl Surface{
     pub fn new(shape: &shapes::Shape, seed:u32)->Surface{
@@ -97,12 +97,18 @@ impl Surface{
             Plate{
                 axis: glm::vec3(0.0,0.0,1.0),
                 density: 0.5,
-                speed: 1.0,
+                speed: 0.005,
+            },
+            Plate{
+                axis: glm::vec3(0.0,0.0,1.0),
+                density: 0.5,
+                speed: -0.005,
             }
         ];
 
         Surface{
             cells,
+            plates
         }
     }
 
@@ -113,36 +119,55 @@ impl Surface{
 
         //translate all pos->get all data at translated point-> copy new data into cells
         let new_cell_data:Vec<f32> = self.cells.iter()
-            .map(|c|
+            .map(|a|
                 {
                     //get new pos
-                    let mut new_pos = glm::rotate_y_vec3(&c.position,0.5);
+                    let mut new_pos = if(a.position.x>0.0){
+                        glm::rotate_y_vec3(&a.position,0.005)
+                    }else{
+                        glm::rotate_y_vec3(&a.position,0.0)
+                    };
+                    //let mut new_pos = glm::rotate_y_vec3(&a.position,0.005);
 
-                    //find interpolated data at pos 
-                    let mut distances:Vec<(&usize,f32)> = c.connections.iter()
+                    //find distance of connection at new pos
+                    let mut distances:Vec<(&usize,f32)> = a.connections.iter()
                         //map to iter that contains (neighboring cell, distance to new pos)
-                        .map(|c| (c,glm::magnitude(&(glm::normalize(&new_pos)-self.cells[*c].position))))
+                        .map(|con| (con,glm::magnitude(&(glm::normalize(&new_pos)-self.cells[*con].position))))
                         //make into list
                         .collect();
                     //sorts distances to cell pos
                     distances.sort_by(|a,b| a.1.partial_cmp(&b.1).unwrap());
-                    //first two pos are the other two verts of triangle
-                    //given all 3 points in triangle, interpolate to find value of new pos
+                    //first two in distances are the other two verts of triangle
+                    let b = &self.cells[*distances[0].0];
+                    let c = &self.cells[*distances[1].0];
 
-                    //calculate barycentric coords of point
-                    let beta:f32 = 0.50;//weight for b
-                    let gamma:f32 = 0.50;//weight for  c
-                    let alpha = 1.0-beta-gamma;//weight for a
+                    //calculating barycentric coords of point
+                    
+                    //vectors for calculating areas
+                    let atob = b.position-a.position;
+                    let atoc = c.position-a.position;
+                    let atonew = new_pos-a.position;
+                    //area of main triangle
+                    let tri_area = glm::cross(&atob, &atoc).magnitude()*0.5;
+                    let area_opposite_b = glm::cross(&atonew, &atob).magnitude()*0.5;
+                    let area_opposite_c = glm::cross(&atonew, &atoc).magnitude()*0.5;
+
+                    let beta:f32 = area_opposite_b/tri_area;//weight for b
+                    let gamma:f32 = area_opposite_c/tri_area;//weight for  c
+                    let alpha:f32 = 1.0-beta-gamma;//weight for a
+
+                    //println!("{:?}",beta+gamma+alpha);
 
                     //interpolate height with those coords
-                    self.cells[*distances[0].0].contents.height*beta + self.cells[*distances[1].0].contents.height*gamma + c.contents.height*alpha
+                    b.contents.height*beta + c.contents.height*gamma + a.contents.height*alpha
                 }
             )
             .collect();
 
         //add new cell data to all cells
         for cell in self.cells.iter_mut().zip(new_cell_data.into_iter()){
-            cell.0.contents.height += (cell.1-cell.0.contents.height);
+            //cell.0.contents.height += (cell.1-cell.0.contents.height)*(years/10.0);
+            cell.0.contents.height = cell.1;
         }
     }
 }
