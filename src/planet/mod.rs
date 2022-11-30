@@ -27,7 +27,7 @@ pub struct RenderData{
 pub struct Planet{
     pub render_data: RenderData,
 
-    surface: surface::Surface,
+    pub surface: surface::Surface,
 
     axis: glm::Vec3,
 

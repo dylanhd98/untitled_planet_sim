@@ -112,6 +112,22 @@ impl Surface{
         }
     }
 
+    pub fn update_fill(&mut self){
+        let new_heights:Vec<f32> = self.cells.iter()
+            .map(|c| {
+                if c.connections.iter().any(|conn| self.cells[*conn].contents.height >=1.5){
+                    1.5
+                }else{
+                    c.contents.height
+                }
+            })
+            .collect();
+
+        for (cell,height) in self.cells.iter_mut().zip(new_heights.into_iter()){
+            cell.contents.height = height;
+        }
+    }
+
     pub fn update(&mut self,years:f32){
         //for every cell translate pos, compare translation with neighbors pos
         //closest neighbor to translated pos is selected
@@ -122,7 +138,7 @@ impl Surface{
             .map(|a|
                 {
                     //get new pos
-                    let mut new_pos = if(a.position.x>0.0){
+                    let mut new_pos = if(a.position.y>0.0){
                         glm::rotate_y_vec3(&a.position,0.005)
                     }else{
                         glm::rotate_y_vec3(&a.position,0.0)
@@ -135,6 +151,7 @@ impl Surface{
                         .map(|con| (con,glm::magnitude(&(glm::normalize(&new_pos)-self.cells[*con].position))))
                         //make into list
                         .collect();
+
                     //sorts distances to cell pos
                     distances.sort_by(|a,b| a.1.partial_cmp(&b.1).unwrap());
                     //first two in distances are the other two verts of triangle
@@ -156,8 +173,6 @@ impl Surface{
                     let gamma:f32 = area_opposite_c/tri_area;//weight for  c
                     let alpha:f32 = 1.0-beta-gamma;//weight for a
 
-                    //println!("{:?}",beta+gamma+alpha);
-
                     //interpolate height with those coords
                     b.contents.height*beta + c.contents.height*gamma + a.contents.height*alpha
                 }
@@ -165,9 +180,9 @@ impl Surface{
             .collect();
 
         //add new cell data to all cells
-        for cell in self.cells.iter_mut().zip(new_cell_data.into_iter()){
-            //cell.0.contents.height += (cell.1-cell.0.contents.height)*(years/10.0);
-            cell.0.contents.height = cell.1;
+        for (cell,new_height) in self.cells.iter_mut().zip(new_cell_data.into_iter()){
+            //cell.contents.height += (new_height-cell.contents.height)*(years/10.0);
+            cell.contents.height = new_height;
         }
     }
 }
