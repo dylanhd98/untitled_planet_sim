@@ -38,6 +38,8 @@ fn main() {
 
     let mut years_per_second = 0.025;
 
+    let mut current:usize = 0;
+
     let mut planet = planet::Planet::new(&display,surface_texture,5,1);
 
     //creates new camera
@@ -89,8 +91,13 @@ fn main() {
                     //if key pressed
                     glutin::event::WindowEvent::KeyboardInput { device_id, input, is_synthetic }=>{
                         match input.virtual_keycode{
-                            Some(glutin::event::VirtualKeyCode::K)=> planet.surface.cells[222].contents.height = 5.0,
+
+                            Some(glutin::event::VirtualKeyCode::K)=> {
+                                    planet.surface.cells[current].contents.height = 5.0;
+                                    current +=1;
+                                },
                             Some(glutin::event::VirtualKeyCode::L)=> planet.surface.update_fill(),
+                            Some(glutin::event::VirtualKeyCode::J)=> planet.surface.unselct(),
                             //zoom in and out
                             Some(glutin::event::VirtualKeyCode::E)=> cam.pos *= 0.95,
                             Some(glutin::event::VirtualKeyCode::Q)=> cam.pos *= 1.05,

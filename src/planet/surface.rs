@@ -86,7 +86,7 @@ impl Surface{
                     Cell{
                         contents: cell.0.0,
                         connections: cell.0.1,
-                        position: cell.1
+                        position: cell.1,
                     }
                 )
                 .collect()
@@ -128,6 +128,11 @@ impl Surface{
         }
     }
 
+    pub fn unselct(&mut self){
+        self.cells.iter_mut()
+            .for_each(|c|c.contents.height = 0.0);
+    }
+
     pub fn update(&mut self,years:f32){
         //for every cell translate pos, compare translation with neighbors pos
         //closest neighbor to translated pos is selected
@@ -138,10 +143,10 @@ impl Surface{
             .map(|a|
                 {
                     //get new pos
-                    let mut new_pos = if(a.position.y>0.0){
-                        glm::rotate_y_vec3(&a.position,0.005)
+                    let new_pos = if a.position.y>0.0{
+                        glm::rotate_y_vec3(&a.position,0.01)
                     }else{
-                        glm::rotate_y_vec3(&a.position,0.0)
+                        glm::rotate_y_vec3(&a.position,0.01)
                     };
                     //let mut new_pos = glm::rotate_y_vec3(&a.position,0.005);
 
@@ -181,8 +186,8 @@ impl Surface{
 
         //add new cell data to all cells
         for (cell,new_height) in self.cells.iter_mut().zip(new_cell_data.into_iter()){
-            //cell.contents.height += (new_height-cell.contents.height)*(years/10.0);
-            cell.contents.height = new_height;
+            cell.contents.height += (new_height-cell.contents.height)*(years/10.0);
+            //cell.contents.height = new_height;
         }
     }
 }
