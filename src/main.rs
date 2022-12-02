@@ -40,7 +40,7 @@ fn main() {
 
     let mut current:usize = 0;
 
-    let mut planet = planet::Planet::new(&display,surface_texture,5,1);
+    let mut planet = planet::Planet::new(&display,surface_texture,4,1);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();
@@ -70,9 +70,9 @@ fn main() {
         include_str!("../resources/shaders/planet/frag.glsl"),
     Some(include_str!("../resources/shaders/planet/geom.glsl"))).unwrap();
 
-    let skybox_shader = glium::Program::from_source(&display, 
-        include_str!("../resources/shaders/skybox/vert.glsl"), 
-        include_str!("../resources/shaders/skybox/frag.glsl"),
+    let map_shader = glium::Program::from_source(&display, 
+        include_str!("../resources/shaders/map/vert.glsl"), 
+        include_str!("../resources/shaders/planet/frag.glsl"),
      None).unwrap();
 
     //loop forever until close event
@@ -182,7 +182,7 @@ fn main() {
                 //clears buffer for colors and depth
                 target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
                 //draw planet
-                planet.draw(&mut target, &planet_shader, &params, &cam);
+                planet.draw(&mut target, &map_shader, &params, &cam);
                 //draw ui on top of all
                 egui_glium.paint(&display, &mut target);
                 //finish drawing and draws to window

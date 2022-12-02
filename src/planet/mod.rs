@@ -111,13 +111,11 @@ impl Planet{
     }
 
     pub fn draw(&self, target:&mut glium::Frame, program:&glium::Program, params:&glium::DrawParameters,cam:&graphics::camera::Camera){
-        //let translation:[[f32;4];4] =  glm::translation(&glm::vec3(0.0,0.0,0.0)).into();
         let pers:[[f32;4];4] = cam.perspective.into();
         let view:[[f32;4];4] = cam.view.into();
         let uniform = glium::uniform! {
             perspective:pers,
             view: view,
-            //world: translation,
 
             tex: glium::uniforms::Sampler::new(&self.render_data.texture).wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
             to_light: [self.to_sun.x,self.to_sun.y,self.to_sun.z],

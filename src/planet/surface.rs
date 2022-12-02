@@ -69,8 +69,7 @@ impl Surface{
             let connections = shape.get_connections();
             //generates cell data
             let cells:Vec<CellData> = shape.vertices.iter()
-            .map(|v
-                |
+            .map(|v|
                 CellData{
                     height: octive_noise(perlin, &v, 2.5, 7, 0.6, 2.5),
                     humidity: octive_noise(perlin, &(v+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),
@@ -148,7 +147,6 @@ impl Surface{
                     }else{
                         glm::rotate_y_vec3(&a.position,0.01)
                     };
-                    //let mut new_pos = glm::rotate_y_vec3(&a.position,0.005);
 
                     //find distance of connection at new pos
                     let mut distances:Vec<(&usize,f32)> = a.connections.iter()
@@ -159,6 +157,7 @@ impl Surface{
 
                     //sorts distances to cell pos
                     distances.sort_by(|a,b| a.1.partial_cmp(&b.1).unwrap());
+
                     //first two in distances are the other two verts of triangle
                     let b = &self.cells[*distances[0].0];
                     let c = &self.cells[*distances[1].0];

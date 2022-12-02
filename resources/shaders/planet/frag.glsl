@@ -5,9 +5,10 @@ in vec3 v_normal;
 in vec2 v_tex_coords;
 in float v_height;
 
-
+//out to whatever this renders too
 out vec4 color;
 
+//uniforms
 uniform sampler2D tex;
 uniform vec3 to_light;
 
@@ -20,5 +21,4 @@ void main() {
     else{
         color = vec4(vec3(mix(vec4(0.0,0.02,0.15,1.0),vec4(0.0,0.0,0.10,1.0),abs(v_height*0.5))* brightness),1.0);
     }
-   //color = vec4(vec3(v_normal),1.0);
 }
