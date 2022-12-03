@@ -40,7 +40,7 @@ fn main() {
 
     let mut current:usize = 0;
 
-    let mut planet = planet::Planet::new(&display,surface_texture,4,1);
+    let mut planet = planet::Planet::new(&display,surface_texture,5,1);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();
@@ -57,7 +57,7 @@ fn main() {
             write: true,
             .. Default::default()
         },
-        polygon_mode: glium::draw_parameters::PolygonMode::Fill,
+        polygon_mode: glium::draw_parameters::PolygonMode::Line,
         backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         .. Default::default()
     };
@@ -182,6 +182,7 @@ fn main() {
                 //clears buffer for colors and depth
                 target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
                 //draw planet
+                //planet.draw(&mut target, &planet_shader, &params, &cam);
                 planet.draw(&mut target, &map_shader, &params, &cam);
                 //draw ui on top of all
                 egui_glium.paint(&display, &mut target);
