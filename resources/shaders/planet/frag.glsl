@@ -1,4 +1,4 @@
-#version 330
+#version 330 core
 
 //in from geometry shader
 in vec3 v_normal;
@@ -22,4 +22,5 @@ void main() {
         color = vec4(vec3(mix(vec4(0.0,0.02,0.15,1.0),vec4(0.0,0.0,0.10,1.0),abs(v_height*0.5))* brightness),1.0);
     }
     //color = vec4(vec3((1+v_height)/2),1.0);
+    //color = vec4(1.0);
 }

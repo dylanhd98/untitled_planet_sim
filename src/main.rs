@@ -57,7 +57,7 @@ fn main() {
             write: true,
             .. Default::default()
         },
-        polygon_mode: glium::draw_parameters::PolygonMode::Line,
+        polygon_mode: glium::draw_parameters::PolygonMode::Fill,
         backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         .. Default::default()
     };

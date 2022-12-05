@@ -1,10 +1,6 @@
-#version 330
+#version 330 core
 
-#define PI 3.1415926538
-#define MERCATOR_GL_PI 3.1415926
-#define MERCATOR_GL_TILE_SCALE 512.0/(MERCATOR_GL_PI*2.0)
-#define mercator_gl_angleDerivatives vec3(1.0,0.0,0.0)
-#define DEGREES_TO_RADIANS 3.1415926 / 180
+#define PI 3.141592653589793
 
 //shape data in
 in vec3 position;
@@ -19,20 +15,30 @@ out vec3 v_normal;
 out vec2 v_tex_coords;
 out float v_height;
 
-vec3 cart_to_sphere(vec3 pos){
-    //y axis is the zenith
-    float rad = length(pos);
-    //issue with this?
-    float azimuth = sign(pos.x)*acos(pos.z/length(vec2(pos.x,pos.z)));//think longitude-> east-west measurement
-    float polar = acos(pos.y/rad);// think latitude-> north-south measurement
-    return vec3(rad,azimuth,polar);//standard order layout for these coords use in mathstextbooks
+float angle(vec2 pos){
+    if(!(abs(pos.x)>0)) return 0.0;
+    return sign(pos.x)*acos(pos.y/length(pos.xy));
 }
 
-//vec2 stereographic (vec3 sphere){}
+vec3 cart_to_sphere(vec3 pos){
+    //y axis is the zenith
+    float rad = 1.0;
+    //issue with this?
+    float azimuth = angle(pos.xz);//think longitude-> east-west measurement (-pi -> pi)
+    float polar = acos(pos.y/rad);// think latitude-> north-south measurement (0 -> pi)
+    return vec3(rad,azimuth,polar);//standard order layout for these coords use in maths
+}
 
-vec2 equirect(vec3 sphere){
-    float x = (sphere.x*(sphere.y)*cos(0.0));
-    float y = (sphere.x*(sphere.z));
+vec2 proj_to_screen(vec2 proj){
+    //y: (0 -> pi)->(-1 -> 1)
+    //x: (-pi -> pi)->(-1 -> 1)
+    return vec2(proj.x/PI,-(((proj.y*2)-PI)/PI));
+}
+
+//projections
+vec2 cylindrical_equal_area (vec3 sphere){
+    float x = sphere.y;
+    float y = sin(sphere.z);
     return vec2(x,y);
 }
 
@@ -43,6 +49,11 @@ vec2 mercator(vec3 sphere){
     return vec2(x,y);
 }
 
+vec2 equirect(vec3 sphere){
+    float x = (sphere.x*(sphere.y));
+    float y = (sphere.x*(sphere.z));
+    return vec2(x, y);
+}
 
 void main() {
     //normal stuff for frag shader, not map related
@@ -53,6 +64,6 @@ void main() {
     vec3 sphere = cart_to_sphere(position);
     vec2 proj = equirect(sphere);
     
-    gl_Position = vec4(sphere.y, position.y,0.0,1.0); 
+    gl_Position = vec4(proj_to_screen(proj),0.0,1.0); 
 }
 
