@@ -12,7 +12,7 @@ mod surface;
 
 //struct containing all things needed for rendering
 pub struct RenderData{
-    shape_data :glium::VertexBuffer<graphics::VertexPos>,
+    //shape_data :glium::VertexBuffer<graphics::VertexPos>,
     planet_data: glium::VertexBuffer<surface::CellData>,
     indices: glium::IndexBuffer<u32>,
 
@@ -65,7 +65,7 @@ impl Planet{
             render_data: 
             RenderData{
                 //buffer containing base shape of planet, most likely the sphere
-                shape_data: glium::VertexBuffer::new(display,&mapped_vertices).unwrap(),
+                //shape_data: glium::VertexBuffer::new(display,&mapped_vertices).unwrap(),
                 //buffer containing cell data needed for rendering, dynamic as this will change frequently
                 planet_data: glium::VertexBuffer::dynamic(display, &surface_contents).unwrap(),
                 //indices, define triangles of planet
@@ -122,6 +122,6 @@ impl Planet{
             terra_scale: self.render_data.scale,
         };
 
-        target.draw((&self.render_data.shape_data,&self.render_data.planet_data),&self.render_data.indices,program,&uniform,params).unwrap();
+        target.draw(&self.render_data.planet_data,&self.render_data.indices,program,&uniform,params).unwrap();
     }
 }

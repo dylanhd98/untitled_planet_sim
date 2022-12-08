@@ -91,13 +91,6 @@ fn main() {
                     //if key pressed
                     glutin::event::WindowEvent::KeyboardInput { device_id, input, is_synthetic }=>{
                         match input.virtual_keycode{
-
-                            Some(glutin::event::VirtualKeyCode::K)=> {
-                                    planet.surface.cells[current].contents.height = 5.0;
-                                    current +=1;
-                                },
-                            Some(glutin::event::VirtualKeyCode::L)=> planet.surface.update_fill(),
-                            Some(glutin::event::VirtualKeyCode::J)=> planet.surface.unselct(),
                             //zoom in and out
                             Some(glutin::event::VirtualKeyCode::E)=> cam.pos *= 0.95,
                             Some(glutin::event::VirtualKeyCode::Q)=> cam.pos *= 1.05,
@@ -153,19 +146,6 @@ fn main() {
                             ui.label("Terrain Scaling");
                             ui.add(egui::Slider::new(&mut planet.render_data.scale, 0.0..=0.25));
                         });
-
-                    /*     
-                    egui::Window::new("New Planet")
-                        .resizable(false)
-                        .collapsible(false)
-                        .title_bar(false)
-                        .show(egui_ctx, |ui|{
-                            ui.add(egui::Slider::new(&mut iterations, 0..=8).integer());
-                            if ui.button("create new").clicked(){
-                                //exture, iterations, seed)
-                            }
-                        });*/
-
                 });
 
 
@@ -182,8 +162,8 @@ fn main() {
                 //clears buffer for colors and depth
                 target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
                 //draw planet
-                //planet.draw(&mut target, &planet_shader, &params, &cam);
-                planet.draw(&mut target, &map_shader, &params, &cam);
+                planet.draw(&mut target, &planet_shader, &params, &cam);
+                //planet.draw(&mut target, &map_shader, &params, &cam);
                 //draw ui on top of all
                 egui_glium.paint(&display, &mut target);
                 //finish drawing and draws to window

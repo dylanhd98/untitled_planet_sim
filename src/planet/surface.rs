@@ -10,11 +10,12 @@ use crate::graphics::shapes;
 //data for each cell on the planet
 #[derive(Copy, Clone)]
 pub struct CellData {
+    pub position: [f32;3],
     pub height: f32,
     pub humidity: f32,
     pub temperature: f32
 }
-glium::implement_vertex!(CellData,height,humidity,temperature);
+glium::implement_vertex!(CellData,position,height,humidity,temperature);
 
 
 //handles perlin noise for generating base
@@ -71,6 +72,7 @@ impl Surface{
             let cells:Vec<CellData> = shape.vertices.iter()
             .map(|v|
                 CellData{
+                    position: [v.x,v.y,v.z],
                     height: octive_noise(perlin, &v, 2.5, 7, 0.6, 2.5),
                     humidity: octive_noise(perlin, &(v+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),
                     temperature: 0.5,
@@ -111,32 +113,26 @@ impl Surface{
         }
     }
 
-    pub fn update_fill(&mut self){
-        let new_heights:Vec<f32> = self.cells.iter()
-            .map(|c| {
-                if c.connections.iter().any(|conn| self.cells[*conn].contents.height >=1.5){
-                    1.5
-                }else{
-                    c.contents.height
-                }
-            })
-            .collect();
-
-        for (cell,height) in self.cells.iter_mut().zip(new_heights.into_iter()){
-            cell.contents.height = height;
+    pub fn tectonics(&mut self,years:f32){
+        for cell in self.cells.iter_mut(){
+            //translate according to plate
+            cell.position= 
+            if cell.position.x>0.0{
+                glm::rotate_y_vec3(&cell.position,years)
+            }else{
+                glm::rotate_y_vec3(&cell.position,-years)
+            };
+            //put cell pos into cell data
+            cell.contents.position=[cell.position.x,cell.position.y,cell.position.z];
         }
     }
 
-    pub fn unselct(&mut self){
-        self.cells.iter_mut()
-            .for_each(|c|c.contents.height = 0.0);
-    }
-
     pub fn update(&mut self,years:f32){
+        self.tectonics(years);
         //for every cell translate pos, compare translation with neighbors pos
         //closest neighbor to translated pos is selected
         //copy selected data into cell
-
+        /* 
         //translate all pos->get all data at translated point-> copy new data into cells
         let new_cell_data:Vec<f32> = self.cells.iter()
             .map(|a|
@@ -187,6 +183,6 @@ impl Surface{
         for (cell,new_height) in self.cells.iter_mut().zip(new_cell_data.into_iter()){
             cell.contents.height += (new_height-cell.contents.height)*(years/10.0);
             //cell.contents.height = new_height;
-        }
+        }*/
     }
 }
