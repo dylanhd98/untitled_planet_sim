@@ -125,6 +125,17 @@ impl Surface{
             //put cell pos into cell data
             cell.contents.position=[cell.position.x,cell.position.y,cell.position.z];
         }
+        
+        //the behaviours, divergent, convergent, transform
+        //diverge -> new cell at lengthened tris, center
+        //converge -> densest of two close cells destroyed, other get higher besed
+        //transform -> search connections of too far cell for closer one, closer replaces old in connections
+        
+        //there is a threshhold for connection length
+        //for each connection in cell, if connection too long, search that second cells connections
+        //and select any within threshhold for use as new connection
+        
+
     }
 
     pub fn update(&mut self,years:f32){

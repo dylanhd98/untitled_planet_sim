@@ -36,9 +36,7 @@ fn main() {
         glium::texture::SrgbTexture2d::new(&display, image).unwrap()
     };
 
-    let mut years_per_second = 0.025;
-
-    let mut current:usize = 0;
+    let mut years_per_second = 0.0;
 
     let mut planet = planet::Planet::new(&display,surface_texture,5,1);
 
@@ -57,7 +55,7 @@ fn main() {
             write: true,
             .. Default::default()
         },
-        polygon_mode: glium::draw_parameters::PolygonMode::Fill,
+        polygon_mode: glium::draw_parameters::PolygonMode::Line,
         backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         .. Default::default()
     };
