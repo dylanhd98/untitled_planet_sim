@@ -10,15 +10,14 @@ use self::surface::CellData;
 //child modules
 mod surface;
 
-//struct containing all things needed for rendering
+//struct containing all things needed passed to the gpu
 pub struct RenderData{
-    //shape_data :glium::VertexBuffer<graphics::VertexPos>,
+    //planet vertices
     planet_data: glium::VertexBuffer<surface::CellData>,
+    //connectivity data
     indices: glium::IndexBuffer<u32>,
-
     //texture lookup for surface
     texture: glium::texture::SrgbTexture2d,
-
     //how esagerated the planet surface will be
     pub scale: f32
 }
@@ -46,14 +45,6 @@ impl Planet{
         //creates planet surface
         let mut surface = surface::Surface::new(&base_shape,seed);
 
-        //maps vertices of base shape into format used in buffer
-        let mapped_vertices:Vec<graphics::VertexPos> = base_shape.vertices
-            .iter()
-            .map(|v| graphics::VertexPos{
-                position:[v.x,v.y,v.z],
-            })
-            .collect();
-
         //extract data needed for rendering out
         let surface_contents:Vec<CellData> = surface.cells.iter()
             .map(|c|
@@ -64,8 +55,6 @@ impl Planet{
         Planet{
             render_data: 
             RenderData{
-                //buffer containing base shape of planet, most likely the sphere
-                //shape_data: glium::VertexBuffer::new(display,&mapped_vertices).unwrap(),
                 //buffer containing cell data needed for rendering, dynamic as this will change frequently
                 planet_data: glium::VertexBuffer::dynamic(display, &surface_contents).unwrap(),
                 //indices, define triangles of planet

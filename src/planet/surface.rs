@@ -113,6 +113,27 @@ impl Surface{
         }
     }
 
+    pub fn update_fill(&mut self){
+        let new_heights:Vec<f32> = self.cells.iter()
+            .map(|c| {
+                if c.connections.iter().any(|conn| self.cells[*conn].contents.height >=1.5){
+                    1.5
+                }else{
+                    c.contents.height
+                }
+            })
+            .collect();
+
+        for (cell,height) in self.cells.iter_mut().zip(new_heights.into_iter()){
+            cell.contents.height = height;
+        }
+    }
+
+    pub fn unselct(&mut self){
+        self.cells.iter_mut()
+            .for_each(|c|c.contents.height = 0.0);
+    }
+
     pub fn tectonics(&mut self,years:f32){
         for cell in self.cells.iter_mut(){
             //translate according to plate
