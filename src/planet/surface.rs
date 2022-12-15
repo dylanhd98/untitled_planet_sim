@@ -68,29 +68,22 @@ impl Surface{
             let perlin = Perlin::new(seed);
             //gets connections
             let connections = shape.get_connections();
-            //generates cell data
-            let cells:Vec<CellData> = shape.vertices.iter()
-            .map(|v|
-                CellData{
-                    position: [v.x,v.y,v.z],
-                    height: octive_noise(perlin, &v, 2.5, 7, 0.6, 2.5),
-                    humidity: octive_noise(perlin, &(v+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),
-                    temperature: 0.5,
+            //generates cells
+            connections.into_iter()
+            .zip(shape.vertices.clone().into_iter())
+            .map(|cell|
+                Cell{
+                    contents: CellData{
+                        position: [cell.1.x,cell.1.y,cell.1.z],
+                        height: octive_noise(perlin, &cell.1, 2.5, 7, 0.6, 2.5),
+                        humidity: octive_noise(perlin, &(cell.1+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),
+                        temperature: 0.5,
+                    },
+                    connections: cell.0,
+                    position: cell.1,
                 }
             )
-            .collect();
-            
-            cells.into_iter()
-                .zip(connections.into_iter())
-                .zip(shape.vertices.clone().into_iter())
-                .map(|cell|
-                    Cell{
-                        contents: cell.0.0,
-                        connections: cell.0.1,
-                        position: cell.1,
-                    }
-                )
-                .collect()
+            .collect()
         };
 
         //creates plates for surface
