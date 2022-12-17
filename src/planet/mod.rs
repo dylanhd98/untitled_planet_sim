@@ -19,7 +19,7 @@ pub struct RenderData{
     //texture lookup for surface
     texture: glium::texture::SrgbTexture2d,
     //how esagerated the planet surface will be
-    pub scale: f32
+    pub scale: f32,
 }
 
 
@@ -45,7 +45,7 @@ impl Planet{
         //creates planet surface
         let mut surface = surface::Surface::new(&base_shape,seed);
 
-        //extract data needed for rendering out
+        //extract data for buffer
         let surface_contents:Vec<CellData> = surface.cells.iter()
             .map(|c|
             c.contents

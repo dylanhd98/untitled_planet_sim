@@ -19,13 +19,13 @@ impl Shape{
     //get connections of every cell
     pub fn get_connections(&self)->Vec<Vec<usize>>{
         //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
-        //iterate through indices, for every index, store other two in triangle into its hashmap
-        let mut connections:Vec::<Vec<usize>> = vec![Vec::with_capacity(5);self.vertices.len()];
+        //iterate through indices, for every index, store other two in triangle
+        let mut connections:Vec::<Vec<usize>> = vec![Vec::with_capacity(6);self.vertices.len()];
         
         self.indices.chunks(3)
             .for_each(|x|
                 {
-                    //adds connections of each vert in triangle to hashset
+                    //adds connections of each vert in triangle
                     for i in 0..3{
                         connections[x[i] as usize].push(x[(i+1)%3] as usize);
                     }
@@ -48,7 +48,7 @@ impl Shape{
     //turns every triangle into 4 smaller ones
     //only works if all indexing is done in the same direction of rotation
     pub fn subdivide(mut self,iterations:u8)->Shape{
-        for i in 0..iterations{
+        for _ in 0..iterations{
             //indices length is just triangle amount*3
             //thus, new indices will be 4 times as large, 4 times more triangles
             //

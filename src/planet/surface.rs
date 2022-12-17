@@ -127,6 +127,10 @@ impl Surface{
             .for_each(|c|c.contents.height = 0.0);
     }
 
+    pub fn axial_tilt(&mut self,years:f32){
+        
+    }
+
     pub fn tectonics(&mut self,years:f32){
         for cell in self.cells.iter_mut(){
             //translate according to plate
