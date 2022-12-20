@@ -14,7 +14,7 @@ mod surface;
 pub struct RenderData{
     //planet vertices
     planet_data: glium::VertexBuffer<surface::CellData>,
-    //connectivity data
+    //triangles
     indices: glium::IndexBuffer<u32>,
     //texture lookup for surface
     texture: glium::texture::SrgbTexture2d,

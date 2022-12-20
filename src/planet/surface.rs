@@ -55,19 +55,18 @@ pub struct Cell{
     pub position: glm::Vec3, 
 }
 
-//contanes all data for the surface of the planet
+//contains all data for the surface of the planet
 pub struct Surface{
     pub cells: Vec<Cell>,
-    pub plates: Vec<Plate>
+    pub plates: Vec<Plate>,
 }
 impl Surface{
     pub fn new(shape: &shapes::Shape, seed:u32)->Surface{
-        
         //creates cells for surface
         let cells:Vec<Cell> = {
             let perlin = Perlin::new(seed);
             //gets connections
-            let connections = shape.get_connections();
+            let connections = shape.indices_to_connections();
             //generates cells
             connections.into_iter()
             .zip(shape.vertices.clone().into_iter())
@@ -158,60 +157,6 @@ impl Surface{
 
     pub fn update(&mut self,years:f32){
         self.tectonics(years);
-        //for every cell translate pos, compare translation with neighbors pos
-        //closest neighbor to translated pos is selected
-        //copy selected data into cell
-        /* 
-        //translate all pos->get all data at translated point-> copy new data into cells
-        let new_cell_data:Vec<f32> = self.cells.iter()
-            .map(|a|
-                {
-                    //get new pos
-                    let new_pos = if a.position.y>0.0{
-                        glm::rotate_y_vec3(&a.position,0.01)
-                    }else{
-                        glm::rotate_y_vec3(&a.position,0.01)
-                    };
-
-                    //find distance of connection at new pos
-                    let mut distances:Vec<(&usize,f32)> = a.connections.iter()
-                        //map to iter that contains (neighboring cell, distance to new pos)
-                        .map(|con| (con,glm::magnitude(&(glm::normalize(&new_pos)-self.cells[*con].position))))
-                        //make into list
-                        .collect();
-
-                    //sorts distances to cell pos
-                    distances.sort_by(|a,b| a.1.partial_cmp(&b.1).unwrap());
-
-                    //first two in distances are the other two verts of triangle
-                    let b = &self.cells[*distances[0].0];
-                    let c = &self.cells[*distances[1].0];
-
-                    //calculating barycentric coords of point
-                    
-                    //vectors for calculating areas
-                    let atob = b.position-a.position;
-                    let atoc = c.position-a.position;
-                    let atonew = new_pos-a.position;
-                    //area of main triangle
-                    let tri_area = glm::cross(&atob, &atoc).magnitude()*0.5;
-                    let area_opposite_b = glm::cross(&atonew, &atob).magnitude()*0.5;
-                    let area_opposite_c = glm::cross(&atonew, &atoc).magnitude()*0.5;
-
-                    let beta:f32 = area_opposite_b/tri_area;//weight for b
-                    let gamma:f32 = area_opposite_c/tri_area;//weight for  c
-                    let alpha:f32 = 1.0-beta-gamma;//weight for a
-
-                    //interpolate height with those coords
-                    b.contents.height*beta + c.contents.height*gamma + a.contents.height*alpha
-                }
-            )
-            .collect();
-
-        //add new cell data to all cells
-        for (cell,new_height) in self.cells.iter_mut().zip(new_cell_data.into_iter()){
-            cell.contents.height += (new_height-cell.contents.height)*(years/10.0);
-            //cell.contents.height = new_height;
-        }*/
+        
     }
 }
