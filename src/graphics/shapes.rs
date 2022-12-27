@@ -17,21 +17,20 @@ pub struct Shape{
 }
 impl Shape{
     //get connections of every cell
-    pub fn indices_to_connections(&self)->Vec<Vec<usize>>{
+    pub fn indices_to_connections(&self)->Vec<Vec<u32>>{
         //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
         //iterate through indices, for every index, store other two in triangle
-        let mut connections:Vec::<Vec<usize>> = vec![Vec::with_capacity(6);self.indices.len()/3];
+        let mut connections:Vec::<Vec<u32>> = vec![Vec::with_capacity(6);self.indices.len()/3];
         
         self.indices.chunks(3)
-            .for_each(|x|
+            .for_each(|x|//for each triangle
                 {
                     //adds connections of each vert in triangle
                     for i in 0..3{
-                        connections[x[i] as usize].push(x[(i+1)%3] as usize);
+                        connections[x[i] as usize].push(x[(i+1)%3] );
                     }
                 }
             );
-
         connections
     }
 

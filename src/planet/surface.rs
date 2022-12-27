@@ -50,7 +50,7 @@ pub struct Cell{
     //what is contained within the cell
     pub contents: CellData,
     //all other cells the cell is connected too
-    pub connections: Vec<usize>,
+    pub connections: Vec<u32>,
     //physical position of cell
     pub position: glm::Vec3, 
 }
@@ -58,10 +58,13 @@ pub struct Cell{
 //contains all data for the surface of the planet
 pub struct Surface{
     pub cells: Vec<Cell>,
+    pub triangles: Vec<u32>,
+    pub bank: Vec<u32>,//contains indices of all cells currently out of use
+    
     pub plates: Vec<Plate>,
 }
 impl Surface{
-    pub fn new(shape: &shapes::Shape, seed:u32)->Surface{
+    pub fn new(shape: shapes::Shape, seed:u32)->Surface{
         //creates cells for surface
         let cells:Vec<Cell> = {
             let perlin = Perlin::new(seed);
@@ -101,14 +104,16 @@ impl Surface{
 
         Surface{
             cells,
-            plates
+            triangles: shape.indices,
+            bank: Vec::with_capacity(shape.vertices.len()/2),
+            plates,
         }
     }
 
     pub fn update_fill(&mut self){
         let new_heights:Vec<f32> = self.cells.iter()
             .map(|c| {
-                if c.connections.iter().any(|conn| self.cells[*conn].contents.height >=1.5){
+                if c.connections.iter().any(|conn| self.cells[*conn as usize].contents.height >=1.5){
                     1.5
                 }else{
                     c.contents.height
@@ -153,6 +158,23 @@ impl Surface{
         //and select any within threshhold for use as new connection
         
 
+    }
+
+    fn triangulate(&self, cells: &Vec<u32>)-> Vec<u32>{
+        vec![cells[0],cells[1],cells[2]]
+    }
+
+    pub fn remove_cell(&mut self,cell: u32){
+        //removes any triangle containing cell
+        self.triangles = self.triangles.chunks(3)
+            .filter(|chunk| !chunk.contains(&cell))//get only the triangles which do not contain the target cell
+            .flatten()
+            .map(|n|*n)
+            .collect();
+        //then marks cell as unused by pushing to bank    
+        self.bank.push(cell);
+        //finally, triangulates surrounding cells
+        self.triangles.append(&mut self.triangulate(&self.cells[cell as usize].connections))
     }
 
     pub fn update(&mut self,years:f32){

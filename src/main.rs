@@ -38,7 +38,7 @@ fn main() {
 
     let mut years_per_second = 0.0;
 
-    let mut planet = planet::Planet::new(&display,surface_texture,5,1);
+    let mut planet = planet::Planet::new(&display,surface_texture,1,1);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();
@@ -55,7 +55,7 @@ fn main() {
             write: true,
             .. Default::default()
         },
-        polygon_mode: glium::draw_parameters::PolygonMode::Line,
+        polygon_mode: glium::draw_parameters::PolygonMode::Fill,
         backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         .. Default::default()
     };
@@ -95,7 +95,7 @@ fn main() {
                                 //current +=1;
                             },
                             Some(glutin::event::VirtualKeyCode::L)=> planet.surface.update_fill(),
-                            Some(glutin::event::VirtualKeyCode::J)=> planet.surface.unselct(),
+                            Some(glutin::event::VirtualKeyCode::J)=> planet.surface.remove_cell(0),
                             //zoom in and out
                             Some(glutin::event::VirtualKeyCode::E)=> cam.pos *= 0.95,
                             Some(glutin::event::VirtualKeyCode::Q)=> cam.pos *= 1.05,
@@ -159,7 +159,7 @@ fn main() {
                 cam.update_view();
                 
                 //updates planet with the specification of how many days pass per frame
-                planet.update(delta_time*years_per_second);//quarter year per second, placeholder
+                planet.update(delta_time*years_per_second,&display);//quarter year per second, placeholder
 
                 //RENDERING
                 //creates buffer to store image in before drawing to window

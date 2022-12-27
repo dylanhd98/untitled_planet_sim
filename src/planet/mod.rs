@@ -43,7 +43,7 @@ impl Planet{
             .normalize();
         
         //creates planet surface
-        let mut surface = surface::Surface::new(&base_shape,seed);
+        let mut surface = surface::Surface::new(base_shape,seed);
 
         //extract data for buffer
         let surface_contents:Vec<CellData> = surface.cells.iter()
@@ -58,7 +58,7 @@ impl Planet{
                 //buffer containing cell data needed for rendering, dynamic as this will change frequently
                 planet_data: glium::VertexBuffer::dynamic(display, &surface_contents).unwrap(),
                 //indices, define triangles of planet
-                indices: glium::IndexBuffer::new(display,glium::index::PrimitiveType::TrianglesList, &base_shape.indices).unwrap(),
+                indices: glium::IndexBuffer::new(display,glium::index::PrimitiveType::TrianglesList, &surface.triangles).unwrap(),
 
                 texture,
 
@@ -73,7 +73,7 @@ impl Planet{
         }
     }
 
-    pub fn update(&mut self, years: f32){
+    pub fn update(&mut self, years: f32,display:&glium::Display){
         self.surface.update(years);
 
         //latitude that gets maximum sunlight from the sun
@@ -97,6 +97,7 @@ impl Planet{
 
         //write surface contents to planet buffer
         self.render_data.planet_data.write(&surface_contents);
+        self.render_data.indices= glium::IndexBuffer::new(display,glium::index::PrimitiveType::TrianglesList, &self.surface.triangles).unwrap();        ;
     }
 
     pub fn draw(&self, target:&mut glium::Frame, program:&glium::Program, params:&glium::DrawParameters,cam:&graphics::camera::Camera){
