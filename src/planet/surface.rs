@@ -54,12 +54,26 @@ pub struct Cell{
     //physical position of cell
     pub position: glm::Vec3, 
 }
+impl Cell{
+    pub fn new(pos:glm::Vec3)->Cell{
+        Cell { 
+            contents: CellData { 
+                position: [pos.x,pos.y,pos.z],
+                height: 0.0,
+                humidity: 0.0,
+                temperature: 0.0
+            },
+            connections: Vec::with_capacity(6),
+            position:pos,
+        }
+    }
+}
 
 //contains all data for the surface of the planet
 pub struct Surface{
     pub cells: Vec<Cell>,
     pub triangles: Vec<u32>,
-    pub bank: Vec<u32>,//contains indices of all cells currently out of use
+    pub bank: Vec<u32>,//contains indices of all free cell locations
     
     pub plates: Vec<Plate>,
 }
@@ -110,27 +124,6 @@ impl Surface{
         }
     }
 
-    pub fn update_fill(&mut self){
-        let new_heights:Vec<f32> = self.cells.iter()
-            .map(|c| {
-                if c.connections.iter().any(|conn| self.cells[*conn as usize].contents.height >=1.5){
-                    1.5
-                }else{
-                    c.contents.height
-                }
-            })
-            .collect();
-
-        for (cell,height) in self.cells.iter_mut().zip(new_heights.into_iter()){
-            cell.contents.height = height;
-        }
-    }
-
-    pub fn unselct(&mut self){
-        self.cells.iter_mut()
-            .for_each(|c|c.contents.height = 0.0);
-    }
-
     pub fn axial_tilt(&mut self,years:f32){
         
     }
@@ -156,12 +149,13 @@ impl Surface{
         //there is a threshhold for connection length
         //for each connection in cell, if connection too long, search that second cells connections
         //and select any within threshhold for use as new connection
-        
 
+        
     }
 
+    //given cells, outputs triangulation for them
     fn triangulate(&self, cells: &Vec<u32>)-> Vec<u32>{
-        vec![cells[0],cells[1],cells[2]]
+        vec![cells[0],cells[1],*cells.last().unwrap()]
     }
 
     pub fn remove_cell(&mut self,cell: u32){
@@ -173,12 +167,38 @@ impl Surface{
             .collect();
         //then marks cell as unused by pushing to bank    
         self.bank.push(cell);
-        //finally, triangulates surrounding cells
-        self.triangles.append(&mut self.triangulate(&self.cells[cell as usize].connections))
+    }
+
+    pub fn add_cell(&mut self, parents:(u32,u32)){
+        //gets index of new cell to be used if avaliable from bank
+        let cell = match self.bank.pop(){
+            Some(c) => c,
+            None => return //if no avaliable cells in bank, does nothing
+        };
+
+        let new_neighbours:Vec<u32> = self.triangles.chunks(3)
+            .filter(|chunk| (chunk.contains(&parents.0)&&chunk.contains(&parents.1)))//get only the triangles which do not contain the target cells
+            .flatten()
+            .map(|n|*n)
+            .filter(|c| c != &parents.0 && c != &parents.1)//remove parents 
+            .collect();
+        
+        //removes any triangle containing both cells
+        self.triangles = self.triangles.chunks(3)
+            .filter(|chunk| !(chunk.contains(&parents.0)&&chunk.contains(&parents.1)))//get only the triangles which do not contain the target cells
+            .flatten()
+            .map(|n|*n)
+            .collect();
+
+        //cell is set as new one at center pos
+        let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
+        let cell_pos = glm::normalize(&mid);
+        self.cells[cell as usize] = Cell::new(cell_pos);
+
+
     }
 
     pub fn update(&mut self,years:f32){
         self.tectonics(years);
-        
     }
 }

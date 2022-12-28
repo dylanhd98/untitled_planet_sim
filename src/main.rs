@@ -37,6 +37,7 @@ fn main() {
     };
 
     let mut years_per_second = 0.0;
+    let mut current:u32 = 0;
 
     let mut planet = planet::Planet::new(&display,surface_texture,1,1);
 
@@ -55,7 +56,7 @@ fn main() {
             write: true,
             .. Default::default()
         },
-        polygon_mode: glium::draw_parameters::PolygonMode::Fill,
+        polygon_mode: glium::draw_parameters::PolygonMode::Line,
         backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         .. Default::default()
     };
@@ -91,11 +92,9 @@ fn main() {
                         match input.virtual_keycode{
                             //connectivity testing REMOVE
                             Some(glutin::event::VirtualKeyCode::K)=> {
-                                planet.surface.cells[24].contents.height = 5.0;
-                                //current +=1;
+                                planet.surface.remove_cell(current);
+                                current +=1;
                             },
-                            Some(glutin::event::VirtualKeyCode::L)=> planet.surface.update_fill(),
-                            Some(glutin::event::VirtualKeyCode::J)=> planet.surface.remove_cell(0),
                             //zoom in and out
                             Some(glutin::event::VirtualKeyCode::E)=> cam.pos *= 0.95,
                             Some(glutin::event::VirtualKeyCode::Q)=> cam.pos *= 1.05,
