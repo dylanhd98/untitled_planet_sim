@@ -97,6 +97,7 @@ impl Planet{
 
         //write surface contents to planet buffer
         self.render_data.planet_data.write(&surface_contents);
+        //FIX THIS, WORKS BUT BAD
         self.render_data.indices= glium::IndexBuffer::new(display,glium::index::PrimitiveType::TrianglesList, &self.surface.triangles).unwrap();        ;
     }
 

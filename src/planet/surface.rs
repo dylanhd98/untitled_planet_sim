@@ -38,6 +38,24 @@ fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistan
     noise_value
 }
 
+//get connections of every cell
+pub fn indices_to_connections(indices: &Vec<u32>)->Vec<Vec<u32>>{
+    //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
+    //iterate through indices, for every index, store other two in triangle
+    let mut connections:Vec::<Vec<u32>> = vec![Vec::with_capacity(6);indices.len()/3];
+    
+    indices.chunks(3)
+        .for_each(|x|//for each triangle
+            {
+                //adds connections of each vert in triangle
+                for i in 0..3{
+                    connections[x[i] as usize].push(x[(i+1)%3] );
+                }
+            }
+        );
+    connections
+}
+
 //data for every plate
 pub struct Plate{
     axis: glm::Vec3,
@@ -49,10 +67,10 @@ pub struct Plate{
 pub struct Cell{
     //what is contained within the cell
     pub contents: CellData,
-    //all other cells the cell is connected too
-    pub connections: Vec<u32>,
     //physical position of cell
-    pub position: glm::Vec3, 
+    pub position: glm::Vec3,
+    //plate that the cell belongs too
+    pub plate: Option<usize>
 }
 impl Cell{
     pub fn new(pos:glm::Vec3)->Cell{
@@ -63,8 +81,8 @@ impl Cell{
                 humidity: 0.0,
                 temperature: 0.0
             },
-            connections: Vec::with_capacity(6),
             position:pos,
+            plate: None
         }
     }
 }
@@ -82,21 +100,22 @@ impl Surface{
         //creates cells for surface
         let cells:Vec<Cell> = {
             let perlin = Perlin::new(seed);
-            //gets connections
-            let connections = shape.indices_to_connections();
             //generates cells
-            connections.into_iter()
-            .zip(shape.vertices.clone().into_iter())
-            .map(|cell|
+            shape.vertices.clone().into_iter()
+            .map(|pos|
                 Cell{
                     contents: CellData{
-                        position: [cell.1.x,cell.1.y,cell.1.z],
-                        height: octive_noise(perlin, &cell.1, 2.5, 7, 0.6, 2.5),
-                        humidity: octive_noise(perlin, &(cell.1+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),
+                        position: [pos.x,pos.y,pos.z],
+                        height: octive_noise(perlin, &pos, 2.5, 7, 0.6, 2.5),
+                        humidity: octive_noise(perlin, &(pos+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),
                         temperature: 0.5,
                     },
-                    connections: cell.0,
-                    position: cell.1,
+                    position: pos,
+                    plate: if pos.x>=0.0{
+                        Some(0)
+                    } else{
+                        Some(1)
+                    }
                 }
             )
             .collect()
@@ -107,12 +126,12 @@ impl Surface{
             Plate{
                 axis: glm::vec3(0.0,0.0,1.0),
                 density: 0.5,
-                speed: 0.005,
+                speed: 0.00005,
             },
             Plate{
                 axis: glm::vec3(0.0,0.0,1.0),
                 density: 0.5,
-                speed: -0.005,
+                speed: -0.00005,
             }
         ];
 
@@ -129,14 +148,13 @@ impl Surface{
     }
 
     pub fn tectonics(&mut self,years:f32){
-        for cell in self.cells.iter_mut(){
+        //for every cell with plate info
+        for cell in self.cells.iter_mut().filter(|c|c.plate.is_some()){
+            //plate cell belongs too
+            let plate = &self.plates[cell.plate.unwrap()];
             //translate according to plate
-            cell.position= 
-            if cell.position.x>0.0{
-                glm::rotate_y_vec3(&cell.position,years)
-            }else{
-                glm::rotate_y_vec3(&cell.position,-years)
-            };
+            cell.position= glm::rotate_vec3(&cell.position, plate.speed, &plate.axis);
+  
             //put cell pos into cell data
             cell.contents.position=[cell.position.x,cell.position.y,cell.position.z];
         }
@@ -167,6 +185,7 @@ impl Surface{
             .collect();
         //then marks cell as unused by pushing to bank    
         self.bank.push(cell);
+        //triangulate all cells connections
     }
 
     pub fn add_cell(&mut self, parents:(u32,u32)){

@@ -16,24 +16,14 @@ pub struct Shape{
     pub indices:Vec::<u32>
 }
 impl Shape{
-    //get connections of every cell
-    pub fn indices_to_connections(&self)->Vec<Vec<u32>>{
-        //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
-        //iterate through indices, for every index, store other two in triangle
-        let mut connections:Vec::<Vec<u32>> = vec![Vec::with_capacity(6);self.indices.len()/3];
-        
-        self.indices.chunks(3)
-            .for_each(|x|//for each triangle
-                {
-                    //adds connections of each vert in triangle
-                    for i in 0..3{
-                        connections[x[i] as usize].push(x[(i+1)%3] );
-                    }
-                }
-            );
-        connections
+    //multiplies every vert by number
+    pub fn scale(mut self,scale:f32)->Shape{
+        self.vertices=self.vertices
+            .iter()
+            .map(|v|v*scale)
+            .collect();
+        self
     }
-
     //makes every vertex unit length
     pub fn normalize(mut self)->Shape{
         //replaces vertices with their normalzed selfs
