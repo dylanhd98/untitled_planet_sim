@@ -43,7 +43,7 @@ impl Planet{
             .normalize();
         
         //creates planet surface
-        let mut surface = surface::Surface::new(base_shape,seed);
+        let mut surface = surface::Surface::new(base_shape,2,seed);
 
         //extract data for buffer
         let surface_contents:Vec<CellData> = surface.cells.iter()

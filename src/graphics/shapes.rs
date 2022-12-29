@@ -16,6 +16,13 @@ pub struct Shape{
     pub indices:Vec::<u32>
 }
 impl Shape{
+    pub fn new(vertices:Vec::<glm::Vec3>,indices:Vec::<u32>)->Shape{
+        Shape{
+            vertices,
+            indices
+        }
+    }
+
     //multiplies every vert by number
     pub fn scale(mut self,scale:f32)->Shape{
         self.vertices=self.vertices
@@ -86,14 +93,6 @@ impl Shape{
             self.indices = new_indices;
         }
         self
-    }
-
-    
-    pub fn new(vertices:Vec::<glm::Vec3>,indices:Vec::<u32>)->Shape{
-        Shape{
-            vertices,
-            indices
-        }
     }
 
     pub fn icosahedron()->Shape{

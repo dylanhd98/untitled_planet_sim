@@ -3,6 +3,7 @@ use std::vec;
 //external crates
 use noise::{NoiseFn, Perlin, Seedable};
 use nalgebra_glm as glm;
+use rand::Rng;
 
 //internal crates
 use crate::graphics::shapes;
@@ -96,11 +97,12 @@ pub struct Surface{
     pub plates: Vec<Plate>,
 }
 impl Surface{
-    pub fn new(shape: shapes::Shape, seed:u32)->Surface{
+    pub fn new(shape: shapes::Shape,plate_num: u32, seed:u32)->Surface{
+        let mut rng = rand::thread_rng();
         //creates cells for surface
         let cells:Vec<Cell> = {
             let perlin = Perlin::new(seed);
-            //generates cells
+            //generates cells with perlin noise
             shape.vertices.clone().into_iter()
             .map(|pos|
                 Cell{
@@ -111,7 +113,7 @@ impl Surface{
                         temperature: 0.5,
                     },
                     position: pos,
-                    plate: if pos.x>=0.0{
+                    plate: if pos.x>=0.0{//two split plates for debugging reasons
                         Some(0)
                     } else{
                         Some(1)
@@ -122,18 +124,24 @@ impl Surface{
         };
 
         //creates plates for surface
-        let plates = vec![
-            Plate{
-                axis: glm::vec3(0.0,0.0,1.0),
-                density: 0.5,
-                speed: 0.00005,
-            },
-            Plate{
-                axis: glm::vec3(0.0,0.0,1.0),
-                density: 0.5,
-                speed: -0.00005,
-            }
-        ];
+        let mut plates:Vec<Plate> = Vec::with_capacity(plate_num as usize);
+        for _ in 0..plate_num{
+            plates.push({
+                let rand_axis = {
+                    let x:f32 = rng.gen_range(0.0..=glm::two_pi());
+                    let y:f32 = rng.gen_range(0.0..=glm::two_pi());
+                    glm::rotate_y_vec3(
+                        &glm::rotate_x_vec3(&glm::vec3(0.0,1.0,0.0),x), 
+                        y)
+                };
+
+                Plate {
+                    axis: rand_axis,
+                    density: rng.gen_range(0.0..10.0),
+                    speed: 0.005,
+                }
+            });
+        }
 
         Surface{
             cells,
@@ -153,7 +161,7 @@ impl Surface{
             //plate cell belongs too
             let plate = &self.plates[cell.plate.unwrap()];
             //translate according to plate
-            cell.position= glm::rotate_vec3(&cell.position, plate.speed, &plate.axis);
+            cell.position= glm::rotate_vec3(&cell.position, plate.speed*years, &plate.axis);
   
             //put cell pos into cell data
             cell.contents.position=[cell.position.x,cell.position.y,cell.position.z];
@@ -168,16 +176,14 @@ impl Surface{
         //for each connection in cell, if connection too long, search that second cells connections
         //and select any within threshhold for use as new connection
 
-        
-    }
-
-    //given cells, outputs triangulation for them
-    fn triangulate(&self, cells: &Vec<u32>)-> Vec<u32>{
-        vec![cells[0],cells[1],*cells.last().unwrap()]
+        for cell in indices_to_connections(&self.triangles){
+            
+        }
     }
 
     pub fn remove_cell(&mut self,cell: u32){
-        //removes any triangle containing cell
+        //get all triangles that contain cell
+        //removes those triangles
         self.triangles = self.triangles.chunks(3)
             .filter(|chunk| !chunk.contains(&cell))//get only the triangles which do not contain the target cell
             .flatten()
@@ -185,7 +191,7 @@ impl Surface{
             .collect();
         //then marks cell as unused by pushing to bank    
         self.bank.push(cell);
-        //triangulate all cells connections
+        //replace 
     }
 
     pub fn add_cell(&mut self, parents:(u32,u32)){
