@@ -90,10 +90,13 @@ impl Cell{
 
 //contains all data for the surface of the planet
 pub struct Surface{
+    //every cell
     pub cells: Vec<Cell>,
+    //triangle data
     pub triangles: Vec<u32>,
-    pub bank: Vec<u32>,//contains indices of all free cell locations
-    
+    //contains indices of all cells not in use
+    pub bank: Vec<u32>,
+    //all tectonic plates on the surface
     pub plates: Vec<Plate>,
 }
 impl Surface{
@@ -123,10 +126,11 @@ impl Surface{
             .collect()
         };
 
-        //creates plates for surface
+        //creates randomized plates for surface
         let mut plates:Vec<Plate> = Vec::with_capacity(plate_num as usize);
         for _ in 0..plate_num{
             plates.push({
+                //randomized axis the plate moves around
                 let rand_axis = {
                     let x:f32 = rng.gen_range(0.0..=glm::two_pi());
                     let y:f32 = rng.gen_range(0.0..=glm::two_pi());
@@ -181,19 +185,21 @@ impl Surface{
         }
     }
 
+
+    //remove cell
     pub fn remove_cell(&mut self,cell: u32){
-        //get all triangles that contain cell
-        //removes those triangles
+        //filter out triangles that contain cell
         self.triangles = self.triangles.chunks(3)
             .filter(|chunk| !chunk.contains(&cell))//get only the triangles which do not contain the target cell
             .flatten()
             .map(|n|*n)
             .collect();
-        //then marks cell as unused by pushing to bank    
+        //then marks cell as unused by pushing to the cell bank    
         self.bank.push(cell);
-        //replace 
+        
     }
 
+    //adds a new cell to the planet between two other cells
     pub fn add_cell(&mut self, parents:(u32,u32)){
         //gets index of new cell to be used if avaliable from bank
         let cell = match self.bank.pop(){
@@ -201,26 +207,21 @@ impl Surface{
             None => return //if no avaliable cells in bank, does nothing
         };
 
-        let new_neighbours:Vec<u32> = self.triangles.chunks(3)
-            .filter(|chunk| (chunk.contains(&parents.0)&&chunk.contains(&parents.1)))//get only the triangles which do not contain the target cells
-            .flatten()
-            .map(|n|*n)
-            .filter(|c| c != &parents.0 && c != &parents.1)//remove parents 
-            .collect();
-        
-        //removes any triangle containing both cells
+        //removes any triangle containing both parent cells, as these are the ones which will obstruct the new cell
         self.triangles = self.triangles.chunks(3)
             .filter(|chunk| !(chunk.contains(&parents.0)&&chunk.contains(&parents.1)))//get only the triangles which do not contain the target cells
             .flatten()
             .map(|n|*n)
             .collect();
 
-        //cell is set as new one at center pos
+        //gets other two cells which are needed for triangulation
+        
+
+        //get midpoint between the two parent cells
         let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
-        let cell_pos = glm::normalize(&mid);
-        self.cells[cell as usize] = Cell::new(cell_pos);
 
-
+        //use cell from bank as new cell between the parent cells
+        self.cells[cell as usize] = Cell::new(glm::normalize(&mid));
     }
 
     pub fn update(&mut self,years:f32){
