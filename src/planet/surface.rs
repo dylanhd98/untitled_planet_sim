@@ -1,4 +1,4 @@
-use std::vec;
+use std::{vec, cell};
 
 //external crates
 use noise::{NoiseFn, Perlin, Seedable};
@@ -96,6 +96,8 @@ pub struct Surface{
     pub triangles: Vec<u32>,
     //contains indices of all cells not in use
     pub bank: Vec<u32>,
+    //distnace used for cell collisions
+    pub cell_distance: f32,
     //all tectonic plates on the surface
     pub plates: Vec<Plate>,
 }
@@ -126,6 +128,10 @@ impl Surface{
             .collect()
         };
 
+        let connections = indices_to_connections(&shape.indices);
+
+        let cell_distance = (cells[0].position - cells[connections[0][0] as usize].position).magnitude();
+
         //creates randomized plates for surface
         let mut plates:Vec<Plate> = Vec::with_capacity(plate_num as usize);
         for _ in 0..plate_num{
@@ -151,6 +157,7 @@ impl Surface{
             cells,
             triangles: shape.indices,
             bank: Vec::with_capacity(shape.vertices.len()/2),
+            cell_distance,
             plates,
         }
     }
@@ -180,9 +187,7 @@ impl Surface{
         //for each connection in cell, if connection too long, search that second cells connections
         //and select any within threshhold for use as new connection
 
-        for cell in indices_to_connections(&self.triangles){
-            
-        }
+        
     }
 
 
@@ -222,6 +227,12 @@ impl Surface{
 
         //use cell from bank as new cell between the parent cells
         self.cells[cell as usize] = Cell::new(glm::normalize(&mid));
+    }
+
+    pub fn cell_distance(&self, cells:(u32,u32))->f32{
+        (self.cells[cells.0 as usize].position - 
+            self.cells[cells.1 as usize].position)
+            .magnitude()
     }
 
     pub fn update(&mut self,years:f32){
