@@ -12,9 +12,10 @@ in float temperature;
 out VS_OUT {
     vec3 pos;
     vec2 tex_coords;
+    //float humidity;
+    //float temperature;
     float height;
 } vs_out;
-
 
 //uniforms
 uniform mat4 view;

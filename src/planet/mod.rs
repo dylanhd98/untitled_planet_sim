@@ -25,7 +25,8 @@ pub enum MapMode{
     Natural,
     Height,
     Temperature,
-    Humidity
+    Humidity,
+    Topological
 }
 
 //struct containing all things needed passed to the gpu

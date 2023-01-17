@@ -8,17 +8,6 @@ use rand::Rng;
 //internal crates
 use crate::graphics::shapes;
 
-//data for each cell on the planet
-#[derive(Copy, Clone)]
-pub struct CellData {
-    pub position: [f32;3],
-    pub height: f32,
-    pub humidity: f32,
-    pub temperature: f32
-}
-glium::implement_vertex!(CellData,position,height,humidity,temperature);
-
-
 //handles perlin noise for generating base
 fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistance:f32, lacunarity:f32)->f32{
     let mut noise_value = 0.0;
@@ -40,28 +29,61 @@ fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistan
 }
 
 //get connections of every cell
-pub fn indices_to_connections(indices: &Vec<u32>)->Vec<Vec<u32>>{
+pub fn indices_to_connections(indices: &Vec<u32>)->Vec<Vec<usize>>{
     //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
     //iterate through indices, for every index, store other two in triangle
-    let mut connections:Vec::<Vec<u32>> = vec![Vec::with_capacity(6);indices.len()/3];
+    let mut connections:Vec::<Vec<usize>> = vec![Vec::with_capacity(6);indices.len()/3];
     
     indices.chunks(3)
         .for_each(|x|//for each triangle
             {
                 //adds connections of each vert in triangle
                 for i in 0..3{
-                    connections[x[i] as usize].push(x[(i+1)%3] );
+                    connections[x[i] as usize].push(x[(i+1)%3] as usize);
                 }
             }
         );
     connections
 }
+//gets all edges, like the above but can be used more efficiently i think
+pub fn indices_to_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
+    //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
+    //iterate through indices, for every index, store other two in triangle
+    let mut edges:Vec::<(usize,usize)> = Vec::with_capacity(indices.len());
+    
+    indices.chunks(3)
+        .for_each(|x|//for each triangle
+            {
+                //adds connections of each vert in triangle
+                for i in 0..3{
+                    let edge = (x[i] as usize,x[(i+1)%3] as usize);
+                    //since a cell can never connect to itself and out of the two duplicates of an edge only one will ever be ordered, 
+                    //check if ordered before doing anything
+                    //this will ensure the edge is unique
+                    if edge.0<edge.1 {
+                        edges.push(edge);
+                    }
+                }
+            }
+        );
+    edges
+}
+
+//data for each cell on the planet, for rendering
+#[derive(Copy, Clone)]
+pub struct CellData {
+    pub position: [f32;3],
+    pub height: f32,
+    pub humidity: f32,
+    pub temperature: f32
+}
+glium::implement_vertex!(CellData,position,height,humidity,temperature);
 
 //data for every plate
 pub struct Plate{
     axis: glm::Vec3,
     density: f32,
-    speed: f32,
+    speed: f32,//cm per year
 }
 
 //data relating to the cell
@@ -77,7 +99,7 @@ impl Cell{
     pub fn new(pos:glm::Vec3)->Cell{
         Cell { 
             contents: CellData { 
-                position: [pos.x,pos.y,pos.z],
+                position: pos.into(),
                 height: 0.0,
                 humidity: 0.0,
                 temperature: 0.0
@@ -92,11 +114,11 @@ impl Cell{
 pub struct Surface{
     //every cell
     pub cells: Vec<Cell>,
-    //triangle data
+    //triangle data, u32 as thats whats needed for passing to gpu
     pub triangles: Vec<u32>,
     //contains indices of all cells not in use
-    pub bank: Vec<u32>,
-    //distnace used for cell collisions
+    pub bank: Vec<usize>,
+    //distnace used for cell collisions, absolute closest one can be to aother before one gets destroyed
     pub cell_distance: f32,
     //all tectonic plates on the surface
     pub plates: Vec<Plate>,
@@ -114,7 +136,7 @@ impl Surface{
                     contents: CellData{
                         position: pos.into(),
                         height: octive_noise(perlin, &pos, 2.5, 7, 0.6, 2.5),
-                        humidity: octive_noise(perlin, &(pos+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),
+                        humidity: (octive_noise(perlin, &(pos+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5)+1.0)*0.5,
                         temperature: 0.5,
                     },
                     position: pos,
@@ -128,9 +150,10 @@ impl Surface{
             .collect()
         };
 
-        let connections = indices_to_connections(&shape.indices);
+        let edges = indices_to_edges(&shape.indices);
 
-        let cell_distance = (cells[0].position - cells[connections[0][0] as usize].position).magnitude();
+        //length of a random edge
+        let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude();
 
         //creates randomized plates for surface
         let mut plates:Vec<Plate> = (0..plate_num)
@@ -186,15 +209,17 @@ impl Surface{
         //for each connection in cell, if connection too long, search that second cells connections
         //and select any within threshhold for use as new connection
 
+        let connections = indices_to_connections(&self.triangles);
+
         
     }
 
 
     //remove cell
-    pub fn remove_cell(&mut self,cell: u32){
+    pub fn remove_cell(&mut self,cell: usize){
         //filter out triangles that contain cell
         self.triangles = self.triangles.chunks(3)
-            .filter(|chunk| !chunk.contains(&cell))//get only the triangles which do not contain the target cell
+            .filter(|chunk| !chunk.contains(&(cell as u32)))//get only the triangles which do not contain the target cell
             .flatten()
             .map(|n|*n)
             .collect();
@@ -228,10 +253,10 @@ impl Surface{
         self.cells[cell as usize] = Cell::new(glm::normalize(&mid));
     }
 
-    //gets distance between two cells
-    pub fn cell_distance(&self, cells:(u32,u32))->f32{
-        (self.cells[cells.0 as usize].position - 
-            self.cells[cells.1 as usize].position)
+    //gets length of an edge
+    pub fn edge_length(&self, edge:(usize,usize))->f32{
+        (self.cells[edge.0].position - 
+            self.cells[edge.1].position)
             .magnitude()
     }
 

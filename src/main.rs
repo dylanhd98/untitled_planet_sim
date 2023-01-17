@@ -38,7 +38,7 @@ fn main() {
     };
 
     let mut years_per_second = 0.0;
-    let mut current:u32 = 0;
+    let mut current:usize = 0;
 
     let mut planet = planet::Planet::new(&display,surface_texture,5,1);
 
@@ -179,6 +179,7 @@ fn main() {
                                     ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Height, "Height");
                                     ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Temperature, "Temperature");
                                     ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Humidity, "Humidity");
+                                    ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Topological, "Topological");
                                 }
                             );
                         });
