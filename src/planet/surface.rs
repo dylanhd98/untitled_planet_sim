@@ -112,7 +112,7 @@ impl Surface{
             .map(|pos|
                 Cell{
                     contents: CellData{
-                        position: [pos.x,pos.y,pos.z],
+                        position: pos.into(),
                         height: octive_noise(perlin, &pos, 2.5, 7, 0.6, 2.5),
                         humidity: octive_noise(perlin, &(pos+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5),
                         temperature: 0.5,
@@ -175,7 +175,7 @@ impl Surface{
             cell.position= glm::rotate_vec3(&cell.position, plate.speed*years, &plate.axis);
   
             //put cell pos into cell data
-            cell.contents.position=[cell.position.x,cell.position.y,cell.position.z];
+            cell.contents.position=cell.position.into();
         }
         
         //the behaviours, divergent, convergent, transform
@@ -229,6 +229,7 @@ impl Surface{
         self.cells[cell as usize] = Cell::new(glm::normalize(&mid));
     }
 
+    //gets distance between two cells
     pub fn cell_distance(&self, cells:(u32,u32))->f32{
         (self.cells[cells.0 as usize].position - 
             self.cells[cells.1 as usize].position)

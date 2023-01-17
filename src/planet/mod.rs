@@ -10,6 +10,14 @@ use self::surface::CellData;
 //child modules
 mod surface;
 
+#[derive(PartialEq)]
+#[derive(Debug)]
+pub enum LightPosition{
+    Sun,
+    Camera,
+    Fixed
+}
+
 //struct containing all things needed passed to the gpu
 pub struct RenderData{
     //planet vertices
@@ -18,8 +26,11 @@ pub struct RenderData{
     indices: glium::IndexBuffer<u32>,
     //texture lookup for surface
     texture: glium::texture::SrgbTexture2d,
-    //how esagerated the planet surface will be
+    //how exagerated the planet surface will be
     pub scale: f32,
+    //where the light source is
+    pub light_pos: LightPosition,
+
 }
 
 
@@ -62,7 +73,9 @@ impl Planet{
 
                 texture,
 
-                scale: 0.025
+                scale: 0.025,
+
+                light_pos: LightPosition::Sun,
             },
 
             surface: surface,
@@ -91,7 +104,7 @@ impl Planet{
         //extract data needed for rendering out
         let surface_contents:Vec<CellData> = self.surface.cells.iter()
             .map(|c|
-            c.contents
+                c.contents
             )
             .collect();
 
@@ -104,12 +117,19 @@ impl Planet{
     pub fn draw(&self, target:&mut glium::Frame, program:&glium::Program, params:&glium::DrawParameters,cam:&graphics::camera::Camera){
         let pers:[[f32;4];4] = cam.perspective.into();
         let view:[[f32;4];4] = cam.view.into();
-        let uniform = glium::uniform! {
+
+        let to_light:[f32;3] = match self.render_data.light_pos{
+            LightPosition::Sun=> self.to_sun.into(),
+            LightPosition::Camera=> cam.pos.normalize().into(),
+            LightPosition::Fixed=> [0.0,0.0,1.0],
+        };
+
+        let uniform = glium::uniform!{
             perspective:pers,
             view: view,
 
             tex: glium::uniforms::Sampler::new(&self.render_data.texture).wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
-            to_light: [self.to_sun.x,self.to_sun.y,self.to_sun.z],
+            to_light: to_light,
             terra_scale: self.render_data.scale,
         };
 

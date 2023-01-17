@@ -8,6 +8,7 @@ use std::time::{Duration, Instant};
 mod planet;
 mod graphics;
 
+
 fn main() {
     //handles window and device events
     let mut event_loop = glutin::event_loop::EventLoop::new();
@@ -39,7 +40,7 @@ fn main() {
     let mut years_per_second = 0.0;
     let mut current:u32 = 0;
 
-    let mut planet = planet::Planet::new(&display,surface_texture,1,1);
+    let mut planet = planet::Planet::new(&display,surface_texture,5,1);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();
@@ -49,14 +50,13 @@ fn main() {
         glm::vec3(0.0,1.0,0.0));
 
     //parameters that specify how rendering takes place
-    let params = glium::DrawParameters {
-        
+    let mut params = glium::DrawParameters {
         depth: glium::Depth {
             test: glium::draw_parameters::DepthTest::IfLess,
             write: true,
             .. Default::default()
         },
-        polygon_mode: glium::draw_parameters::PolygonMode::Line,
+        polygon_mode: glium::draw_parameters::PolygonMode::Fill,
         backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         .. Default::default()
     };
@@ -142,13 +142,34 @@ fn main() {
                 //handles egui input and what results from it
                 egui_glium.run(&display, |egui_ctx| {
 
-                    //side panel for controls
+                    //left side panel for controls
                     egui::SidePanel::left("Left Panel").resizable(false)
                         .show(egui_ctx,|ui| {
                             ui.label("Years Per Second");
                             ui.add(egui::Slider::new(&mut years_per_second, 0.0..=1000.0).logarithmic(true));
+
                             ui.label("Terrain Scaling");
                             ui.add(egui::Slider::new(&mut planet.render_data.scale, 0.0..=0.25));
+
+                            ui.label("Light Source");
+                            egui::ComboBox::from_id_source("lighting")
+                                .selected_text(format!("{:?}", planet.render_data.light_pos))
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(&mut planet.render_data.light_pos, planet::LightPosition::Sun, "Sun");
+                                    ui.selectable_value(&mut planet.render_data.light_pos, planet::LightPosition::Camera, "Camera");
+                                    ui.selectable_value(&mut planet.render_data.light_pos, planet::LightPosition::Fixed, "Fixed");
+                                }
+                            );
+
+                            ui.label("Polygon Mode");
+                            egui::ComboBox::from_id_source("polygon")
+                                .selected_text(format!("{:?}", params.polygon_mode))
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(&mut params.polygon_mode, glium::PolygonMode::Fill, "Fill");
+                                    ui.selectable_value(&mut params.polygon_mode, glium::PolygonMode::Line, "Line");
+                                    ui.selectable_value(&mut params.polygon_mode, glium::PolygonMode::Point, "Point");
+                                }
+                            );
                         });
                 });
 
