@@ -133,9 +133,8 @@ impl Surface{
         let cell_distance = (cells[0].position - cells[connections[0][0] as usize].position).magnitude();
 
         //creates randomized plates for surface
-        let mut plates:Vec<Plate> = Vec::with_capacity(plate_num as usize);
-        for _ in 0..plate_num{
-            plates.push({
+        let mut plates:Vec<Plate> = (0..plate_num)
+            .map(|_|{
                 //randomized axis the plate moves around
                 let rand_axis = {
                     let x:f32 = rng.gen_range(0.0..=glm::two_pi());
@@ -150,8 +149,8 @@ impl Surface{
                     density: rng.gen_range(0.0..10.0),
                     speed: 0.005,
                 }
-            });
-        }
+            })
+            .collect();
 
         Surface{
             cells,
