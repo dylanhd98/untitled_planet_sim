@@ -166,7 +166,7 @@ impl Surface{
     }
 
     pub fn tectonics(&mut self,years:f32){
-        //for every cell with plate info
+        //for every cell with plate info, move according to plate
         for cell in self.cells.iter_mut().filter(|c|c.plate.is_some()){
             //plate cell belongs too
             let plate = &self.plates[cell.plate.unwrap()];

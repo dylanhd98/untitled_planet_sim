@@ -18,6 +18,16 @@ pub enum LightPosition{
     Fixed
 }
 
+#[derive(PartialEq)]
+#[derive(Clone, Copy)]
+#[derive(Debug)]
+pub enum MapMode{
+    Natural,
+    Height,
+    Temperature,
+    Humidity
+}
+
 //struct containing all things needed passed to the gpu
 pub struct RenderData{
     //planet vertices
@@ -30,7 +40,8 @@ pub struct RenderData{
     pub scale: f32,
     //where the light source is
     pub light_pos: LightPosition,
-
+    //map mode to use when displaying the planet
+    pub map_mode: MapMode,
 }
 
 
@@ -76,6 +87,8 @@ impl Planet{
                 scale: 0.025,
 
                 light_pos: LightPosition::Sun,
+
+                map_mode: MapMode::Natural,
             },
 
             surface: surface,
@@ -131,6 +144,7 @@ impl Planet{
             tex: glium::uniforms::Sampler::new(&self.render_data.texture).wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
             to_light: to_light,
             terra_scale: self.render_data.scale,
+            map_mode: self.render_data.map_mode as i32,
         };
 
         target.draw(&self.render_data.planet_data,&self.render_data.indices,program,&uniform,params).unwrap();

@@ -170,6 +170,17 @@ fn main() {
                                     ui.selectable_value(&mut params.polygon_mode, glium::PolygonMode::Point, "Point");
                                 }
                             );
+
+                            ui.label("Map Mode");
+                            egui::ComboBox::from_id_source("map_mode")
+                                .selected_text(format!("{:?}", planet.render_data.map_mode))
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Natural, "Natural");
+                                    ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Height, "Height");
+                                    ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Temperature, "Temperature");
+                                    ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Humidity, "Humidity");
+                                }
+                            );
                         });
                 });
 
