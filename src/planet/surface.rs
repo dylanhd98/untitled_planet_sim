@@ -90,7 +90,7 @@ glium::implement_vertex!(CellData,position,height,humidity,temperature);
 pub struct Plate{
     axis: glm::Vec3,
     density: f32,
-    speed: f32,//cm per year, avg is 5-15
+    speed: f32,//cm per year, avg is 5-15, earth rad = 6,371km,
 }
 
 //data relating to the cell
@@ -173,7 +173,7 @@ impl Surface{
                 Plate {
                     axis: rand_axis,
                     density: rng.gen_range(0.0..10.0),
-                    speed: 0.005,
+                    speed: rng.gen_range(0.00..0.2)/6371000.0, //done in meters, 6371000 is earths radius
                 }
             })
             .collect();
@@ -240,6 +240,7 @@ impl Surface{
         //and select any within threshhold for use as new connection
 
         let edges = indices_to_edges(&self.triangles);
+
         //filter edges to get only ones on plate boundries, then test for the collisions
         let plate_boundries:Vec<&(usize,usize)> = edges.iter()
             .filter(|e| 
@@ -247,9 +248,14 @@ impl Surface{
                 .collect();
 
         for edge in plate_boundries{
+            //if cells collide
             if edge_length(&self.cells, edge)<self.cell_distance{
                 self.remove_cell(edge.0);
                 self.cells[edge.1].contents.height +=1.0
+            //if cells split
+            }else if edge_length(&self.cells, edge)>self.cell_distance*2.0{
+                self.remove_cell(edge.1);
+                self.cells[edge.0].contents.height -=0.25
             }
         }
     }
@@ -265,7 +271,6 @@ impl Surface{
             .collect();
         //then marks cell as unused by pushing to the cell bank    
         self.bank.push(cell);
-        
     }
 
     //adds a new cell to the planet between two other cells

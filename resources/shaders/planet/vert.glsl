@@ -23,7 +23,7 @@ uniform mat4 perspective;
 uniform float terra_scale;
 
 void main() {
-    vs_out.tex_coords = vec2((1.0+humidity)*0.5,temperature);
+    vs_out.tex_coords = vec2(humidity,temperature);
     vs_out.height = height;
 
     vec3 new_pos = position;

@@ -140,10 +140,10 @@ fn main() {
                     egui::SidePanel::left("Left Panel").resizable(false)
                         .show(egui_ctx,|ui| {
                             ui.label("Years Per Second");
-                            ui.add(egui::Slider::new(&mut years_per_second, 0.0..=1000.0).logarithmic(true));
+                            ui.add(egui::Slider::new(&mut years_per_second, 0.0..=1000000.0).logarithmic(true));
 
                             ui.label("Terrain Scaling");
-                            ui.add(egui::Slider::new(&mut planet.render_data.scale, 0.0..=0.25));
+                            ui.add(egui::Slider::new(&mut planet.render_data.scale, 0.0..=0.3));
 
                             ui.label("Light Source");
                             egui::ComboBox::from_id_source("lighting")
@@ -173,7 +173,7 @@ fn main() {
                                     ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Height, "Height");
                                     ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Temperature, "Temperature");
                                     ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Humidity, "Humidity");
-                                    ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Topological, "Topological");
+                                    ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Relief, "Relief");
                                 }
                             );
                         });
