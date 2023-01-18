@@ -90,11 +90,6 @@ fn main() {
                     //if key pressed
                     glutin::event::WindowEvent::KeyboardInput { device_id, input, is_synthetic }=>{
                         match input.virtual_keycode{
-                            //connectivity testing REMOVE
-                            Some(glutin::event::VirtualKeyCode::K)=> {
-                                planet.surface.remove_cell(current);
-                                current +=1;
-                            },
                             //zoom in and out
                             Some(glutin::event::VirtualKeyCode::E)=> cam.pos *= 0.95,
                             Some(glutin::event::VirtualKeyCode::Q)=> cam.pos *= 1.05,

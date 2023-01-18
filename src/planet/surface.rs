@@ -58,8 +58,7 @@ pub fn indices_to_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
                 for i in 0..3{
                     let edge = (x[i] as usize,x[(i+1)%3] as usize);
                     //since a cell can never connect to itself and out of the two duplicates of an edge only one will ever be ordered, 
-                    //check if ordered before doing anything
-                    //this will ensure the edge is unique
+                    //checking if ordered before doing anything will ensure the edge is unique
                     if edge.0<edge.1 {
                         edges.push(edge);
                     }
@@ -67,6 +66,13 @@ pub fn indices_to_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
             }
         );
     edges
+}
+
+//gets length of an edge
+pub fn edge_length(cells: &Vec<Cell>, edge:&(usize,usize))->f32{
+    (cells[edge.0].position - 
+        cells[edge.1].position)
+        .magnitude()
 }
 
 //data for each cell on the planet, for rendering
@@ -153,7 +159,7 @@ impl Surface{
         let edges = indices_to_edges(&shape.indices);
 
         //length of a random edge
-        let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude();
+        let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude()/2.0;
 
         //creates randomized plates for surface
         let mut plates:Vec<Plate> = (0..plate_num)
@@ -195,7 +201,6 @@ impl Surface{
             let plate = &self.plates[cell.plate.unwrap()];
             //translate according to plate
             cell.position= glm::rotate_vec3(&cell.position, plate.speed*years, &plate.axis);
-  
             //put cell pos into cell data
             cell.contents.position=cell.position.into();
         }
@@ -209,9 +214,19 @@ impl Surface{
         //for each connection in cell, if connection too long, search that second cells connections
         //and select any within threshhold for use as new connection
 
-        let connections = indices_to_connections(&self.triangles);
+        let edges = indices_to_edges(&self.triangles);
+        //filter edges to get only ones on plate boundries, then test for the collisions
+        let plate_boundries:Vec<&(usize,usize)> = edges.iter()
+            .filter(|e| 
+                &self.cells[e.0].plate != &self.cells[e.1].plate)
+                .collect();
 
-        
+        for edge in plate_boundries{
+            if edge_length(&self.cells, edge)<self.cell_distance{
+                self.remove_cell(edge.0);
+                self.cells[edge.1].contents.height +=10.0
+            }
+        }
     }
 
 
@@ -233,7 +248,7 @@ impl Surface{
         //gets index of new cell to be used if avaliable from bank
         let cell = match self.bank.pop(){
             Some(c) => c,
-            None => return //if no avaliable cells in bank, does nothing
+            None => return, //if no avaliable cells in bank, does nothing
         };
 
         //removes any triangle containing both parent cells, as these are the ones which will obstruct the new cell
@@ -251,13 +266,6 @@ impl Surface{
 
         //use cell from bank as new cell between the parent cells
         self.cells[cell as usize] = Cell::new(glm::normalize(&mid));
-    }
-
-    //gets length of an edge
-    pub fn edge_length(&self, edge:(usize,usize))->f32{
-        (self.cells[edge.0].position - 
-            self.cells[edge.1].position)
-            .magnitude()
     }
 
     pub fn update(&mut self,years:f32){
