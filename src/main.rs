@@ -40,7 +40,7 @@ fn main() {
     let mut years_per_second = 0.0;
     let mut current:usize = 0;
 
-    let mut planet = planet::Planet::new(&display,surface_texture,5,1);
+    let mut planet = planet::Planet::new(&display,surface_texture,4,1);
 
     //creates new camera
     let dimensions = display.get_framebuffer_dimensions();

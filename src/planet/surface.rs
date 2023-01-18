@@ -3,7 +3,7 @@ use std::{vec, cell};
 //external crates
 use noise::{NoiseFn, Perlin, Seedable};
 use nalgebra_glm as glm;
-use rand::Rng;
+use rand::{Rng, seq::SliceRandom};
 
 //internal crates
 use crate::graphics::shapes;
@@ -45,6 +45,7 @@ pub fn indices_to_connections(indices: &Vec<u32>)->Vec<Vec<usize>>{
         );
     connections
 }
+
 //gets all edges, like the above but can be used more efficiently i think
 pub fn indices_to_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
     //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
@@ -133,7 +134,7 @@ impl Surface{
     pub fn new(shape: shapes::Shape,plate_num: u32, seed:u32)->Surface{
         let mut rng = rand::thread_rng();
         //creates cells for surface
-        let cells:Vec<Cell> = {
+        let mut cells:Vec<Cell> = {
             let perlin = Perlin::new(seed);
             //generates cells with perlin noise
             shape.vertices.clone().into_iter()
@@ -146,11 +147,7 @@ impl Surface{
                         temperature: 0.5,
                     },
                     position: pos,
-                    plate: if pos.x>=0.0{//two split plates for debugging reasons
-                        Some(0)
-                    } else{
-                        Some(1)
-                    }
+                    plate: None
                 }
             )
             .collect()
@@ -159,7 +156,7 @@ impl Surface{
         let edges = indices_to_edges(&shape.indices);
 
         //length of a random edge
-        let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude()/2.0;
+        let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude()*0.6;
 
         //creates randomized plates for surface
         let mut plates:Vec<Plate> = (0..plate_num)
@@ -180,6 +177,32 @@ impl Surface{
                 }
             })
             .collect();
+
+        if !plates.is_empty(){
+            //place seed cells randomly for each plate for each to spread out from
+            for plate in 0..plates.len(){
+                let target = rng.gen_range(0..cells.len());
+                cells[target].plate = Some(plate);
+            }
+
+            //fill planet with the cells via random fill, if there are plates to even fill with
+            while cells.iter().any(|c| !c.plate.is_some()){
+                //get all plate boundries
+                let plate_boundries:Vec<&(usize,usize)> = edges.iter()
+                    .filter(|e| 
+                    &cells[e.0].plate != &cells[e.1].plate)
+                    .collect();
+                //extend plate across random boundry
+                let edge = plate_boundries.choose(&mut rng).unwrap();
+                if cells[edge.0].plate == None{
+                    cells[edge.0].plate = cells[edge.1].plate;
+                }else{
+                    cells[edge.1].plate = cells[edge.0].plate;
+                }
+                
+            }
+        }
+        
 
         Surface{
             cells,
@@ -224,7 +247,7 @@ impl Surface{
         for edge in plate_boundries{
             if edge_length(&self.cells, edge)<self.cell_distance{
                 self.remove_cell(edge.0);
-                self.cells[edge.1].contents.height +=10.0
+                self.cells[edge.1].contents.height +=1.0
             }
         }
     }
