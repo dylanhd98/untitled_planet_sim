@@ -56,9 +56,9 @@ pub struct Planet{
     to_sun: glm::Vec3
 }
 impl Planet{
-    pub fn new(display:&glium::Display, texture:glium::texture::SrgbTexture2d, iterations :u8,seed:u32)->Planet{
+    pub fn new(display:&glium::Display, texture:glium::texture::SrgbTexture2d,iterations :u8,seed:u32,plate_no:u32,axial_tilt:f32)->Planet{
         
-        let axis = glm::vec3(0.0,1.0,0.25).normalize();
+        let axis = glm::rotate_z_vec3( &glm::vec3(0.0,1.0,0.0),axial_tilt);
 
         //generates base shape
         let base_shape = graphics::shapes::Shape::icosahedron()
@@ -66,7 +66,7 @@ impl Planet{
             .normalize();
         
         //creates planet surface
-        let mut surface = surface::Surface::new(base_shape,4,seed);
+        let mut surface = surface::Surface::new(base_shape,plate_no,seed);
 
         //extract data for buffer
         let surface_contents:Vec<CellData> = surface.cells.iter()

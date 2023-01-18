@@ -90,7 +90,7 @@ glium::implement_vertex!(CellData,position,height,humidity,temperature);
 pub struct Plate{
     axis: glm::Vec3,
     density: f32,
-    speed: f32,//cm per year
+    speed: f32,//cm per year, avg is 5-15
 }
 
 //data relating to the cell
@@ -131,7 +131,7 @@ pub struct Surface{
     pub plates: Vec<Plate>,
 }
 impl Surface{
-    pub fn new(shape: shapes::Shape,plate_num: u32, seed:u32)->Surface{
+    pub fn new(shape: shapes::Shape,plate_no: u32, seed:u32)->Surface{
         let mut rng = rand::thread_rng();
         //creates cells for surface
         let mut cells:Vec<Cell> = {
@@ -159,7 +159,7 @@ impl Surface{
         let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude()*0.6;
 
         //creates randomized plates for surface
-        let mut plates:Vec<Plate> = (0..plate_num)
+        let mut plates:Vec<Plate> = (0..plate_no)
             .map(|_|{
                 //randomized axis the plate moves around
                 let rand_axis = {
@@ -192,14 +192,16 @@ impl Surface{
                     .filter(|e| 
                     &cells[e.0].plate != &cells[e.1].plate)
                     .collect();
-                //extend plate across random boundry
-                let edge = plate_boundries.choose(&mut rng).unwrap();
-                if cells[edge.0].plate == None{
-                    cells[edge.0].plate = cells[edge.1].plate;
-                }else{
-                    cells[edge.1].plate = cells[edge.0].plate;
+
+                for _ in 0..16{
+                    //extend plate across random boundries
+                    let edge = plate_boundries.choose(&mut rng).unwrap();
+                    if cells[edge.0].plate == None{
+                        cells[edge.0].plate = cells[edge.1].plate;
+                    }else if cells[edge.1].plate == None{
+                        cells[edge.1].plate = cells[edge.0].plate;
+                    }
                 }
-                
             }
         }
         
