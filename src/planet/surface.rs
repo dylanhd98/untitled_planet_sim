@@ -250,16 +250,23 @@ impl Surface{
         for edge in plate_boundries{
             //if cells collide
             if edge_length(&self.cells, edge)<self.cell_distance{
-                self.remove_cell(edge.0);
-                self.cells[edge.1].contents.height +=1.0
-            //if cells split
+                //when two collide remove the denser one as it subducts
+                if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
+                    //if edge.0 is less dense, edge.1 is destroyed and subducts
+                    self.remove_cell(edge.1);
+                    self.cells[edge.0].contents.height +=1.0
+                }else{
+                    //otherwise inverse happens
+                    self.remove_cell(edge.0);
+                    self.cells[edge.1].contents.height +=1.0
+                }
+            //if cells split too far, spawn new one at midpoint
             }else if edge_length(&self.cells, edge)>self.cell_distance*2.0{
                 self.remove_cell(edge.1);
                 self.cells[edge.0].contents.height -=0.25
             }
         }
     }
-
 
     //remove cell
     pub fn remove_cell(&mut self,cell: usize){

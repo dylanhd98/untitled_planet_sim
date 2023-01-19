@@ -87,7 +87,7 @@ impl Planet{
 
                 scale: 0.025,
 
-                light_pos: LightPosition::Sun,
+                light_pos: LightPosition::Fixed,
 
                 map_mode: MapMode::Natural,
             },
