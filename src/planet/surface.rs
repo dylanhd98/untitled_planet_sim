@@ -194,7 +194,7 @@ impl Surface{
                     .collect();
 
                 for _ in 0..16{
-                    //extend plate across random boundries
+                    //extend plate across random boundries 16 times
                     let edge = plate_boundries.choose(&mut rng).unwrap();
                     if cells[edge.0].plate == None{
                         cells[edge.0].plate = cells[edge.1].plate;
@@ -253,29 +253,37 @@ impl Surface{
                 //when two collide remove the denser one as it subducts
                 if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
                     //if edge.0 is less dense, edge.1 is destroyed and subducts
-                    self.remove_cell(edge.1);
+                    self.remove_cell(edge.1,edge.0);
                     self.cells[edge.0].contents.height +=1.0
                 }else{
                     //otherwise inverse happens
-                    self.remove_cell(edge.0);
+                    self.remove_cell(edge.0,edge.1);
                     self.cells[edge.1].contents.height +=1.0
                 }
             //if cells split too far, spawn new one at midpoint
             }else if edge_length(&self.cells, edge)>self.cell_distance*2.0{
-                self.remove_cell(edge.1);
+                self.remove_cell(edge.1,edge.0);
                 self.cells[edge.0].contents.height -=0.25
             }
         }
     }
 
     //remove cell
-    pub fn remove_cell(&mut self,cell: usize){
+    pub fn remove_cell(&mut self,cell: usize,replacement: usize){
+        //copies the triangles that contain the cell to be removed, and doesnt contain the cell it is to be replaced with
+        let tri_cells:Vec<u32> = self.triangles.chunks(3)
+            .filter(|chunk| chunk.contains(&(cell as u32))&& !chunk.contains(&(replacement as u32)))//get only the triangles which do not contain the target cells
+            .flatten()
+            .map(|n|*n)
+            .collect();
+
         //filter out triangles that contain cell
         self.triangles = self.triangles.chunks(3)
             .filter(|chunk| !chunk.contains(&(cell as u32)))//get only the triangles which do not contain the target cell
             .flatten()
             .map(|n|*n)
             .collect();
+            
         //then marks cell as unused by pushing to the cell bank    
         self.bank.push(cell);
     }
