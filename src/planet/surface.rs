@@ -155,7 +155,7 @@ impl Surface{
 
         let edges = indices_to_edges(&shape.indices);
 
-        //length of a random edge
+        //length of edge
         let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude()*0.6;
 
         //creates randomized plates for surface
@@ -248,9 +248,14 @@ impl Surface{
                 .collect();
 
         for edge in plate_boundries{
+            //self.cells[edge.0].contents.height =5.0;
+            //self.cells[edge.1].contents.height =5.0;
+
+            /* 
+            let edge_length = edge_length(&self.cells, edge);
             //if cells collide
-            if edge_length(&self.cells, edge)<self.cell_distance{
-                //when two collide remove the denser one as it subducts
+            if edge_length < self.cell_distance{
+                //when two collide remove the denser one, as it subducts
                 if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
                     //if edge.0 is less dense, edge.1 is destroyed and subducts
                     self.remove_cell(edge.1,edge.0);
@@ -261,10 +266,18 @@ impl Surface{
                     self.cells[edge.1].contents.height +=1.0
                 }
             //if cells split too far, spawn new one at midpoint
-            }else if edge_length(&self.cells, edge)>self.cell_distance*2.0{
-                self.remove_cell(edge.1,edge.0);
-                self.cells[edge.0].contents.height -=0.25
-            }
+            }else if edge_length > self.cell_distance*2.0{
+                //when two collide remove the denser one, as it subducts
+                if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
+                    //if edge.0 is less dense, edge.1 is destroyed and subducts
+                    self.remove_cell(edge.1,edge.0);
+                    self.cells[edge.0].contents.height +=1.0
+                }else{
+                    //otherwise inverse happens
+                    self.remove_cell(edge.0,edge.1);
+                    self.cells[edge.1].contents.height +=1.0
+                }
+            }*/
         }
     }
 
