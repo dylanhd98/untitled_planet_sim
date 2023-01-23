@@ -66,7 +66,6 @@ fn main() {
         seed: 1,
         plate_no: 2,
         axial_tilt: 0.4084,
-        starting_temp: 13.9,
         greenhouse_effect: 0.7
     };
 
@@ -181,7 +180,7 @@ fn main() {
 
                         //draw planet
                         planet.draw(&mut target, &planet_shader, &params, &camera);
-                        //planet.draw(&mut target, &map_shader, &params, &cam);
+                        //planet.draw(&mut target, &map_shader, &params, &camera);
                     }
                 }
                 

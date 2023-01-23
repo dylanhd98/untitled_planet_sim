@@ -35,7 +35,6 @@ pub struct GenInfo{
     pub seed:u32,
     pub plate_no:u32,
     pub axial_tilt:f32,
-    pub starting_temp:f32,
     pub greenhouse_effect:f32
 }
 
@@ -45,6 +44,8 @@ pub struct SimInfo{
     pub years_per_second: f32,
     //percentage of energy retained from the sun
     pub greenhouse_effect:f32,
+    //bolometric luminosity of the sun
+    //pub solar_luminosity:f32,
     //planet's axis
     pub axis: glm::Vec3,
     //vector pointing to orbital center
@@ -113,7 +114,8 @@ impl Planet{
             sim_info: 
             SimInfo { 
                 years_per_second: 0.0, 
-                greenhouse_effect: 0.0, 
+                //solar_luminosity: 1.0,
+                greenhouse_effect: gen.greenhouse_effect, 
                 axis: axis, 
                 to_sun: glm::vec3(1.0,0.0,0.0) 
             }
@@ -122,7 +124,7 @@ impl Planet{
 
     pub fn update(&mut self, deltatime: f32,display:&glium::Display){
         let years_past = deltatime*self.sim_info.years_per_second;
-        self.surface.update(years_past);
+        self.surface.tectonics(years_past);
         self.surface.temperature(years_past, &self.sim_info);
 
         

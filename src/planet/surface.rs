@@ -149,7 +149,7 @@ impl Surface{
                         position: pos.into(),
                         height: octive_noise(perlin, &pos, 2.5, 7, 0.6, 2.5),
                         humidity: (octive_noise(perlin, &(pos+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5)+1.0)*0.5,
-                        temperature: gen.starting_temp,
+                        temperature: 0.0,
                     },
                     position: pos,
                     plate: None
@@ -342,9 +342,5 @@ impl Surface{
 
         //use cell from bank as new cell between the parent cells
         self.cells[cell as usize] = Cell::new(glm::normalize(&mid));
-    }
-
-    pub fn update(&mut self,years:f32){
-        self.tectonics(years);
     }
 }

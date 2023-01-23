@@ -26,11 +26,7 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
 
                 ui.label("Seed");
                 ui.add(egui::DragValue::new(&mut gen_info.seed).speed(0));
-                
-                ui.label("Starting Temp");
-                ui.add(egui::DragValue::new(&mut gen_info.starting_temp).speed(0.1));
-
-                
+             
 
                 /* 
                 if ui.button("CREATE").clicked(){
