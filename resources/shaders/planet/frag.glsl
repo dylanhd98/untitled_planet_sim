@@ -16,6 +16,8 @@
 #define VEG vec3(.133,.545,.133)
 #define WATER vec3(.075,.278,.643)
 
+//colors for natural
+
 //in from geometry shader
 in vec3 v_normal;
 in vec2 v_tex_coords;
@@ -25,7 +27,6 @@ in float v_height;
 out vec4 color;
 
 //uniforms
-uniform sampler2D tex;
 uniform vec3 to_light;
 uniform int map_mode;
 
@@ -48,6 +49,11 @@ vec3 five_color(vec3 col_a,vec3 col_b,vec3 col_c,vec3 col_d,vec3 col_e,float int
     }
 }
 
+//produces natural color of the ground based on the attributes of the cell
+vec3 natural_color(float humidity){
+    return mix(SAND,VEG,humidity);
+}
+
 
 void main() {
     switch (map_mode){
@@ -56,7 +62,7 @@ void main() {
             float brightness = max(dot(to_light,v_normal),0.1);
 
             if(v_height>0.0){
-                color = vec4(vec3(texture(tex, v_tex_coords)*brightness),1.0);
+                color = vec4(natural_color(v_tex_coords.x)*brightness,1.0);
             }
             else{
                 color = vec4(vec3(mix(vec4(0.0,0.02,0.15,1.0),vec4(0.0,0.0,0.10,1.0),abs(v_height*0.5))* brightness),1.0);

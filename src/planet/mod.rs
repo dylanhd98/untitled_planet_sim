@@ -29,14 +29,20 @@ pub enum MapMode{
     Relief
 }
 
+//info used for generating planet
+pub struct GenInfo{
+    pub iterations :u8,
+    pub seed:u32,
+    pub plate_no:u32,
+    pub axial_tilt:f32
+}
+
 //struct containing all things needed passed to the gpu
 pub struct RenderData{
     //planet vertices
     planet_data: glium::VertexBuffer<surface::CellData>,
     //triangles
     indices: glium::IndexBuffer<u32>,
-    //texture lookup for surface
-    texture: glium::texture::SrgbTexture2d,
     //how exagerated the planet surface will be
     pub scale: f32,
     //where the light source is
@@ -56,17 +62,17 @@ pub struct Planet{
     to_sun: glm::Vec3
 }
 impl Planet{
-    pub fn new(display:&glium::Display, texture:glium::texture::SrgbTexture2d,iterations :u8,seed:u32,plate_no:u32,axial_tilt:f32)->Planet{
+    pub fn new(display:&glium::Display, gen:&GenInfo)->Planet{
         
-        let axis = glm::rotate_z_vec3( &glm::vec3(0.0,1.0,0.0),axial_tilt);
+        let axis = glm::rotate_z_vec3( &glm::vec3(0.0,1.0,0.0),gen.axial_tilt);
 
         //generates base shape
         let base_shape = graphics::shapes::Shape::icosahedron()
-            .subdivide(iterations)
+            .subdivide(gen.iterations)
             .normalize();
         
         //creates planet surface
-        let mut surface = surface::Surface::new(base_shape,plate_no,seed);
+        let mut surface = surface::Surface::new(base_shape,gen.plate_no,gen.seed);
 
         //extract data for buffer
         let surface_contents:Vec<CellData> = surface.cells.iter()
@@ -82,8 +88,6 @@ impl Planet{
                 planet_data: glium::VertexBuffer::dynamic(display, &surface_contents).unwrap(),
                 //indices, define triangles of planet
                 indices: glium::IndexBuffer::new(display,glium::index::PrimitiveType::TrianglesList, &surface.triangles).unwrap(),
-
-                texture,
 
                 scale: 0.025,
 
@@ -141,8 +145,6 @@ impl Planet{
         let uniform = glium::uniform!{
             perspective:pers,
             view: view,
-
-            tex: glium::uniforms::Sampler::new(&self.render_data.texture).wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
             to_light: to_light,
             terra_scale: self.render_data.scale,
             map_mode: self.render_data.map_mode as i32,
