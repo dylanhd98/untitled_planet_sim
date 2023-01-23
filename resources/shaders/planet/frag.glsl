@@ -13,7 +13,7 @@
 #define SNOW vec3(1.0,.98,.98)
 #define ROCK vec3(.545,.271,.075)
 #define SAND vec3(.957,.643,.376)
-#define DESERT vec3(.58,.51,.282)
+#define DESERT vec3(1.0,.6,.4)
 #define VEG vec3(.133,.545,.133)
 #define DARK_GREEN vec3(.0,.392,.0)
 #define WATER vec3(.075,.278,.643)

@@ -79,9 +79,13 @@ pub fn edge_length(cells: &Vec<Cell>, edge:&(usize,usize))->f32{
 //data for each cell on the planet, for rendering
 #[derive(Copy, Clone)]
 pub struct CellData {
+    //position in space of cell
     pub position: [f32;3],
+    //height of land in cell, 0>>Sea Level, 1>>10km,-1>>-10km
     pub height: f32,
+    //absolute humidity, as (g/m^3)/100
     pub humidity: f32,
+    //temperature, 0>>-50C,1>>50
     pub temperature: f32
 }
 glium::implement_vertex!(CellData,position,height,humidity,temperature);

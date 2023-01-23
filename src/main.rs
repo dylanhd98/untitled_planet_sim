@@ -11,6 +11,7 @@ mod planet;
 mod graphics;
 mod menus;
 
+//enum discribing the games current state, containing data specific to each
 pub enum GameState{
     Generate(planet::GenInfo),
     Playing(Planet,Camera),
@@ -87,7 +88,7 @@ fn main() {
                     //if key pressed
                     glutin::event::WindowEvent::KeyboardInput { device_id, input, is_synthetic }=>{
                         match game_state{
-                            GameState::Generate(_)=>{
+                            GameState::Generate(ref gen)=>{
                                 match input.virtual_keycode{
                                     Some(glutin::event::VirtualKeyCode::Return)=> {
                                         //creates new camera
@@ -96,14 +97,6 @@ fn main() {
                                             glm::vec3(0.0,0.0,5.0), 
                                             glm::vec3(0.0,0.0,0.0),
                                             glm::vec3(0.0,1.0,0.0));
-
-                                        let gen = GenInfo{
-                                            iterations: 5,
-                                            seed: 1,
-                                            plate_no: 2,
-                                            axial_tilt:0.5
-                                            
-                                        };
 
                                         let planet = planet::Planet::new(&display, &gen);
                                         game_state= GameState::Playing(planet, cam)},
@@ -167,11 +160,9 @@ fn main() {
 
                 match game_state{
                     GameState::Generate(ref gen_info)=>{
-                        //variables used for defining the planet
-                        //let mut plateno =
                         //handles egui input and what results from it
                         egui_glium.run(&display, |egui_ctx| {
-                            menus::start(egui_ctx, &display,&mut game_state);
+                            menus::planet_create(egui_ctx, &display,&mut game_state);
                         });
                     }
 
