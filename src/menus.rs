@@ -18,12 +18,19 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
                 ui.label("Plate Amount");
                 ui.add(egui::Slider::new(&mut gen_info.plate_no, 0..=50));
 
-                ui.label("Seed");
-                ui.add(egui::DragValue::new(&mut gen_info.seed).speed(0));
-
                 ui.label("Axial Tilt");
                 ui.add(egui::Slider::new(&mut gen_info.axial_tilt, 0.0..=(2.0*3.141592653)));
 
+                ui.label("Greenhouse Effect");
+                ui.add(egui::Slider::new(&mut gen_info.greenhouse_effect, 0.0..=1.0));
+
+                ui.label("Seed");
+                ui.add(egui::DragValue::new(&mut gen_info.seed).speed(0));
+                
+                ui.label("Starting Temp");
+                ui.add(egui::DragValue::new(&mut gen_info.starting_temp).speed(0.1));
+
+                
 
                 /* 
                 if ui.button("CREATE").clicked(){
@@ -34,14 +41,7 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
                         glm::vec3(0.0,0.0,0.0),
                         glm::vec3(0.0,1.0,0.0));
 
-                    let gen = GenInfo{
-                        iterations: 5,
-                        seed: 3,
-                        plate_no: 2,
-                        axial_tilt:0.5
-                    };
-
-                    let planet = planet::Planet::new(&display, &gen);
+                    let planet = planet::Planet::new(&display, &gen_info);
                     *game_state= GameState::Playing(planet, cam);
                 }*/
             }
@@ -50,15 +50,18 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
 }
 
 //menus for during the simulation
-pub fn playing(egui_ctx: &Context,years_per_second: &mut f32,params: &mut DrawParameters,planet:&mut planet::Planet){
+pub fn playing(egui_ctx: &Context,params: &mut DrawParameters,planet:&mut planet::Planet){
     //left side panel for controls
     egui::SidePanel::left("Left Panel").resizable(false)
     .show(egui_ctx,|ui| {
         ui.label("Years Per Second");
-        ui.add(egui::Slider::new(years_per_second, 0.0..=1000000.0).logarithmic(true));
+        ui.add(egui::Slider::new(&mut planet.sim_info.years_per_second, 0.0..=1000000.0).logarithmic(true));
 
         ui.label("Terrain Scaling");
         ui.add(egui::Slider::new(&mut planet.render_data.scale, 0.0..=0.3));
+
+        ui.label("Greenhouse Effect");
+        ui.add(egui::Slider::new(&mut planet.sim_info.greenhouse_effect, 0.0..=1.0));
 
         ui.label("Light Source");
         egui::ComboBox::from_id_source("lighting")

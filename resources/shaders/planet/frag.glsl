@@ -53,7 +53,7 @@ vec3 five_color(vec3 col_a,vec3 col_b,vec3 col_c,vec3 col_d,vec3 col_e,float int
 
 //produces natural color of the ground based on the attributes of the cell
 vec3 natural_color(float humid,float temp){
-    vec3 ground = mix(DESERT,DARK_GREEN,humid);
+    vec3 ground = mix(SAND,DARK_GREEN,humid);
     return mix(SNOW,ground,min(temp*5.0,1.0));
 }
 

@@ -35,9 +35,6 @@ fn main() {
     //set up ui
     let mut egui_glium = egui_glium::EguiGlium::new(&display, &event_loop);
 
-    //how many years pass per second in the simulation
-    let mut years_per_second = 0.0;
-
     //parameters that specify how rendering takes place
     let mut params = glium::DrawParameters {
         depth: glium::Depth {
@@ -63,11 +60,14 @@ fn main() {
         include_str!("../resources/shaders/planet/frag.glsl"),
      None).unwrap();
 
+     //default settings for planet gen
     let default_gen = planet::GenInfo{
-        iterations: 0,
-        seed: 0,
-        plate_no: 0,
-        axial_tilt: 0.0
+        iterations: 5,
+        seed: 1,
+        plate_no: 2,
+        axial_tilt: 0.4084,
+        starting_temp: 13.9,
+        greenhouse_effect: 0.7
     };
 
     let mut game_state = GameState::Generate(default_gen);
@@ -170,14 +170,14 @@ fn main() {
                     GameState::Playing(ref mut planet,ref mut camera)=>{
                         //handles egui input and what results from it
                         egui_glium.run(&display, |egui_ctx| {
-                            menus::playing(egui_ctx, &mut years_per_second, &mut params, planet)
+                            menus::playing(egui_ctx,&mut params, planet)
                         });
 
                         //updates camera view based on new pos specified by user input
                         camera.update_view();
                         
                         //updates planet with the specification of how many days pass per frame
-                        planet.update(delta_time*years_per_second,&display);//quarter year per second, placeholder
+                        planet.update(delta_time, &display);//quarter year per second, placeholder
 
                         //draw planet
                         planet.draw(&mut target, &planet_shader, &params, &camera);

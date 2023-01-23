@@ -7,6 +7,7 @@ use rand::{Rng, seq::SliceRandom};
 
 //internal crates
 use crate::graphics::shapes;
+use super::{GenInfo, SimInfo};
 
 //handles perlin noise for generating base
 fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistance:f32, lacunarity:f32)->f32{
@@ -81,11 +82,11 @@ pub fn edge_length(cells: &Vec<Cell>, edge:&(usize,usize))->f32{
 pub struct CellData {
     //position in space of cell
     pub position: [f32;3],
-    //height of land in cell, 0>>Sea Level, 1>>10km,-1>>-10km
+    //height of land in cell, in m
     pub height: f32,
-    //absolute humidity, as (g/m^3)/100
+    //absolute humidity, as g/m^3
     pub humidity: f32,
-    //temperature, 0>>-50C,1>>50
+    //temperature, in degrees C
     pub temperature: f32
 }
 glium::implement_vertex!(CellData,position,height,humidity,temperature);
@@ -135,11 +136,11 @@ pub struct Surface{
     pub plates: Vec<Plate>,
 }
 impl Surface{
-    pub fn new(shape: shapes::Shape,plate_no: u32, seed:u32)->Surface{
+    pub fn new(shape: shapes::Shape,gen: &GenInfo)->Surface{
         let mut rng = rand::thread_rng();
         //creates cells for surface
         let mut cells:Vec<Cell> = {
-            let perlin = Perlin::new(seed);
+            let perlin = Perlin::new(gen.seed);
             //generates cells with perlin noise
             shape.vertices.clone().into_iter()
             .map(|pos|
@@ -148,7 +149,7 @@ impl Surface{
                         position: pos.into(),
                         height: octive_noise(perlin, &pos, 2.5, 7, 0.6, 2.5),
                         humidity: (octive_noise(perlin, &(pos+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5)+1.0)*0.5,
-                        temperature: 0.5,
+                        temperature: gen.starting_temp,
                     },
                     position: pos,
                     plate: None
@@ -163,7 +164,7 @@ impl Surface{
         let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude()*0.6;
 
         //creates randomized plates for surface
-        let mut plates:Vec<Plate> = (0..plate_no)
+        let mut plates:Vec<Plate> = (0..gen.plate_no)
             .map(|_|{
                 //randomized axis the plate moves around
                 let rand_axis = {
@@ -177,7 +178,7 @@ impl Surface{
                 Plate {
                     axis: rand_axis,
                     density: rng.gen_range(0.0..10.0),
-                    speed: rng.gen_range(0.00..0.2)/6371000.0, //done in meters, 6371000 is earths radius
+                    speed: rng.gen_range(0.00..0.2)/6371000.0, //done in meters per second, 6371000 is earths radius
                 }
             })
             .collect();
@@ -219,10 +220,23 @@ impl Surface{
         }
     }
 
-    pub fn axial_tilt(&mut self,years:f32){
-        
+    //handles tempereture updating
+    pub fn temperature(&mut self,years:f32,sim_info: &SimInfo){
+        //latitude that gets maximum sunlight from the sun
+        let sun_max = glm::dot(&sim_info.to_sun, &sim_info.axis);
+
+        //updates temp for each
+        for cell in self.cells.iter_mut(){
+            //adds energy from sun correctly according to latitude
+            cell.contents.temperature += (1.0-cell.contents.height)* 
+            glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(&cell.position,&sim_info.axis)), 0.0);
+
+            //cell then loses a percentage to space
+            cell.contents.temperature*=sim_info.greenhouse_effect;
+        }
     }
 
+    //handles the teconics on the planets surface
     pub fn tectonics(&mut self,years:f32){
         //for every cell with plate info, move according to plate
         for cell in self.cells.iter_mut().filter(|c|c.plate.is_some()){

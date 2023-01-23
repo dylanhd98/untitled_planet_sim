@@ -34,7 +34,21 @@ pub struct GenInfo{
     pub iterations :u8,
     pub seed:u32,
     pub plate_no:u32,
-    pub axial_tilt:f32
+    pub axial_tilt:f32,
+    pub starting_temp:f32,
+    pub greenhouse_effect:f32
+}
+
+//information for the general running of the simulation, not specific to cells or surface
+pub struct SimInfo{
+    //years passing per second in the sim
+    pub years_per_second: f32,
+    //percentage of energy retained from the sun
+    pub greenhouse_effect:f32,
+    //planet's axis
+    pub axis: glm::Vec3,
+    //vector pointing to orbital center
+    pub to_sun: glm::Vec3,
 }
 
 //struct containing all things needed passed to the gpu
@@ -57,9 +71,7 @@ pub struct Planet{
 
     pub surface: surface::Surface,
 
-    axis: glm::Vec3,
-
-    to_sun: glm::Vec3
+    pub sim_info: SimInfo
 }
 impl Planet{
     pub fn new(display:&glium::Display, gen:&GenInfo)->Planet{
@@ -72,7 +84,7 @@ impl Planet{
             .normalize();
         
         //creates planet surface
-        let mut surface = surface::Surface::new(base_shape,gen.plate_no,gen.seed);
+        let mut surface = surface::Surface::new(base_shape,gen);
 
         //extract data for buffer
         let surface_contents:Vec<CellData> = surface.cells.iter()
@@ -98,26 +110,25 @@ impl Planet{
 
             surface: surface,
 
-            axis: axis,
-
-            to_sun: glm::vec3(1.0,0.0,0.0)
+            sim_info: 
+            SimInfo { 
+                years_per_second: 0.0, 
+                greenhouse_effect: 0.0, 
+                axis: axis, 
+                to_sun: glm::vec3(1.0,0.0,0.0) 
+            }
         }
     }
 
-    pub fn update(&mut self, years: f32,display:&glium::Display){
-        self.surface.update(years);
+    pub fn update(&mut self, deltatime: f32,display:&glium::Display){
+        let years_past = deltatime*self.sim_info.years_per_second;
+        self.surface.update(years_past);
+        self.surface.temperature(years_past, &self.sim_info);
 
-        //latitude that gets maximum sunlight from the sun
-        let sun_max = glm::dot(&self.to_sun, &self.axis);
-
-        //updates cell temp based on distance from sun_max
-        self.surface.cells.iter_mut()
-            .for_each(|c|
-                c.contents.temperature= (1.0-c.contents.height)* 
-                glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(&c.position,&self.axis)), 0.0));
+        
 
         //one year is 360 days here for simplicity
-        self.to_sun= glm::rotate_y_vec3(&self.to_sun, years*(std::f32::consts::PI*2.0));
+        self.sim_info.to_sun= glm::rotate_y_vec3(&self.sim_info.to_sun, years_past*(std::f32::consts::PI*2.0));
         
         //extract data needed for rendering out
         let surface_contents:Vec<CellData> = self.surface.cells.iter()
@@ -137,7 +148,7 @@ impl Planet{
         let view:[[f32;4];4] = cam.view.into();
 
         let to_light:[f32;3] = match self.render_data.light_pos{
-            LightPosition::Sun=> self.to_sun.into(),
+            LightPosition::Sun=> self.sim_info.to_sun.into(),
             LightPosition::Camera=> cam.pos.normalize().into(),
             LightPosition::Fixed=> [0.0,0.0,1.0],
         };
