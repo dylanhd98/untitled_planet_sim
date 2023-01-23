@@ -5,13 +5,15 @@ layout (triangle_strip, max_vertices = 3) out;
 //in from vertex
 in VS_OUT {
     vec3 pos;
-    vec2 tex_coords;
+    float humidity;
+    float temperature;
     float height;
 } gs_in[];
 
 //out for frag
 out vec3 v_normal;
-out vec2 v_tex_coords;
+out float v_humidity;
+out float v_temperature;
 out float v_height;
 
 
@@ -31,7 +33,8 @@ void main() {
 
     for(int i=0;i<3;i++){
         gl_Position = gl_in[i].gl_Position;
-        v_tex_coords = gs_in[i].tex_coords;
+        v_humidity = gs_in[i].humidity;
+        v_temperature = gs_in[i].temperature;
         v_height = gs_in[i].height;
         EmitVertex();
     }

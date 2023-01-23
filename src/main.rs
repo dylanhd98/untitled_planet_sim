@@ -101,7 +101,7 @@ fn main() {
                                             iterations: 5,
                                             seed: 1,
                                             plate_no: 2,
-                                            axial_tilt:0.1
+                                            axial_tilt:0.5
                                             
                                         };
 

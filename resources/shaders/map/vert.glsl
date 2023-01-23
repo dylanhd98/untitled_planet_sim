@@ -12,7 +12,8 @@ in float temperature;
 
 //out for frag shader
 out vec3 v_normal;
-out vec2 v_tex_coords;
+out float v_humidity;
+out float v_temperature;
 out float v_height;
 
 float angle(vec2 pos){
@@ -57,7 +58,8 @@ vec2 equirect(vec3 sphere){
 
 void main() {
     //normal stuff for frag shader, not map related
-    v_tex_coords = vec2((1.0+humidity)*0.5,temperature);
+    v_humidity = humidity;
+    v_temperature = temperature;
     v_height = height;
     v_normal = position;//TEMPORARY, BE RID OF THIS
 

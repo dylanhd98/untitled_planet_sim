@@ -11,9 +11,8 @@ in float temperature;
 //data for geometry shader
 out VS_OUT {
     vec3 pos;
-    vec2 tex_coords;
-    //float humidity;
-    //float temperature;
+    float humidity;
+    float temperature;
     float height;
 } vs_out;
 
@@ -23,7 +22,8 @@ uniform mat4 perspective;
 uniform float terra_scale;
 
 void main() {
-    vs_out.tex_coords = vec2(humidity,temperature);
+    vs_out.humidity = humidity;
+    vs_out.temperature = temperature;
     vs_out.height = height;
 
     vec3 new_pos = position;

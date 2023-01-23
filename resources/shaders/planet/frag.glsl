@@ -9,18 +9,20 @@
 #define CYAN vec3(0.0,1.0,1.0)
 #define MAGENTA vec3(1.0,0.0,1.0)
 
-//colors for topographic map
+//other colors for topographic map
 #define SNOW vec3(1.0,.98,.98)
 #define ROCK vec3(.545,.271,.075)
 #define SAND vec3(.957,.643,.376)
+#define DESERT vec3(.58,.51,.282)
 #define VEG vec3(.133,.545,.133)
+#define DARK_GREEN vec3(.0,.392,.0)
 #define WATER vec3(.075,.278,.643)
 
-//colors for natural
 
 //in from geometry shader
 in vec3 v_normal;
-in vec2 v_tex_coords;
+in float v_humidity;
+in float v_temperature;
 in float v_height;
 
 //out to whatever this renders too
@@ -50,8 +52,9 @@ vec3 five_color(vec3 col_a,vec3 col_b,vec3 col_c,vec3 col_d,vec3 col_e,float int
 }
 
 //produces natural color of the ground based on the attributes of the cell
-vec3 natural_color(float humidity){
-    return mix(SAND,VEG,humidity);
+vec3 natural_color(float humid,float temp){
+    vec3 ground = mix(DESERT,DARK_GREEN,humid);
+    return mix(SNOW,ground,min(temp*5.0,1.0));
 }
 
 
@@ -62,7 +65,7 @@ void main() {
             float brightness = max(dot(to_light,v_normal),0.1);
 
             if(v_height>0.0){
-                color = vec4(natural_color(v_tex_coords.x)*brightness,1.0);
+                color = vec4(natural_color(v_humidity,v_temperature)*brightness,1.0);
             }
             else{
                 color = vec4(vec3(mix(vec4(0.0,0.02,0.15,1.0),vec4(0.0,0.0,0.10,1.0),abs(v_height*0.5))* brightness),1.0);
@@ -74,11 +77,11 @@ void main() {
             break;
         //map mode 2, temp
         case 2:
-            color = vec4(five_color(BLUE,CYAN,GREEN,YELLOW,RED,v_tex_coords.y),1.0);
+            color = vec4(five_color(BLUE,CYAN,GREEN,YELLOW,RED,v_temperature),1.0);
             break;
         //map mode 3, humidity
         case 3:
-            color = vec4(three_color(vec3(1.0,0.647,0.0),vec3(1.0,0.859,0.604),vec3(0.392,0.584,0.929),v_tex_coords.x),1.0);
+            color = vec4(three_color(vec3(1.0,0.647,0.0),vec3(1.0,0.859,0.604),vec3(0.392,0.584,0.929),v_humidity),1.0);
             break;
         //map mode 4, relief
         case 4:
