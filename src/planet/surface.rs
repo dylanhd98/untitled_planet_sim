@@ -227,12 +227,11 @@ impl Surface{
 
         //updates temp for each
         for cell in self.cells.iter_mut(){
+            //at each step the temp changes 
+            //change calculated by ((absorbtion rate-radiation rate)*timestep)/heat capacity
             //adds energy from sun correctly according to latitude
-            cell.contents.temperature += (1.0-cell.contents.height)* 
+            cell.contents.temperature += sim_info.greenhouse_effect*(1.0-cell.contents.height)* 
             glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(&cell.position,&sim_info.axis)), 0.0);
-
-            //cell then loses a percentage to space
-            cell.contents.temperature*=sim_info.greenhouse_effect;
         }
     }
 

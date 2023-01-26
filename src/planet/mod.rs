@@ -124,10 +124,9 @@ impl Planet{
 
     pub fn update(&mut self, deltatime: f32,display:&glium::Display){
         let years_past = deltatime*self.sim_info.years_per_second;
+
         self.surface.tectonics(years_past);
         self.surface.temperature(years_past, &self.sim_info);
-
-        
 
         //one year is 360 days here for simplicity
         self.sim_info.to_sun= glm::rotate_y_vec3(&self.sim_info.to_sun, years_past*(std::f32::consts::PI*2.0));
