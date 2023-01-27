@@ -94,8 +94,7 @@ impl Planet{
         //extract data for buffer
         let surface_contents:Vec<CellData> = surface.cells.iter()
             .map(|c|
-            c.contents
-            )
+            c.contents)
             .collect();
 
         Planet{
@@ -106,7 +105,7 @@ impl Planet{
                 
                 indices: glium::IndexBuffer::new(display,glium::index::PrimitiveType::TrianglesList, &surface.triangles).unwrap(),
 
-                scale: 0.025,
+                scale: 0.01,
 
                 light_pos: LightPosition::Fixed,
 

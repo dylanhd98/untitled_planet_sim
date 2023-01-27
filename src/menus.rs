@@ -68,7 +68,7 @@ pub fn playing(egui_ctx: &Context,params: &mut DrawParameters,planet:&mut planet
         ui.add(egui::Slider::new(&mut planet.sim_info.years_per_second, 0.0..=1000000.0).logarithmic(true));
 
         ui.label("Terrain Scaling");
-        ui.add(egui::Slider::new(&mut planet.render_data.scale, 0.0..=0.3));
+        ui.add(egui::Slider::new(&mut planet.render_data.scale, 0.0..=0.05));
 
         ui.label("Lapse Rate");
         ui.add(egui::Slider::new(&mut planet.sim_info.lapse_rate, 0.0..=25.0));

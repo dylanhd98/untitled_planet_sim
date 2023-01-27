@@ -77,6 +77,27 @@ pub fn edge_length(cells: &Vec<Cell>, edge:&(usize,usize))->f32{
         .magnitude()
 }
 
+//gets the centroid of a triangle 
+pub fn centroid(points:&Vec<glm::Vec3>,tri:[&f32;3])->glm::Vec3{
+     (points[*tri[0] as usize]+
+        points[*tri[1] as usize]+
+        points[*tri[2] as usize])
+        /3.0
+}
+
+//triangulates points using centroid and avg distance from it, may not be optimal but is quick
+pub fn approx_triangulate(points:&Vec<glm::Vec3>,start_triangulation:Vec<f32>){
+    //for every triangle, check if any other point is inside its centroid circle, if so, flip the triangle
+    for tri in start_triangulation.chunks(3){
+        //for every point not already in triangle
+        for point in start_triangulation.iter().filter(|x| !tri.contains(x)){
+            //check if point is closer than the triangles points avg distance to its centroid
+            let centroid = centroid(points,tri);
+
+        }
+    }
+}
+
 //data for each cell on the planet, for rendering
 #[derive(Copy, Clone)]
 pub struct CellData {
@@ -238,7 +259,7 @@ impl Surface{
             //calculates latitude and gets its distance from the ideal/max 
             let light_angle_multiplier = glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(&cell.position,&sim_info.axis)), 0.0);
             //multiplies ideal temp by angle, then takes lapse rate*height away if above sea level
-            cell.contents.temperature = (40.0*light_angle_multiplier)-(glm::max2_scalar(cell.contents.height,0.0)*sim_info.lapse_rate);
+            cell.contents.temperature = ((40.0*light_angle_multiplier)-(glm::max2_scalar(cell.contents.height,0.0)*sim_info.lapse_rate))*sim_info.greenhouse_effect;
         }
     }
 
