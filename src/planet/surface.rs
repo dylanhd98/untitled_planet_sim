@@ -77,23 +77,31 @@ pub fn edge_length(cells: &Vec<Cell>, edge:&(usize,usize))->f32{
         .magnitude()
 }
 
-//gets the centroid of a triangle 
-pub fn centroid(points:&Vec<glm::Vec3>,tri:[&f32;3])->glm::Vec3{
-     (points[*tri[0] as usize]+
-        points[*tri[1] as usize]+
-        points[*tri[2] as usize])
-        /3.0
+//gets circumcenter of triangle
+pub fn circumcenter(a: &glm::Vec3,b: &glm::Vec3,c: &glm::Vec3)->glm::Vec3{
+    //vectors pointing along triangle edges, and their cross product, for calculation
+    let atoc = c-a;
+    let atob = b-a;
+    let cross = glm::cross(&atoc, &atob);
+
+    //vector pointing to circumcenter
+    let to_circumcenter = 
+        (glm::cross(&cross, &atob)*atoc.magnitude_squared() + 
+        glm::cross(&atoc, &cross)*atob.magnitude_squared())
+        /(2.0*cross.magnitude_squared());
+
+    //actual location in space
+    a+to_circumcenter
 }
 
-//triangulates points using centroid and avg distance from it, may not be optimal but is quick
-pub fn approx_triangulate(points:&Vec<glm::Vec3>,start_triangulation:Vec<f32>){
-    //for every triangle, check if any other point is inside its centroid circle, if so, flip the triangle
+//triangulates points using circumcenter and avg distance from it, may not be optimal but is quick
+pub fn triangulate(points:&Vec<glm::Vec3>,start_triangulation:Vec<f32>){
+    //for every triangle, check if any other point is inside its circumcircle, if so, flip the triangle
     for tri in start_triangulation.chunks(3){
         //for every point not already in triangle
         for point in start_triangulation.iter().filter(|x| !tri.contains(x)){
-            //check if point is closer than the triangles points avg distance to its centroid
-            let centroid = centroid(points,tri);
-
+            //check if point is closer than the triangles points avg distance to its circumcenter
+            //let circumcenter = circumcenter([tri[0]], tri[1], tri[2]);
         }
     }
 }
