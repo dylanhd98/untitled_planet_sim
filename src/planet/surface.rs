@@ -80,22 +80,25 @@ pub fn edge_length(cells: &Vec<Cell>, edge:&(usize,usize))->f32{
 //data for each cell on the planet, for rendering
 #[derive(Copy, Clone)]
 pub struct CellData {
-    //position in space of cell
+    //position in space of cell, should be normalized
     pub position: [f32;3],
-    //height of land in cell, in m
+    //height of land in cell from sea level, in km, should be in range -10km to 10-km
     pub height: f32,
-    //absolute humidity, as g/m^3
+    //absolute humidity, as g/m^3, range of 0 to 100
     pub humidity: f32,
-    //temperature, in degrees C
+    //temperature, in degrees C, range of -50 to 50
     pub temperature: f32
 }
 glium::implement_vertex!(CellData,position,height,humidity,temperature);
 
 //data for every plate
 pub struct Plate{
+    //axis around which the plate rotates
     axis: glm::Vec3,
+    //density of plates determines which will overlap another
     density: f32,
-    speed: f32,//cm per year, avg is 5-15, earth rad = 6,371km,
+    //cm per year, avg is 5-15, earth rad = 6,371km,
+    speed: f32,
 }
 
 //data relating to the cell
@@ -108,6 +111,7 @@ pub struct Cell{
     pub plate: Option<usize>
 }
 impl Cell{
+    //creates effectivly blank cell at pos
     pub fn new(pos:glm::Vec3)->Cell{
         Cell { 
             contents: CellData { 
@@ -147,8 +151,11 @@ impl Surface{
                 Cell{
                     contents: CellData{
                         position: pos.into(),
-                        height: octive_noise(perlin, &pos, 2.5, 7, 0.6, 2.5),
-                        humidity: (octive_noise(perlin, &(pos+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5)+1.0)*0.5,
+                        //multiplied by 10 to get hight in the -10km to 10km range
+                        height: octive_noise(perlin, &pos, 2.5, 7, 0.6, 2.5)*10.0,
+                        //humidity to be in range 0 to 100, so (perlin+1)*50
+                        humidity: (octive_noise(perlin, &(pos+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5)+1.0)*50.0,
+                        //temp set to zero bc its raised almost immedietely in the sim
                         temperature: 0.0,
                     },
                     position: pos,
@@ -227,11 +234,11 @@ impl Surface{
 
         //updates temp for each
         for cell in self.cells.iter_mut(){
-            //at each step the temp changes 
-            //change calculated by ((absorbtion rate-radiation rate)*timestep)/heat capacity
-            //adds energy from sun correctly according to latitude
-            cell.contents.temperature += sim_info.greenhouse_effect*(1.0-cell.contents.height)* 
-            glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(&cell.position,&sim_info.axis)), 0.0);
+            //amount of light recieved as percentage compared to ideal
+            //calculates latitude and gets its distance from the ideal/max 
+            let light_angle_multiplier = glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(&cell.position,&sim_info.axis)), 0.0);
+            //multiplies ideal temp by angle, then takes lapse rate*height away if above sea level
+            cell.contents.temperature = (40.0*light_angle_multiplier)-(glm::max2_scalar(cell.contents.height,0.0)*sim_info.lapse_rate);
         }
     }
 
@@ -265,9 +272,6 @@ impl Surface{
                 .collect();
 
         for edge in plate_boundries{
-            //self.cells[edge.0].contents.height =5.0;
-            //self.cells[edge.1].contents.height =5.0;
-
             /* 
             let edge_length = edge_length(&self.cells, edge);
             //if cells collide

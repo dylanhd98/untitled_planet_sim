@@ -66,6 +66,7 @@ fn main() {
         seed: 1,
         plate_no: 2,
         axial_tilt: 0.4084,
+        lapse_rate:9.8,
         greenhouse_effect: 0.7
     };
 

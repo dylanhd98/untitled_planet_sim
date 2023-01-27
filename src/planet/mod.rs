@@ -35,6 +35,7 @@ pub struct GenInfo{
     pub seed:u32,
     pub plate_no:u32,
     pub axial_tilt:f32,
+    pub lapse_rate: f32,
     pub greenhouse_effect:f32
 }
 
@@ -42,6 +43,8 @@ pub struct GenInfo{
 pub struct SimInfo{
     //years passing per second in the sim
     pub years_per_second: f32,
+    //how much temp falls with altitude, C/km
+    pub lapse_rate: f32,
     //percentage of energy retained from the sun
     pub greenhouse_effect:f32,
     //bolometric luminosity of the sun
@@ -54,9 +57,9 @@ pub struct SimInfo{
 
 //struct containing all things needed passed to the gpu
 pub struct RenderData{
-    //planet vertices
+    //buffer containing cell data needed for rendering
     planet_data: glium::VertexBuffer<surface::CellData>,
-    //triangles
+    //indices, define triangles of planet
     indices: glium::IndexBuffer<u32>,
     //how exagerated the planet surface will be
     pub scale: f32,
@@ -68,15 +71,16 @@ pub struct RenderData{
 
 
 pub struct Planet{
+    //data related to rendering the planet and for the shaders
     pub render_data: RenderData,
-
+    //data describing the planets surface
     pub surface: surface::Surface,
-
+    //infromation used for the general running of the simulation
     pub sim_info: SimInfo
 }
 impl Planet{
     pub fn new(display:&glium::Display, gen:&GenInfo)->Planet{
-        
+        //tilts planet axis as specified
         let axis = glm::rotate_z_vec3( &glm::vec3(0.0,1.0,0.0),gen.axial_tilt);
 
         //generates base shape
@@ -97,9 +101,9 @@ impl Planet{
         Planet{
             render_data: 
             RenderData{
-                //buffer containing cell data needed for rendering, dynamic as this will change frequently
+                //dynamic as this will change frequently
                 planet_data: glium::VertexBuffer::dynamic(display, &surface_contents).unwrap(),
-                //indices, define triangles of planet
+                
                 indices: glium::IndexBuffer::new(display,glium::index::PrimitiveType::TrianglesList, &surface.triangles).unwrap(),
 
                 scale: 0.025,
@@ -114,6 +118,7 @@ impl Planet{
             sim_info: 
             SimInfo { 
                 years_per_second: 0.0, 
+                lapse_rate: 9.8,
                 //solar_luminosity: 1.0,
                 greenhouse_effect: gen.greenhouse_effect, 
                 axis: axis, 
