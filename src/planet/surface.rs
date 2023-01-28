@@ -94,14 +94,16 @@ pub fn circumcenter(a: &glm::Vec3,b: &glm::Vec3,c: &glm::Vec3)->glm::Vec3{
     a+to_circumcenter
 }
 
-//triangulates points using circumcenter and avg distance from it, may not be optimal but is quick
-pub fn triangulate(points:&Vec<glm::Vec3>,start_triangulation:Vec<f32>){
+//triangulates points using circumcenter and avg distance from it, using flip alg
+pub fn flip_triangulate(points:&Vec<glm::Vec3>,start_triangulation:Vec<f32>){
     //for every triangle, check if any other point is inside its circumcircle, if so, flip the triangle
     for tri in start_triangulation.chunks(3){
         //for every point not already in triangle
+        let circumcenter = circumcenter(&points[tri[0] as usize], &points[tri[1] as usize], &points[tri[2] as usize]);
         for point in start_triangulation.iter().filter(|x| !tri.contains(x)){
-            //check if point is closer than the triangles points avg distance to its circumcenter
-            //let circumcenter = circumcenter([tri[0]], tri[1], tri[2]);
+            //check if point is within circumcircle
+            
+
         }
     }
 }
