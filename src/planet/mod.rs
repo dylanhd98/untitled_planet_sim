@@ -9,6 +9,7 @@ use self::surface::CellData;
 
 //child modules
 mod surface;
+mod utils;
 
 #[derive(PartialEq)]
 #[derive(Debug)]

@@ -7,120 +7,8 @@ use rand::{Rng, seq::SliceRandom};
 
 //internal crates
 use crate::graphics::shapes;
-use super::{GenInfo, SimInfo};
+use super::{GenInfo, SimInfo,utils::*};
 
-//handles perlin noise for generating base
-fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistance:f32, lacunarity:f32)->f32{
-    let mut noise_value = 0.0;
-    let mut amplitude = 1.0;
-    let mut frequency = 1.0;
-
-    for _o in 0..octives{
-        let perlin_value = perlin.get([
-            (pos[0]/scale * frequency) as f64,
-            (pos[1]/scale *frequency) as f64,
-            (pos[2]/scale *frequency) as f64
-        ]) as f32;
-
-        noise_value += perlin_value*amplitude;
-        amplitude *= persistance;
-        frequency *= lacunarity;
-    }
-    noise_value
-}
-
-//get connections of every cell
-pub fn indices_to_connections(indices: &Vec<u32>)->Vec<Vec<usize>>{
-    //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
-    //iterate through indices, for every index, store other two in triangle
-    let mut connections:Vec::<Vec<usize>> = vec![Vec::with_capacity(6);indices.len()/3];
-    
-    indices.chunks(3)
-        .for_each(|x|//for each triangle
-            {
-                //adds connections of each vert in triangle
-                for i in 0..3{
-                    connections[x[i] as usize].push(x[(i+1)%3] as usize);
-                }
-            }
-        );
-    connections
-}
-
-//gets all edges, like the above but can be used more efficiently i think
-pub fn indices_to_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
-    //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
-    //iterate through indices, for every index, store other two in triangle
-    let mut edges:Vec::<(usize,usize)> = Vec::with_capacity(indices.len());
-    
-    indices.chunks(3)
-        .for_each(|x|//for each triangle
-            {
-                //adds connections of each vert in triangle
-                for i in 0..3{
-                    let edge = (x[i] as usize,x[(i+1)%3] as usize);
-                    //since a cell can never connect to itself and out of the two duplicates of an edge only one will ever be ordered, 
-                    //checking if ordered before doing anything will ensure the edge is unique
-                    if edge.0<edge.1 {
-                        edges.push(edge);
-                    }
-                }
-            }
-        );
-    edges
-}
-
-//gets length of an edge between cells
-pub fn edge_length(cells: &Vec<Cell>, edge:&(usize,usize))->f32{
-    (cells[edge.0].position - 
-        cells[edge.1].position)
-        .magnitude()
-}
-
-//gets circumcenter of triangle
-pub fn circumcenter(a: &glm::Vec3,b: &glm::Vec3,c: &glm::Vec3)->glm::Vec3{
-    //vectors pointing along triangle edges, and their cross product, for calculation
-    let atoc = c-a;
-    let atob = b-a;
-    let cross = glm::cross(&atoc, &atob);
-
-    //vector pointing to circumcenter
-    let to_circumcenter = 
-        (glm::cross(&cross, &atob)*atoc.magnitude_squared() + 
-        glm::cross(&atoc, &cross)*atob.magnitude_squared())
-        /(2.0*cross.magnitude_squared());
-
-    //actual location in space
-    a+to_circumcenter
-}
-
-//takes closed clockwise surrounding points and a target point, returns new trainges all connecting surroundings to target
-pub fn connect_point(outline:Vec<u32>, target: u32)->Vec<u32>{
-    let mut tris = Vec::with_capacity(outline.len());
-    for outline_point in 0..outline.len(){
-        tris.push(outline[outline_point]);
-        tris.push(outline[(outline_point+1)%outline.len()]);
-        tris.push(target);
-    }
-    tris
-}
-
-//implementation of the bowyer watson alg, producing indices
-//works in 2d using a supplied normal, to be done on local areas of the planet
-pub fn bowyer_watson(points:&Vec<glm::Vec3>, normal:glm::Vec3){
-    //create vec of indices
-    let indices:Vec<i32> = Vec::with_capacity(points.len()*6);
-
-    //first a clockwise super triangle is made encompassing all points on the normals plane
-    let a = glm::vec3(0.0, 1_000_000.0, 0.0);
-    let b = glm::vec3(1_000_000.0, -1_000_000.0, 0.0);
-    let c = glm::vec3(-1_000_000.0, -1_000_000.0, 0.0);
-
-    //for
-
-    //return triangles, removing those containing super triangle points
-
-}
 
 //data for each cell on the planet, for rendering
 #[derive(Copy, Clone)]
@@ -166,7 +54,7 @@ impl Cell{
                 temperature: 0.0
             },
             position:pos,
-            plate: None
+            plate: Some(0)
         }
     }
 }
@@ -333,19 +221,9 @@ impl Surface{
                 }
             //if cells split too far, spawn new one at midpoint
             }
-            /* 
             else if edge_length > self.cell_distance*2.0{
-                //when two collide remove the denser one, as it subducts
-                if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
-                    //if edge.0 is less dense, edge.1 is destroyed and subducts
-                    self.remove_cell(edge.1,edge.0);
-                    self.cells[edge.0].contents.height +=1.0
-                }else{
-                    //otherwise inverse happens
-                    self.remove_cell(edge.0,edge.1);
-                    self.cells[edge.1].contents.height +=1.0
-                }
-            }*/
+                self.add_cell(*edge);
+            }
         }
     }
 
@@ -380,27 +258,38 @@ impl Surface{
     }
 
     //adds a new cell to the planet between two other cells
-    pub fn add_cell(&mut self, parents:(u32,u32)){
+    pub fn add_cell(&mut self, parents:(usize,usize)){
         //gets index of new cell to be used if avaliable from bank
         let cell = match self.bank.pop(){
             Some(c) => c,
             None => return, //if no avaliable cells in bank, does nothing
         };
 
-        //removes any triangle containing both parent cells, as these are the ones which will obstruct the new cell
+        //vec to store surrounding triangles
+        let mut tris = Vec::with_capacity(6);
+
+        //removes any triangle containing both parent cells, as these are the ones which will obstruct the new cell, they are also stored for later
         self.triangles = self.triangles.chunks(3)
-            .filter(|chunk| !(chunk.contains(&parents.0)&&chunk.contains(&parents.1)))//get only the triangles which do not contain the target cells
+            .filter(|chunk| {
+                //if triangle contains both parents
+                if chunk.contains(&(parents.0 as u32))&&chunk.contains(&(parents.1 as u32)){
+                    tris.append(&mut vec![chunk[0],chunk[1],chunk[2]]);
+                    false
+                }else{
+                    true
+                }
+            })
             .flatten()
             .map(|n|*n)
             .collect();
-
-        //gets other two cells which are needed for triangulation
-        
 
         //get midpoint between the two parent cells
         let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
 
         //use cell from bank as new cell between the parent cells
         self.cells[cell as usize] = Cell::new(glm::normalize(&mid));
+
+        //add new triangles, connecting the new cell
+        self.triangles.append(&mut connect_point(tris, cell as u32));
     }
 }
