@@ -70,7 +70,7 @@ pub fn indices_to_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
     edges
 }
 
-//gets length of an edge
+//gets length of an edge between cells
 pub fn edge_length(cells: &Vec<Cell>, edge:&(usize,usize))->f32{
     (cells[edge.0].position - 
         cells[edge.1].position)
@@ -94,18 +94,32 @@ pub fn circumcenter(a: &glm::Vec3,b: &glm::Vec3,c: &glm::Vec3)->glm::Vec3{
     a+to_circumcenter
 }
 
-//triangulates points using circumcenter and avg distance from it, using flip alg
-pub fn flip_triangulate(points:&Vec<glm::Vec3>,start_triangulation:Vec<f32>){
-    //for every triangle, check if any other point is inside its circumcircle, if so, flip the triangle
-    for tri in start_triangulation.chunks(3){
-        //for every point not already in triangle
-        let circumcenter = circumcenter(&points[tri[0] as usize], &points[tri[1] as usize], &points[tri[2] as usize]);
-        for point in start_triangulation.iter().filter(|x| !tri.contains(x)){
-            //check if point is within circumcircle
-            
-
-        }
+//takes closed clockwise surrounding points and a target point, returns new trainges all connecting surroundings to target
+pub fn connect_point(outline:Vec<u32>, target: u32)->Vec<u32>{
+    let mut tris = Vec::with_capacity(outline.len());
+    for outline_point in 0..outline.len(){
+        tris.push(outline[outline_point]);
+        tris.push(outline[(outline_point+1)%outline.len()]);
+        tris.push(target);
     }
+    tris
+}
+
+//implementation of the bowyer watson alg, producing indices
+//works in 2d using a supplied normal, to be done on local areas of the planet
+pub fn bowyer_watson(points:&Vec<glm::Vec3>, normal:glm::Vec3){
+    //create vec of indices
+    let indices:Vec<i32> = Vec::with_capacity(points.len()*6);
+
+    //first a clockwise super triangle is made encompassing all points on the normals plane
+    let a = glm::vec3(0.0, 1_000_000.0, 0.0);
+    let b = glm::vec3(1_000_000.0, -1_000_000.0, 0.0);
+    let c = glm::vec3(-1_000_000.0, -1_000_000.0, 0.0);
+
+    //for
+
+    //return triangles, removing those containing super triangle points
+
 }
 
 //data for each cell on the planet, for rendering
@@ -126,7 +140,7 @@ glium::implement_vertex!(CellData,position,height,humidity,temperature);
 pub struct Plate{
     //axis around which the plate rotates
     axis: glm::Vec3,
-    //density of plates determines which will overlap another
+    //density of plates determines which will overlap another and nature of collision
     density: f32,
     //cm per year, avg is 5-15, earth rad = 6,371km,
     speed: f32,
@@ -199,7 +213,7 @@ impl Surface{
         let edges = indices_to_edges(&shape.indices);
 
         //length of edge
-        let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude()*0.6;
+        let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude()*0.75;
 
         //creates randomized plates for surface
         let mut plates:Vec<Plate> = (0..gen.plate_no)
@@ -303,7 +317,7 @@ impl Surface{
                 .collect();
 
         for edge in plate_boundries{
-            /* 
+            
             let edge_length = edge_length(&self.cells, edge);
             //if cells collide
             if edge_length < self.cell_distance{
@@ -311,14 +325,16 @@ impl Surface{
                 if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
                     //if edge.0 is less dense, edge.1 is destroyed and subducts
                     self.remove_cell(edge.1,edge.0);
-                    self.cells[edge.0].contents.height +=1.0
+                    self.cells[edge.0].contents.height +=0.5
                 }else{
                     //otherwise inverse happens
                     self.remove_cell(edge.0,edge.1);
-                    self.cells[edge.1].contents.height +=1.0
+                    self.cells[edge.1].contents.height +=0.5
                 }
             //if cells split too far, spawn new one at midpoint
-            }else if edge_length > self.cell_distance*2.0{
+            }
+            /* 
+            else if edge_length > self.cell_distance*2.0{
                 //when two collide remove the denser one, as it subducts
                 if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
                     //if edge.0 is less dense, edge.1 is destroyed and subducts
@@ -336,10 +352,17 @@ impl Surface{
     //remove cell
     pub fn remove_cell(&mut self,cell: usize,replacement: usize){
         //copies the triangles that contain the cell to be removed, and doesnt contain the cell it is to be replaced with
-        let tri_cells:Vec<u32> = self.triangles.chunks(3)
+        //then replace the cell to be removed, with the replacement cell
+        let mut tri_cells:Vec<u32> = self.triangles.chunks(3)
             .filter(|chunk| chunk.contains(&(cell as u32))&& !chunk.contains(&(replacement as u32)))//get only the triangles which do not contain the target cells
             .flatten()
-            .map(|n|*n)
+            .map(|n| 
+                if *n == cell as u32{
+                    replacement as u32
+                }else{
+                    *n
+                }
+            )
             .collect();
 
         //filter out triangles that contain cell
@@ -348,6 +371,9 @@ impl Surface{
             .flatten()
             .map(|n|*n)
             .collect();
+
+        //adds new triangles
+        self.triangles.append(&mut tri_cells);
             
         //then marks cell as unused by pushing to the cell bank    
         self.bank.push(cell);
