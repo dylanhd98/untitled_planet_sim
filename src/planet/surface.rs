@@ -1,4 +1,4 @@
-use std::{vec, cell};
+use std::{vec,collections::HashMap};
 
 //external crates
 use noise::{NoiseFn, Perlin, Seedable};
@@ -244,7 +244,8 @@ impl Surface{
             )
             .collect();*/
         
-        let mut surrounding_points = Vec::with_capacity(6);
+        //hashmap to ensure surrounding points are unique
+        let mut surrounding_points = HashMap::with_capacity(6);
 
         //filter out triangles that contain cell, record all other points if they do
         self.triangles = self.triangles.chunks(3)
@@ -258,7 +259,7 @@ impl Surface{
                         .filter(|x| **x != cell as u32)//make sure ther original cell is excluded
                         .map(|x| *x) 
                         .collect();
-                    surrounding_points.append(&mut tri);
+                    surrounding_points.(&mut tri);
                     false
                 }
             })
@@ -269,6 +270,8 @@ impl Surface{
         let mut all_points:Vec<glm::Vec3> = self.cells.iter()
             .map(|cell| cell.position)
             .collect();
+
+        surrounding_points.
 
         //gets new triangulation 
         let mut triangulation = bowyer_watson(&mut all_points,&mut surrounding_points);
