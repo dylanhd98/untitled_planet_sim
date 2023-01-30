@@ -212,25 +212,26 @@ impl Surface{
                 //when two collide remove the denser one, as it subducts
                 if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
                     //if edge.0 is less dense, edge.1 is destroyed and subducts
-                    self.remove_cell(edge.1,edge.0);
+                    self.remove_cell(edge.1);
                     self.cells[edge.0].contents.height +=0.5
                 }else{
                     //otherwise inverse happens
-                    self.remove_cell(edge.0,edge.1);
+                    self.remove_cell(edge.0);
                     self.cells[edge.1].contents.height +=0.5
                 }
             //if cells split too far, spawn new one at midpoint
             }
-            else if edge_length > self.cell_distance*2.0{
-                self.add_cell(*edge);
+            else if edge_length > self.cell_distance*1.75{
+                //self.add_cell(*edge);
             }
         }
     }
 
     //remove cell
-    pub fn remove_cell(&mut self,cell: usize,replacement: usize){
+    pub fn remove_cell(&mut self,cell: usize){
         //copies the triangles that contain the cell to be removed, and doesnt contain the cell it is to be replaced with
         //then replace the cell to be removed, with the replacement cell
+        /* 
         let mut tri_cells:Vec<u32> = self.triangles.chunks(3)
             .filter(|chunk| chunk.contains(&(cell as u32))&& !chunk.contains(&(replacement as u32)))//get only the triangles which do not contain the target cells
             .flatten()
@@ -241,17 +242,38 @@ impl Surface{
                     *n
                 }
             )
-            .collect();
+            .collect();*/
+        
+        let mut surrounding_points = Vec::with_capacity(6);
 
-        //filter out triangles that contain cell
+        //filter out triangles that contain cell, record all other points if they do
         self.triangles = self.triangles.chunks(3)
-            .filter(|chunk| !chunk.contains(&(cell as u32)))//get only the triangles which do not contain the target cell
+            .filter(|chunk| {
+                //get only the triangles which do not contain the target cell
+                if !chunk.contains(&(cell as u32)){
+                    true
+                }else{
+                    //record tris that do contain the cell
+                    let mut tri:Vec<u32> = chunk.iter()
+                        .filter(|x| **x != cell as u32)//make sure ther original cell is excluded
+                        .map(|x| *x) 
+                        .collect();
+                    surrounding_points.append(&mut tri);
+                    false
+                }
+            })
             .flatten()
             .map(|n|*n)
             .collect();
 
+        let mut all_points:Vec<glm::Vec3> = self.cells.iter()
+            .map(|cell| cell.position)
+            .collect();
+
+        //gets new triangulation 
+        let mut triangulation = bowyer_watson(&mut all_points,&mut surrounding_points);
         //adds new triangles
-        self.triangles.append(&mut tri_cells);
+        self.triangles.append(&mut triangulation);
             
         //then marks cell as unused by pushing to the cell bank    
         self.bank.push(cell);
@@ -271,7 +293,7 @@ impl Surface{
         //removes any triangle containing both parent cells, as these are the ones which will obstruct the new cell, they are also stored for later
         self.triangles = self.triangles.chunks(3)
             .filter(|chunk| {
-                //if triangle contains both parents
+                //if triangle contains both parents, appends triangle
                 if chunk.contains(&(parents.0 as u32))&&chunk.contains(&(parents.1 as u32)){
                     tris.append(&mut vec![chunk[0],chunk[1],chunk[2]]);
                     false
