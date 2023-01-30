@@ -1,3 +1,5 @@
+use std::os::unix::raw::dev_t;
+
 //external crates
 use nalgebra_glm as glm;
 use noise::{NoiseFn, Perlin, Seedable};
@@ -98,8 +100,8 @@ pub fn circumcenter(points: &Vec<glm::Vec3>, tri: Vec<u32>)->glm::Vec3{
         glm::cross(&atoc, &cross)*atob.magnitude_squared())
         /(2.0*cross.magnitude_squared());
 
-    //actual location in space
-    points[tri[0] as usize]+to_circumcenter
+    //actual location in space 
+    points[tri[0] as usize]-to_circumcenter
 }
 
 //takes surrounding triangles and a target point, returns new traingles all connecting surrounding edges to target
@@ -126,6 +128,7 @@ pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
 //implementation of the bowyer watson alg, producing indices
 //works in 2d using a supplied normal, to be done on local areas of the planet
 pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Vec<u32>{
+    println!("entered points: {:?}",point_indices);
     //create vec of indices
     let mut indices:Vec<u32> = Vec::with_capacity(point_indices.len()*6);
 
@@ -142,9 +145,9 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
 
     //for every point, add it and check if it is inside any tris circumcircle
     //if it is, remove those triangles and attach the point to their edges
-    for point_no in 0..point_indices.len(){
-        println!("points_no: {}\npoint_indices: {}\n",point_no,point_indices.len());
-        let point = all_points[point_no];
+    for point_no in point_indices{
+        println!("point_no: {}\npoint_count: {}\n",point_no,point_indices.len());
+        let point = all_points[*point_no as usize];
         let mut bad_triangles = Vec::with_capacity(indices.len());
         //filter out triangles whos circumcircle contains point, record triangles seperately
         indices = indices.chunks(3)
@@ -153,7 +156,6 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
                 let circumcenter = circumcenter(all_points,tri.to_vec());
                 //radius of circumcircle
                 let radius = (circumcenter-all_points[tri[0] as usize]).magnitude();
-                println!("circumcenter: {} \nradius: {} \npoint pos: {}",circumcenter,radius,all_points[point_no]);
                 //if less than radius, point is inside circumcircle
                 if (circumcenter-point).magnitude()<radius{
                     //record triangle
@@ -169,18 +171,20 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
             .collect();
         println!("bad triangles:{}",bad_triangles.len());
         //connect point to hole left by bad triangles
-        indices.append(&mut connect_point(bad_triangles,point_no as u32));
+        let mut new_tris = connect_point(bad_triangles,*point_no);
+        println!("new triangles: {:?}",new_tris);
+        println!("supertri indices: {:?}",super_tri);
+        println!("target index:{}",point_no);
+        indices.append(&mut new_tris);
         println!("triangle count: {}",indices.len()/3);
     }
-
-    
 
     //then remove supertri points
     all_points.drain(super_tri.clone());
     //return triangles, removing those containing super triangle points
     indices.chunks(3)
         //checks if any vert in supertri is contained within each triangle
-        .filter(|tri| !super_tri.any(|vert| tri.contains(&(vert as u32))))
+        .filter(|tri| super_tri.all(|vert| !tri.contains(&(vert as u32))))
         .flatten()
         .map(|x| *x)
         .collect()
