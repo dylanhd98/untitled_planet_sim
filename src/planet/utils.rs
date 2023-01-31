@@ -1,5 +1,3 @@
-use std::os::unix::raw::dev_t;
-
 //external crates
 use nalgebra_glm as glm;
 use noise::{NoiseFn, Perlin, Seedable};
@@ -144,14 +142,14 @@ pub fn connect_point(points: &Vec<glm::Vec3>,tris:Vec<u32>, target: u32)->Vec<u3
     
     //return, connecting each valid edge to target
     edges.iter()
-        .map(|edge| clockwiseify(points, vec![edge.0 as u32,edge.1 as u32,target]))
+        .map(|edge|  vec![edge.0 as u32,edge.1 as u32,target])
         .flatten()
         .collect()
 }
 
 //implementation of the bowyer watson alg, producing indices
 //works in 2d on z=0, to be done on local areas of the planet
-pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>, non_projected:&mut Vec<glm::Vec3>)->Vec<u32>{
+pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Vec<u32>{
     //create vec of indices
     let mut indices:Vec<u32> = Vec::with_capacity(point_indices.len()*6);
 
@@ -191,7 +189,7 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>, non
             .map(|x| *x)
             .collect();
         //connect point to hole left by bad triangles
-        let mut new_tris = connect_point(&non_projected,bad_triangles,*point_no);
+        let mut new_tris = connect_point(&all_points,bad_triangles,*point_no);
         //add new triangles to triangulation
         indices.append(&mut new_tris);
     }

@@ -7,6 +7,8 @@ use std::io::Cursor;
 use std::time::{Duration, Instant};
 
 //child modules
+#[cfg(test)]
+mod tests;
 mod planet;
 mod graphics;
 mod menus;

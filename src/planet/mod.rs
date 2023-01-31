@@ -8,8 +8,8 @@ use crate::graphics;
 use self::surface::CellData;
 
 //child modules
-mod surface;
-mod utils;
+pub mod surface;
+pub mod utils;
 
 #[derive(PartialEq)]
 #[derive(Debug)]

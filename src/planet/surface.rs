@@ -47,16 +47,16 @@ pub struct Cell{
 }
 impl Cell{
     //creates effectivly blank cell at pos
-    pub fn new(pos:glm::Vec3)->Cell{
+    pub fn new(pos:glm::Vec3,plate: Option<usize>)->Cell{
         Cell { 
             contents: CellData { 
                 position: pos.into(),
-                height: 0.0,
+                height: -10.0,
                 humidity: 0.0,
                 temperature: 0.0
             },
             position:pos,
-            plate: Some(0)
+            plate: plate
         }
     }
 }
@@ -152,7 +152,6 @@ impl Surface{
             }
         }
         
-
         Surface{
             cells,
             triangles: shape.indices,
@@ -208,7 +207,7 @@ impl Surface{
 
         //for each edge along the plate boundry
         for edge in plate_boundries{
-            
+            //get edge length
             let edge_length = edge_length(&self.cells, edge);
             //if cells collide
             if edge_length < self.cell_distance{
@@ -216,11 +215,11 @@ impl Surface{
                 if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
                     //if edge.0 is less dense, edge.1 is destroyed and subducts
                     self.remove_cell(edge.1);
-                    self.cells[edge.0].contents.height +=0.5
+                    self.cells[edge.0].contents.height +=0.05
                 }else{
                     //otherwise inverse happens
                     self.remove_cell(edge.0);
-                    self.cells[edge.1].contents.height +=0.5
+                    self.cells[edge.1].contents.height +=0.05
                 }
             //if cells split too far, spawn new one at midpoint
             }
@@ -312,11 +311,9 @@ impl Surface{
 
         //get midpoint between the two parent cells
         let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
-
+        //select random plate of the two to make the new plate belong to
+        let plate = self.cells[parents.0 as usize].plate;
         //use cell from bank as new cell between the parent cells
-        self.cells[cell as usize] = Cell::new(glm::normalize(&mid));
-
-        //add new triangles, connecting the new cell
-       // self.triangles.append(&mut connect_point(tris, cell as u32));
+        self.cells[cell as usize] = Cell::new(glm::normalize(&mid),plate);
     }
 }
