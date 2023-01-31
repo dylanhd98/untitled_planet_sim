@@ -1,6 +1,7 @@
 use std::{vec,collections::HashMap};
 
 use egui::epaint::ahash::{HashSet, HashSetExt};
+use glm::all;
 //external crates
 use noise::{NoiseFn, Perlin, Seedable};
 use nalgebra_glm as glm;
@@ -196,7 +197,7 @@ impl Surface{
         //there is a threshhold for connection length
         //for each connection in cell, if connection too long, search that second cells connections
         //and select any within threshhold for use as new connection
-        /* 
+        
         let edges = indices_to_edges(&self.triangles);
 
         //filter edges to get only ones on plate boundries, then test for the collisions
@@ -204,8 +205,6 @@ impl Surface{
             .filter(|e| 
                 &self.cells[e.0].plate != &self.cells[e.1].plate)
                 .collect();
-
-        
 
         //for each edge along the plate boundry
         for edge in plate_boundries{
@@ -226,40 +225,28 @@ impl Surface{
             //if cells split too far, spawn new one at midpoint
             }
             else if edge_length > self.cell_distance*1.75{
-                //self.add_cell(*edge);
+                self.add_cell(*edge);
             }
-        }*/
+        }
 
         //retriangulate mesh
         //project points stereographic
         let mut all_points:Vec<glm::Vec3> = self.cells.iter()
             .map(|cell| stereographic(cell.position))
             .collect();
+        //get indices of all points excluding those in bank
+        let to_triangulate:Vec<u32> = (0..all_points.len()).into_iter()
+            .filter(|x| !self.bank.contains(x))
+            .map(|x| x as u32)
+            .collect();
 
-        
-
-
+        self.triangles = bowyer_watson(&mut all_points, &to_triangulate);
     }
 
     //remove cell
     pub fn remove_cell(&mut self,cell: usize){
-        //copies the triangles that contain the cell to be removed, and doesnt contain the cell it is to be replaced with
-        //then replace the cell to be removed, with the replacement cell
-        /* 
-        let mut tri_cells:Vec<u32> = self.triangles.chunks(3)
-            .filter(|chunk| chunk.contains(&(cell as u32))&& !chunk.contains(&(replacement as u32)))//get only the triangles which do not contain the target cells
-            .flatten()
-            .map(|n| 
-                if *n == cell as u32{
-                    replacement as u32
-                }else{
-                    *n
-                }
-            )
-            .collect();*/
-        
         //hashset to ensure surrounding points are unique
-        let mut surrounding_points:HashSet<u32> = HashSet::with_capacity(6);
+/*         let mut surrounding_points:HashSet<u32> = HashSet::with_capacity(6);
 
         //filter out triangles that contain cell, record all other points if they do
         self.triangles = self.triangles.chunks(3)
@@ -290,7 +277,7 @@ impl Surface{
         //gets new triangulation 
         let mut triangulation = bowyer_watson(&mut all_points,&mut Vec::from_iter(surrounding_points));
         //adds new triangles
-        self.triangles.append(&mut triangulation);
+        self.triangles.append(&mut triangulation);*/
             
         //then marks cell as unused by pushing to the cell bank    
         self.bank.push(cell);
@@ -304,6 +291,7 @@ impl Surface{
             None => return, //if no avaliable cells in bank, does nothing
         };
 
+        /* 
         //vec to store surrounding triangles
         let mut tris = Vec::with_capacity(6);
 
@@ -320,7 +308,7 @@ impl Surface{
             })
             .flatten()
             .map(|n|*n)
-            .collect();
+            .collect();*/
 
         //get midpoint between the two parent cells
         let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
@@ -329,6 +317,6 @@ impl Surface{
         self.cells[cell as usize] = Cell::new(glm::normalize(&mid));
 
         //add new triangles, connecting the new cell
-        self.triangles.append(&mut connect_point(tris, cell as u32));
+       // self.triangles.append(&mut connect_point(tris, cell as u32));
     }
 }

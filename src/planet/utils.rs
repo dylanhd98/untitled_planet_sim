@@ -128,7 +128,6 @@ pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
 //implementation of the bowyer watson alg, producing indices
 //works in 2d on z=0, to be done on local areas of the planet
 pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Vec<u32>{
-    println!("entered points: {:?}",point_indices); 
     //create vec of indices
     let mut indices:Vec<u32> = Vec::with_capacity(point_indices.len()*6);
 
@@ -167,14 +166,10 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
             .flatten()
             .map(|x| *x)
             .collect();
-        println!("bad triangles:{}",bad_triangles.len());
         //connect point to hole left by bad triangles
         let mut new_tris = connect_point(bad_triangles,*point_no);
-        println!("new triangles: {:?}",new_tris);
-        println!("supertri indices: {:?}",super_tri);
-        println!("target index:{}",point_no);
+        //add new triangles to triangulation
         indices.append(&mut new_tris);
-        println!("triangle count: {}\n",indices.len()/3);
     }
 
     //then remove supertri points
