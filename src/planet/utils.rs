@@ -104,8 +104,32 @@ pub fn circumcenter(points: &Vec<glm::Vec3>, tri: Vec<u32>)->glm::Vec3{
     points[tri[0] as usize]-to_circumcenter
 }
 
+//center of mass of triangle
+pub fn centroid(points: &Vec<glm::Vec3>,tri: &Vec<u32>)->glm::Vec3{
+    tri.iter()
+        .map(|i| points[*i as usize])
+        .fold(glm::vec3(0.0, 0.0, 0.0), |acc,x| acc+x)
+        /3.0       
+}
+
+//returns clockwise varient of triangle
+pub fn clockwiseify(points: &Vec<glm::Vec3>,mut tri: Vec<u32>)->Vec<u32>{
+    let a = points[tri[0] as usize];
+    let b = points[tri[1] as usize];
+    let c = points[tri[2] as usize];
+
+    let n = glm::cross(&(b-a), &(c-a));
+
+    let centroid = centroid(points, &tri);
+
+    if glm::dot(&n,&centroid)<0.0{
+        tri.reverse();
+    }
+    tri
+}
+
 //takes surrounding triangles and a target point, returns new traingles all connecting surrounding edges to target
-pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
+pub fn connect_point(points: &Vec<glm::Vec3>,tris:Vec<u32>, target: u32)->Vec<u32>{
     //divide tris into edges
     //filter out shared edges, by filtering out any with a flipped variaent also contained in edges
     let mut edges = indices_to_directed_edges(&tris);
@@ -120,14 +144,14 @@ pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
     
     //return, connecting each valid edge to target
     edges.iter()
-        .map(|edge| [edge.0 as u32,edge.1 as u32,target])
+        .map(|edge| clockwiseify(points, vec![edge.0 as u32,edge.1 as u32,target]))
         .flatten()
         .collect()
 }
 
 //implementation of the bowyer watson alg, producing indices
 //works in 2d on z=0, to be done on local areas of the planet
-pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Vec<u32>{
+pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>, non_projected:&mut Vec<glm::Vec3>)->Vec<u32>{
     //create vec of indices
     let mut indices:Vec<u32> = Vec::with_capacity(point_indices.len()*6);
 
@@ -167,7 +191,7 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
             .map(|x| *x)
             .collect();
         //connect point to hole left by bad triangles
-        let mut new_tris = connect_point(bad_triangles,*point_no);
+        let mut new_tris = connect_point(&non_projected,bad_triangles,*point_no);
         //add new triangles to triangulation
         indices.append(&mut new_tris);
     }
