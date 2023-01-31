@@ -100,6 +100,10 @@ void main() {
                 color = vec4(WATER,1.0);
             }
             break;
+        //normal map mode
+        case 5:
+            color = vec4(v_normal,1.0);
+            break;
     }
 }
 

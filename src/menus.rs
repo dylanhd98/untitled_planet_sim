@@ -105,6 +105,7 @@ pub fn playing(egui_ctx: &Context,params: &mut DrawParameters,planet:&mut planet
                 ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Temperature, "Temperature");
                 ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Humidity, "Humidity");
                 ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Relief, "Relief");
+                ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Normals, "Normals");
             }
         );
     });

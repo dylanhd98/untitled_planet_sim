@@ -1,5 +1,6 @@
 use std::{vec,collections::HashMap};
 
+use egui::epaint::ahash::{HashSet, HashSetExt};
 //external crates
 use noise::{NoiseFn, Perlin, Seedable};
 use nalgebra_glm as glm;
@@ -195,7 +196,7 @@ impl Surface{
         //there is a threshhold for connection length
         //for each connection in cell, if connection too long, search that second cells connections
         //and select any within threshhold for use as new connection
-
+        /* 
         let edges = indices_to_edges(&self.triangles);
 
         //filter edges to get only ones on plate boundries, then test for the collisions
@@ -204,6 +205,9 @@ impl Surface{
                 &self.cells[e.0].plate != &self.cells[e.1].plate)
                 .collect();
 
+        
+
+        //for each edge along the plate boundry
         for edge in plate_boundries{
             
             let edge_length = edge_length(&self.cells, edge);
@@ -224,7 +228,17 @@ impl Surface{
             else if edge_length > self.cell_distance*1.75{
                 //self.add_cell(*edge);
             }
-        }
+        }*/
+
+        //retriangulate mesh
+        //project points stereographic
+        let mut all_points:Vec<glm::Vec3> = self.cells.iter()
+            .map(|cell| stereographic(cell.position))
+            .collect();
+
+        
+
+
     }
 
     //remove cell
@@ -244,8 +258,8 @@ impl Surface{
             )
             .collect();*/
         
-        //hashmap to ensure surrounding points are unique
-        let mut surrounding_points = HashMap::with_capacity(6);
+        //hashset to ensure surrounding points are unique
+        let mut surrounding_points:HashSet<u32> = HashSet::with_capacity(6);
 
         //filter out triangles that contain cell, record all other points if they do
         self.triangles = self.triangles.chunks(3)
@@ -254,12 +268,14 @@ impl Surface{
                 if !chunk.contains(&(cell as u32)){
                     true
                 }else{
-                    //record tris that do contain the cell
+                    //remove cell from triangles
                     let mut tri:Vec<u32> = chunk.iter()
                         .filter(|x| **x != cell as u32)//make sure ther original cell is excluded
-                        .map(|x| *x) 
+                        .map(|x| {
+                            surrounding_points.insert(*x);//insert points into hashset
+                            *x
+                        }) 
                         .collect();
-                    surrounding_points.(&mut tri);
                     false
                 }
             })
@@ -268,13 +284,11 @@ impl Surface{
             .collect();
 
         let mut all_points:Vec<glm::Vec3> = self.cells.iter()
-            .map(|cell| cell.position)
+            .map(|cell| stereographic(cell.position))
             .collect();
 
-        surrounding_points.
-
         //gets new triangulation 
-        let mut triangulation = bowyer_watson(&mut all_points,&mut surrounding_points);
+        let mut triangulation = bowyer_watson(&mut all_points,&mut Vec::from_iter(surrounding_points));
         //adds new triangles
         self.triangles.append(&mut triangulation);
             

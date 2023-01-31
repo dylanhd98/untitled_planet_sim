@@ -27,7 +27,8 @@ pub enum MapMode{
     Height,
     Temperature,
     Humidity,
-    Relief
+    Relief,
+    Normals,
 }
 
 //info used for generating planet

@@ -126,27 +126,26 @@ pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
 }
 
 //implementation of the bowyer watson alg, producing indices
-//works in 2d using a supplied normal, to be done on local areas of the planet
+//works in 2d on z=0, to be done on local areas of the planet
 pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Vec<u32>{
-    println!("entered points: {:?}",point_indices);
+    println!("entered points: {:?}",point_indices); 
     //create vec of indices
     let mut indices:Vec<u32> = Vec::with_capacity(point_indices.len()*6);
 
-    //first a clockwise super triangle is made encompassing all points on the normals plane
+    //first a clockwise super triangle is made encompassing all points 
     all_points.append(&mut vec![
         glm::vec3(0.0, 1_000.0, 0.0),
         glm::vec3(1_000.0, -1_000.0, 0.0),
         glm::vec3(-1_000.0, -1_000.0, 0.0)]);
 
     //store its indices so it can be removed later
-    let mut super_tri= all_points.len()-3..all_points.len();
-
-    indices.append(&mut vec![(all_points.len()-3) as u32,(all_points.len()-2) as u32,(all_points.len()-1) as u32]);
+    let super_tri= all_points.len()-3;
+    indices.append(&mut vec![super_tri as u32,(super_tri+1) as u32,(super_tri+2) as u32]);
 
     //for every point, add it and check if it is inside any tris circumcircle
     //if it is, remove those triangles and attach the point to their edges
     for point_no in point_indices{
-        println!("point_no: {}\npoint_count: {}\n",point_no,point_indices.len());
+        //gets points pos
         let point = all_points[*point_no as usize];
         let mut bad_triangles = Vec::with_capacity(indices.len());
         //filter out triangles whos circumcircle contains point, record triangles seperately
@@ -159,7 +158,6 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
                 //if less than radius, point is inside circumcircle
                 if (circumcenter-point).magnitude()<radius{
                     //record triangle
-                    println!("triangle recorded!");
                     bad_triangles.append(&mut tri.to_vec());
                     false
                 }else{
@@ -176,37 +174,22 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
         println!("supertri indices: {:?}",super_tri);
         println!("target index:{}",point_no);
         indices.append(&mut new_tris);
-        println!("triangle count: {}",indices.len()/3);
+        println!("triangle count: {}\n",indices.len()/3);
     }
 
     //then remove supertri points
-    all_points.drain(super_tri.clone());
+    all_points.drain(super_tri..);
+
     //return triangles, removing those containing super triangle points
     indices.chunks(3)
-        //checks if any vert in supertri is contained within each triangle
-        .filter(|tri| super_tri.all(|vert| !tri.contains(&(vert as u32))))
+        //check if any triangle contains index of supertriangle
+        .filter(|triangle| !triangle.into_iter().any(|point| point>=&(super_tri as u32)))
         .flatten()
         .map(|x| *x)
         .collect()
 }
 
-//flipping algorithm for delaunay triangulation
-//VERY INEFFICIENT, DO NOT ACTUALLY USE, JUST FOR TESTING
-pub fn delaunay_flip(points:&Vec<glm::Vec3>, indices: Vec<u32>)->Vec<u32>{
-    //go through each triangle, if opposite angles sums are >180, flip them
-    //done until none to flip
-    loop{
-        for tri in indices.chunks(3){
-            //for every tri it borders, preform the check and flip if needed
-            let bordering:Vec<&[u32]> = indices.chunks(3)
-                .filter(|c| c.contains(&tri[0]) as u8 +c.contains(&tri[1]) as u8+c.contains(&tri[2]) as u8>=2)//check if shares two or more points, then they neighbor
-                .collect();
-
-            //compare opposite angles in triangles
-            for border_tri in bordering{
-                
-            }
-        }
-        return indices;
-    }
+//takes cartesian point on unit sphere, returns it as stereographic
+pub fn stereographic(point: glm::Vec3)->glm::Vec3{
+    glm::vec3(point.x/(1.0-point.z), point.y/(1.0-point.z), 0.0)
 }

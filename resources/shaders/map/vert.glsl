@@ -37,10 +37,9 @@ vec2 proj_to_screen(vec2 proj){
 }
 
 //projections
-vec2 cylindrical_equal_area (vec3 sphere){
-    float x = sphere.y;
-    float y = sin(sphere.z);
-    return vec2(x,y);
+vec2 stereographic (vec3 sphere){
+    float denom = 1.0-sphere.z;
+    return vec2(sphere.x/denom,sphere.y/denom);
 }
 
 vec2 mercator(vec3 sphere){
@@ -65,7 +64,7 @@ void main() {
 
     vec3 sphere = cart_to_sphere(position);
     vec2 proj = equirect(sphere);
-    
+
     gl_Position = vec4(proj_to_screen(proj),0.0,1.0); 
 }
 
