@@ -1,8 +1,6 @@
-use std::{vec,collections::HashMap};
 
-use egui::epaint::ahash::{HashSet, HashSetExt};
-use glm::all;
 //external crates
+use std::{vec,collections::HashMap};
 use noise::{NoiseFn, Perlin, Seedable};
 use nalgebra_glm as glm;
 use rand::{Rng, seq::SliceRandom};
@@ -223,14 +221,15 @@ impl Surface{
                 }
             //if cells split too far, spawn new one at midpoint
             }
-            else if edge_length > self.cell_distance*1.75{
+            else if edge_length > self.cell_distance*1.5{
                 self.add_cell(*edge);
             }
         }
 
         //retriangulate mesh
         //project points stereographic
-        let mut all_points:Vec<glm::Vec3> = self.cells.iter()
+        if years>1000.0{
+            let mut all_points:Vec<glm::Vec3> = self.cells.iter()
             .map(|cell| stereographic(cell.position))
             .collect();
         //get indices of all points excluding those in bank
@@ -240,6 +239,8 @@ impl Surface{
             .collect();
 
         self.triangles = bowyer_watson(&mut all_points, &to_triangulate);
+        }
+        
     }
 
     //remove cell

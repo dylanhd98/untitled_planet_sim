@@ -1,6 +1,7 @@
 //external crates
 use glium::{Surface,glutin};
 use nalgebra_glm as glm;
+use rand::rngs::ThreadRng;
 
 //other internal modules
 use crate::graphics;
@@ -49,12 +50,14 @@ pub struct SimInfo{
     pub lapse_rate: f32,
     //percentage of energy retained from the sun
     pub greenhouse_effect:f32,
-    //bolometric luminosity of the sun
+    //luminosity of the sun
     //pub solar_luminosity:f32,
     //planet's axis
     pub axis: glm::Vec3,
     //vector pointing to orbital center
     pub to_sun: glm::Vec3,
+    //randon generator
+    pub rng: ThreadRng
 }
 
 //struct containing all things needed passed to the gpu
@@ -82,6 +85,8 @@ pub struct Planet{
 }
 impl Planet{
     pub fn new(display:&glium::Display, gen:&GenInfo)->Planet{
+        //creats rng
+        let mut rng = rand::thread_rng();
         //tilts planet axis as specified
         let axis = glm::rotate_z_vec3( &glm::vec3(0.0,1.0,0.0),gen.axial_tilt);
 
@@ -123,7 +128,8 @@ impl Planet{
                 //solar_luminosity: 1.0,
                 greenhouse_effect: gen.greenhouse_effect, 
                 axis: axis, 
-                to_sun: glm::vec3(1.0,0.0,0.0) 
+                to_sun: glm::vec3(1.0,0.0,0.0),
+                rng: rng
             }
         }
     }
