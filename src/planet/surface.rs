@@ -67,7 +67,7 @@ pub struct Surface{
     pub triangles: Vec<u32>,
     //contains indices of all cells not in use
     pub bank: Vec<usize>,
-    //distnace used for cell collisions, absolute closest one can be to aother before one gets destroyed
+    //distace used for cell collisions, absolute closest one can be to aother before one gets destroyed
     pub cell_distance: f32,
     //all tectonic plates on the surface
     pub plates: Vec<Plate>,
@@ -101,7 +101,7 @@ impl Surface{
         let edges = indices_to_edges(&shape.indices);
 
         //length of edge
-        let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude()*0.75;
+        let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude();
 
         //creates randomized plates for surface
         let mut plates:Vec<Plate> = (0..gen.plate_no)
@@ -175,8 +175,8 @@ impl Surface{
     }
 
     //handles the teconics on the planets surface
-    pub fn tectonics(&mut self,years:f32){
-        //for every cell with plate info, move according to plate
+    pub fn tectonics(&mut self,years:f32,sim_info: &mut SimInfo){
+        //for every cell with plate info, move according to plate, but also try to stay as far as possible from neighbors of same plate
         for cell in self.cells.iter_mut().filter(|c|c.plate.is_some()){
             //plate cell belongs too
             let plate = &self.plates[cell.plate.unwrap()];
@@ -185,6 +185,14 @@ impl Surface{
             //put cell pos into cell data
             cell.contents.position=cell.position.into();
         }
+
+        //update counter, check if exceeds interval
+        if sim_info.tectonic_interval.0 > sim_info.tectonic_interval.1 {
+            sim_info.tectonic_interval.1 +=years;
+            return;
+        }
+        sim_info.tectonic_interval.1 = 0.0;
+
         
         //the behaviours, divergent, convergent, transform
         //diverge -> new cell at lengthened tris, center
@@ -210,26 +218,27 @@ impl Surface{
             //if cells collide
             if edge_length < self.cell_distance{
                 //when two collide remove the denser one, as it subducts
+                //sort by density
+                let dense_sorted =
                 if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
-                    //if edge.0 is less dense, edge.1 is destroyed and subducts
-                    self.remove_cell(edge.1);
-                    self.cells[edge.0].contents.height +=0.05
+                    (edge.0,edge.1)
                 }else{
-                    //otherwise inverse happens
-                    self.remove_cell(edge.0);
-                    self.cells[edge.1].contents.height +=0.05
-                }
+                    (edge.1,edge.0)
+                };
+
+                self.remove_cell(dense_sorted.0);
+                self.cells[dense_sorted.1].contents.height +=0.05
+
             //if cells split too far, spawn new one at midpoint
             }
-            else if edge_length > self.cell_distance*1.5{
+            else if edge_length > self.cell_distance*1.25{
                 self.add_cell(*edge);
             }
         }
 
         //retriangulate mesh
         //project points stereographic
-        if years>1000.0{
-            let mut all_points:Vec<glm::Vec3> = self.cells.iter()
+        let mut all_points:Vec<glm::Vec3> = self.cells.iter()
             .map(|cell| stereographic(cell.position))
             .collect();
         //get indices of all points excluding those in bank
@@ -239,8 +248,6 @@ impl Surface{
             .collect();
 
         self.triangles = bowyer_watson(&mut all_points, &to_triangulate);
-        }
-        
     }
 
     //remove cell
@@ -313,7 +320,7 @@ impl Surface{
         //get midpoint between the two parent cells
         let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
         //select random plate of the two to make the new plate belong to
-        let plate = self.cells[parents.0 as usize].plate;
+        let plate = self.cells[parents.1 as usize].plate;
         //use cell from bank as new cell between the parent cells
         self.cells[cell as usize] = Cell::new(glm::normalize(&mid),plate);
     }

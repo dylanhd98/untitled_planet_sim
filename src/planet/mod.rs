@@ -46,6 +46,8 @@ pub struct GenInfo{
 pub struct SimInfo{
     //years passing per second in the sim
     pub years_per_second: f32,
+    //how long passes between updating the tectonics, and its associated counter
+    pub tectonic_interval: (f32,f32),
     //how much temp falls with altitude, C/km
     pub lapse_rate: f32,
     //percentage of energy retained from the sun
@@ -56,8 +58,6 @@ pub struct SimInfo{
     pub axis: glm::Vec3,
     //vector pointing to orbital center
     pub to_sun: glm::Vec3,
-    //randon generator
-    pub rng: ThreadRng
 }
 
 //struct containing all things needed passed to the gpu
@@ -124,12 +124,12 @@ impl Planet{
             sim_info: 
             SimInfo { 
                 years_per_second: 0.0, 
+                tectonic_interval: (1_000_000.0,0.0),
                 lapse_rate: 9.8,
                 //solar_luminosity: 1.0,
                 greenhouse_effect: gen.greenhouse_effect, 
                 axis: axis, 
                 to_sun: glm::vec3(1.0,0.0,0.0),
-                rng: rng
             }
         }
     }
@@ -137,7 +137,7 @@ impl Planet{
     pub fn update(&mut self, deltatime: f32,display:&glium::Display){
         let years_past = deltatime*self.sim_info.years_per_second;
 
-        self.surface.tectonics(years_past);
+        self.surface.tectonics(years_past,  &mut self.sim_info);
         self.surface.temperature(years_past, &self.sim_info);
 
         //one year is 360 days here for simplicity

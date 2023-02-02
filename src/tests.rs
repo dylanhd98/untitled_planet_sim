@@ -29,8 +29,27 @@ fn connect_point_to_tri(){
     assert_eq!(result,expected);
 }
 
-//tests if circumcenter found correctly
+//tests if circumcenter found correctly by comparing with online calculator
 #[test]
-fn circumcenter(){
+fn circumcenter_correct_location(){
+    let test_points = vec![
+        glm::vec3(0.0, 100.0, 0.0),
+        glm::vec3(100.0, -100.0, 0.0),
+        glm::vec3(-100.0, -100.0, 0.0),
 
+        glm::vec3(-100.0, 0.0, 0.0),
+        glm::vec3(0.0, 10.0, 0.0),
+        glm::vec3(100.0, 0.0, 0.0)];
+
+    let tri_a = vec![0,1,2];
+    let tri_b = vec![3,4,5];
+    //results from online calc given same tri
+    let expected_a = glm::vec3(0.0,-25.0,0.0);
+    let expected_b = glm::vec3(0.0,-495.0,0.0);
+
+    let result_a = utils::circumcenter(&test_points, tri_a);
+    let result_b = utils::circumcenter(&test_points, tri_b);
+
+    assert_eq!(result_a,expected_a);
+    assert_eq!(result_b,expected_b);
 }
