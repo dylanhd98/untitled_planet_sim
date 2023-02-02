@@ -187,7 +187,7 @@ impl Surface{
             //plate cell belongs too
             let plate = &self.plates[cell.plate.unwrap()];
             //translate according to plate
-            cell.position= glm::rotate_vec3(&cell.position, plate.speed*years, &plate.axis);
+            cell.position = glm::rotate_vec3(&cell.position, plate.speed*years, &plate.axis);
             //put cell pos into cell data
             cell.contents.position=cell.position.into();
         }
