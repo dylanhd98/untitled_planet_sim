@@ -3,7 +3,6 @@ use glium::{Surface,glutin};
 use graphics::camera::Camera;
 use nalgebra_glm as glm;
 use planet::{Planet, GenInfo};
-use std::io::Cursor;
 use std::time::{Duration, Instant};
 
 //child modules

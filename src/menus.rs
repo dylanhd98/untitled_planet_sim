@@ -1,9 +1,9 @@
-use std::fmt::format;
-
+//external crates
 use egui::Context;
 use glium::{Display,DrawParameters};
 use nalgebra_glm as glm;
 
+//internal modules
 use crate::{GenInfo, GameState,planet, graphics};
 
 //menu for planet creation

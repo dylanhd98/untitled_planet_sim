@@ -174,6 +174,10 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
             .filter(|tri| {
                 //check if new point is within the circumcircle
                 let circumcenter = circumcenter(all_points,tri.to_vec());
+                //println!("circumcenter: {}",circumcenter);
+                if circumcenter == glm::vec3(f32::NAN, f32::NAN, f32::NAN){
+                    println!(">:(");
+                }
                 //radius of circumcircle
                 let radius = (circumcenter-all_points[tri[0] as usize]).magnitude();
                 //if less than radius, point is inside circumcircle

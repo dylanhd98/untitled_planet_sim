@@ -46,8 +46,8 @@ pub struct GenInfo{
 pub struct SimInfo{
     //years passing per second in the sim
     pub years_per_second: f32,
-    //how long passes between updating the tectonics, and its associated counter
-    pub tectonic_interval: (f32,f32),
+    //how long passes between updating the tectonics
+    pub triangulation_interval: f32,
     //how much temp falls with altitude, C/km
     pub lapse_rate: f32,
     //percentage of energy retained from the sun
@@ -124,8 +124,8 @@ impl Planet{
             sim_info: 
             SimInfo { 
                 years_per_second: 0.0, 
-                tectonic_interval: (1_000_000.0,0.0),
-                lapse_rate: 9.8,
+                triangulation_interval: 1_000_000.0,
+                lapse_rate: gen.lapse_rate,
                 //solar_luminosity: 1.0,
                 greenhouse_effect: gen.greenhouse_effect, 
                 axis: axis, 

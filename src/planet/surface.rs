@@ -3,7 +3,7 @@
 use std::{vec,collections::HashMap};
 use noise::{NoiseFn, Perlin, Seedable};
 use nalgebra_glm as glm;
-use rand::{Rng, seq::SliceRandom};
+use rand::{Rng, seq::SliceRandom, rngs::ThreadRng};
 
 //internal crates
 use crate::graphics::shapes;
@@ -65,12 +65,16 @@ pub struct Surface{
     pub cells: Vec<Cell>,
     //triangle data, u32 as thats whats needed for passing to gpu
     pub triangles: Vec<u32>,
+    //all tectonic plates on the surface
+    pub plates: Vec<Plate>,
     //contains indices of all cells not in use
     pub bank: Vec<usize>,
     //distace used for cell collisions, absolute closest one can be to aother before one gets destroyed
-    pub cell_distance: f32,
-    //all tectonic plates on the surface
-    pub plates: Vec<Plate>,
+    cell_distance: f32,
+    //time passed since last triangulation
+    since_triangulation:f32,
+    //random generator for surface
+    rng: ThreadRng,
 }
 impl Surface{
     pub fn new(shape: shapes::Shape,gen: &GenInfo)->Surface{
@@ -117,7 +121,7 @@ impl Surface{
 
                 Plate {
                     axis: rand_axis,
-                    density: rng.gen_range(0.0..10.0),
+                    density: rng.gen_range(0.0..10.0),//not representative of real value, just used to compare plates
                     speed: rng.gen_range(0.00..0.2)/6371000.0, //done in meters per second, 6371000 is earths radius
                 }
             })
@@ -153,9 +157,11 @@ impl Surface{
         Surface{
             cells,
             triangles: shape.indices,
+            plates,
             bank: Vec::with_capacity(shape.vertices.len()/2),
             cell_distance,
-            plates,
+            since_triangulation:0.0,
+            rng,
         }
     }
 
@@ -187,22 +193,13 @@ impl Surface{
         }
 
         //update counter, check if exceeds interval
-        if sim_info.tectonic_interval.0 > sim_info.tectonic_interval.1 {
-            sim_info.tectonic_interval.1 +=years;
+        if sim_info.triangulation_interval > self.since_triangulation{
+            self.since_triangulation +=years;
             return;
         }
-        sim_info.tectonic_interval.1 = 0.0;
-
+        self.since_triangulation = 0.0;
         
-        //the behaviours, divergent, convergent, transform
-        //diverge -> new cell at lengthened tris, center
-        //converge -> densest of two close cells destroyed, other get higher besed
-        //transform -> search connections of too far cell for closer one, closer replaces old in connections
-        
-        //there is a threshhold for connection length
-        //for each connection in cell, if connection too long, search that second cells connections
-        //and select any within threshhold for use as new connection
-        
+        //get edges from triangles
         let edges = indices_to_edges(&self.triangles);
 
         //filter edges to get only ones on plate boundries, then test for the collisions
@@ -227,10 +224,9 @@ impl Surface{
                 };
 
                 self.remove_cell(dense_sorted.0);
-                self.cells[dense_sorted.1].contents.height +=0.05
-
-            //if cells split too far, spawn new one at midpoint
+                self.cells[dense_sorted.1].contents.height +=1.0
             }
+            //if cells split too far, spawn new one at midpoint
             else if edge_length > self.cell_distance*1.25{
                 self.add_cell(*edge);
             }
@@ -320,7 +316,11 @@ impl Surface{
         //get midpoint between the two parent cells
         let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
         //select random plate of the two to make the new plate belong to
-        let plate = self.cells[parents.1 as usize].plate;
+        let plate = if self.rng.gen(){
+            self.cells[parents.0 as usize].plate
+        }else{
+            self.cells[parents.1 as usize].plate
+        };
         //use cell from bank as new cell between the parent cells
         self.cells[cell as usize] = Cell::new(glm::normalize(&mid),plate);
     }
