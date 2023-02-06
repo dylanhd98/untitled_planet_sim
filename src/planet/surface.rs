@@ -231,11 +231,10 @@ impl Surface{
                 self.add_cell(*edge);
             }
         }
-
         //retriangulate mesh
         //project points stereographic
         let mut all_points:Vec<glm::Vec3> = self.cells.iter()
-            .map(|cell| stereographic(cell.position))
+            .map(|cell| stereographic(cell.position,&glm::Vec3::y()))
             .collect();
         //get indices of all points excluding those in bank
         let to_triangulate:Vec<u32> = (0..all_points.len()).into_iter()

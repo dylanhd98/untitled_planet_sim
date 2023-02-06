@@ -210,7 +210,7 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
         .collect()
 }
 
-//takes cartesian point on unit sphere, returns it as stereographic
-pub fn stereographic(point: glm::Vec3)->glm::Vec3{
+//takes cartesian point on unit sphere, returns it as stereographic, a pole must be specified
+pub fn stereographic(point: glm::Vec3,pole: &glm::Vec3)->glm::Vec3{    
     glm::vec3(point.x/(1.0-point.z), point.y/(1.0-point.z), 0.0)
 }

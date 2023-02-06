@@ -74,7 +74,6 @@ pub struct RenderData{
     pub map_mode: MapMode,
 }
 
-
 pub struct Planet{
     //data related to rendering the planet and for the shaders
     pub render_data: RenderData,
