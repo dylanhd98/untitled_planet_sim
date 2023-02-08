@@ -18,7 +18,7 @@ fn connect_point_to_tri(){
     //initial tris the point will be inserted into
     let start_tris:Vec<u32> = vec![0,1,2];
     //use the method
-    let result = utils::connect_point(&test_points, start_tris, 3);
+    let result = utils::connect_point(start_tris, 3);
     //expect that the triangles resulting are clockwise 
     let expected = vec![
         0,1,3,

@@ -127,7 +127,7 @@ pub fn clockwiseify(points: &Vec<glm::Vec3>,mut tri: Vec<u32>)->Vec<u32>{
 }
 
 //takes surrounding triangles and a target point, returns new traingles all connecting surrounding edges to target
-pub fn connect_point(points: &Vec<glm::Vec3>,tris:Vec<u32>, target: u32)->Vec<u32>{
+pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
     //divide tris into edges
     //filter out shared edges, by filtering out any with a flipped variaent also contained in edges
     let mut edges = indices_to_directed_edges(&tris);
@@ -193,7 +193,7 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
             .map(|x| *x)
             .collect();
         //connect point to hole left by bad triangles
-        let mut new_tris = connect_point(&all_points,bad_triangles,*point_no);
+        let mut new_tris = connect_point(bad_triangles,*point_no);
         //add new triangles to triangulation
         indices.append(&mut new_tris);
     }

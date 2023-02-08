@@ -1,6 +1,6 @@
 
 //external crates
-use std::{vec,collections::HashMap};
+use std::{vec,collections::{HashMap,HashSet}};
 use noise::{NoiseFn, Perlin, Seedable};
 use nalgebra_glm as glm;
 use rand::{Rng, seq::SliceRandom, rngs::ThreadRng};
@@ -231,6 +231,7 @@ impl Surface{
                 self.add_cell(*edge);
             }
         }
+        /* 
         //retriangulate mesh
         //project points stereographic
         let mut all_points:Vec<glm::Vec3> = self.cells.iter()
@@ -242,29 +243,27 @@ impl Surface{
             .map(|x| x as u32)
             .collect();
 
-        self.triangles = bowyer_watson(&mut all_points, &to_triangulate);
+        self.triangles = bowyer_watson(&mut all_points, &to_triangulate);*/
     }
 
     //remove cell
     pub fn remove_cell(&mut self,cell: usize){
         //hashset to ensure surrounding points are unique
-/*         let mut surrounding_points:HashSet<u32> = HashSet::with_capacity(6);
+        let mut surrounding_points:HashSet<u32> = HashSet::with_capacity(6);
 
         //filter out triangles that contain cell, record all other points if they do
         self.triangles = self.triangles.chunks(3)
             .filter(|chunk| {
-                //get only the triangles which do not contain the target cell
+                //get only the triangles(chunks of 3 indices) which do not contain the target cell
                 if !chunk.contains(&(cell as u32)){
                     true
                 }else{
-                    //remove cell from triangles
-                    let mut tri:Vec<u32> = chunk.iter()
+                    //add all surrounding points that arent the cell itself to hashset for triangulation
+                    chunk.iter()
                         .filter(|x| **x != cell as u32)//make sure ther original cell is excluded
-                        .map(|x| {
+                        .for_each(|x| {
                             surrounding_points.insert(*x);//insert points into hashset
-                            *x
-                        }) 
-                        .collect();
+                        });
                     false
                 }
             })
@@ -273,13 +272,13 @@ impl Surface{
             .collect();
 
         let mut all_points:Vec<glm::Vec3> = self.cells.iter()
-            .map(|cell| stereographic(cell.position))
+            .map(|cell| stereographic(cell.position,&glm::Vec3::y()))
             .collect();
 
         //gets new triangulation 
         let mut triangulation = bowyer_watson(&mut all_points,&mut Vec::from_iter(surrounding_points));
         //adds new triangles
-        self.triangles.append(&mut triangulation);*/
+        self.triangles.append(&mut triangulation);
             
         //then marks cell as unused by pushing to the cell bank    
         self.bank.push(cell);
@@ -293,25 +292,6 @@ impl Surface{
             None => return, //if no avaliable cells in bank, does nothing
         };
 
-        /* 
-        //vec to store surrounding triangles
-        let mut tris = Vec::with_capacity(6);
-
-        //removes any triangle containing both parent cells, as these are the ones which will obstruct the new cell, they are also stored for later
-        self.triangles = self.triangles.chunks(3)
-            .filter(|chunk| {
-                //if triangle contains both parents, appends triangle
-                if chunk.contains(&(parents.0 as u32))&&chunk.contains(&(parents.1 as u32)){
-                    tris.append(&mut vec![chunk[0],chunk[1],chunk[2]]);
-                    false
-                }else{
-                    true
-                }
-            })
-            .flatten()
-            .map(|n|*n)
-            .collect();*/
-
         //get midpoint between the two parent cells
         let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
         //select random plate of the two to make the new plate belong to
@@ -322,5 +302,36 @@ impl Surface{
         };
         //use cell from bank as new cell between the parent cells
         self.cells[cell as usize] = Cell::new(glm::normalize(&mid),plate);
+
+        //hashset to ensure surrounding points are unique
+        let mut surrounding_points:HashSet<u32> = HashSet::with_capacity(12);
+
+        //removes any triangle containing both parent cells, as these are the ones which will obstruct the new cell, they are also stored for later
+        self.triangles = self.triangles.chunks(3)
+            .filter(|chunk| {
+                //if triangle contains both parents, insert points into hash set
+                if chunk.contains(&(parents.0 as u32))&&chunk.contains(&(parents.1 as u32)){
+                    surrounding_points.insert(chunk[0]);
+                    surrounding_points.insert(chunk[1]);
+                    surrounding_points.insert(chunk[2]);
+                    false
+                }else{
+                    true
+                }
+            })
+            .flatten()
+            .map(|n|*n)
+            .collect();
+
+        //add new cell to hashset aswell, then triangulate
+        surrounding_points.insert(cell as u32);
+        //gets all points projected
+        let mut all_points:Vec<glm::Vec3> = self.cells.iter()
+            .map(|cell| stereographic(cell.position,&glm::Vec3::y()))
+            .collect();
+        //gets new triangulation 
+        let mut triangulation = bowyer_watson(&mut all_points,&mut Vec::from_iter(surrounding_points));
+        //adds new triangles
+        //self.triangles.append(&mut triangulation);
     }
 }
