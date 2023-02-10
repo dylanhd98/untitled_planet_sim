@@ -84,57 +84,57 @@ fn main() {
         match event {
             //checking for window events
             glutin::event::Event::WindowEvent { event, .. } => 
-                
                 match event {
+                    
                     //if key pressed
                     glutin::event::WindowEvent::KeyboardInput { device_id, input, is_synthetic }=>{
-                        match game_state{
-                            GameState::Generate(ref gen)=>{
-                                match input.virtual_keycode{
-                                    Some(glutin::event::VirtualKeyCode::Return)=> {
-                                        //creates new camera
-                                        let dimensions = display.get_framebuffer_dimensions();
-                                        let mut cam = graphics::camera::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
-                                            glm::vec3(0.0,0.0,5.0), 
-                                            glm::vec3(0.0,0.0,0.0),
-                                            glm::vec3(0.0,1.0,0.0));
+                        //if game state is generating the planet
+                        if let GameState::Generate(ref gen) = game_state{
+                            match input.virtual_keycode{
+                                Some(glutin::event::VirtualKeyCode::Return)=> {
+                                    //creates new camera
+                                    let dimensions = display.get_framebuffer_dimensions();
+                                    let cam = graphics::camera::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
+                                        glm::vec3(0.0,0.0,5.0), 
+                                        glm::vec3(0.0,0.0,0.0),
+                                        glm::vec3(0.0,1.0,0.0));
 
-                                        let planet = planet::Planet::new(&display, &gen);
-                                        game_state= GameState::Playing(planet, cam)},
-                                    _=>()
-                                }
+                                    let planet = planet::Planet::new(&display, &gen);
+                                    game_state= GameState::Playing(planet, cam)},
+                                _=>()
                             }
-
-                            GameState::Playing(_,ref mut cam) =>{
-                                match input.virtual_keycode{
-                                    //zoom in and out
-                                    Some(glutin::event::VirtualKeyCode::E)=> cam.pos *= 0.95,
-                                    Some(glutin::event::VirtualKeyCode::Q)=> cam.pos *= 1.05,
-        
-                                    //look left and right
-                                    Some(glutin::event::VirtualKeyCode::A)=> cam.pos = glm::rotate_y_vec3(&cam.pos,-0.05),
-                                    Some(glutin::event::VirtualKeyCode::D)=> cam.pos = glm::rotate_y_vec3(&cam.pos, 0.05),
-        
-                                    //look up and down, for these it creates a rotation axis that is tangent to Y and cam.pos
-                                    Some(glutin::event::VirtualKeyCode::W)=> cam.pos ={
-                                        let up = glm::vec3(0.0,1.0,0.0);
-                                        let normal = glm::cross(&cam.pos,&up);
-                                        glm::rotate_vec3(&cam.pos, 0.05, &normal)
-                                    }, 
-                                    Some(glutin::event::VirtualKeyCode::S)=> cam.pos = {
-                                        let up = glm::vec3(0.0,1.0,0.0);
-                                        let normal = glm::cross(&cam.pos,&up);
-                                        glm::rotate_vec3(&cam.pos, -0.05, &normal)
-                                    },
-                                    _=>()
-                                }
+                        }
+                        //if game state is running the sim
+                        else if let GameState::Playing(_,ref mut cam) = game_state{
+                            match input.virtual_keycode{
+                                //zoom in and out
+                                Some(glutin::event::VirtualKeyCode::E)=> cam.pos *= 0.95,
+                                Some(glutin::event::VirtualKeyCode::Q)=> cam.pos *= 1.05,
+    
+                                //look left and right
+                                Some(glutin::event::VirtualKeyCode::A)=> cam.pos = glm::rotate_y_vec3(&cam.pos,-0.05),
+                                Some(glutin::event::VirtualKeyCode::D)=> cam.pos = glm::rotate_y_vec3(&cam.pos, 0.05),
+    
+                                //look up and down, for these it creates a rotation axis that is tangent to Y and cam.pos
+                                Some(glutin::event::VirtualKeyCode::W)=> cam.pos ={
+                                    let up = glm::vec3(0.0,1.0,0.0);
+                                    let normal = glm::cross(&cam.pos,&up);
+                                    glm::rotate_vec3(&cam.pos, 0.05, &normal)
+                                }, 
+                                Some(glutin::event::VirtualKeyCode::S)=> cam.pos = {
+                                    let up = glm::vec3(0.0,1.0,0.0);
+                                    let normal = glm::cross(&cam.pos,&up);
+                                    glm::rotate_vec3(&cam.pos, -0.05, &normal)
+                                },
+                                _=>()
                             }
-                            _=>()
                         }
                     },
 
                     //handle resizing
+                    //update camera if window resized and game state is playing
                     glutin::event::WindowEvent::Resized( new_size) =>{
+                        
                         if let GameState::Playing(_,ref mut cam) = game_state{
                             cam.update_ratio(new_size.width as f32/ new_size.height as f32);
                         }
@@ -144,8 +144,8 @@ fn main() {
                     glutin::event::WindowEvent::CloseRequested => {
                         *control_flow = glutin::event_loop::ControlFlow::Exit;
                     },
-
-                    _ => {egui_glium.on_event(&event);},//if no other events, do egui event
+                    //if no other events, do egui event
+                    _ => {egui_glium.on_event(&event);},
                 },
 
             //once events are handled, this runs
