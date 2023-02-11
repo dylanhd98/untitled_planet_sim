@@ -48,7 +48,6 @@ impl Shape{
             //indices length is just triangle amount*3
             //thus, new indices will be 4 times as large, 4 times more triangles
             //this is calculated here to prevent constant memory realocation with each push
-            //TODO: FUTURE ME VERIFY IF THIS IS RIGHT
             let mut new_indices:Vec::<u32> = Vec::with_capacity(self.indices.len()*4);
 
             //for every triangle edge, calculate midpoint,add to new vertices, store index in dictionary with edge indices as the key

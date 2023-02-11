@@ -48,18 +48,19 @@ fn main() {
         .. Default::default()
     };
 
+    //set time of start of frame
     let mut frame_time = Instant::now();
 
     //compiles shaders from files
     let planet_shader = glium::Program::from_source(&display, 
         include_str!("../resources/shaders/planet/vert.glsl"), 
         include_str!("../resources/shaders/planet/frag.glsl"),
-    Some(include_str!("../resources/shaders/planet/geom.glsl"))).unwrap();
+        Some(include_str!("../resources/shaders/planet/geom.glsl"))).unwrap();
 
     let map_shader = glium::Program::from_source(&display, 
         include_str!("../resources/shaders/map/vert.glsl"), 
         include_str!("../resources/shaders/planet/frag.glsl"),
-     None).unwrap();
+        None).unwrap();
 
      //default settings for planet gen
     let default_gen = planet::GenInfo{
@@ -82,26 +83,38 @@ fn main() {
 
         //handle window events
         if let glutin::event::Event::WindowEvent { event, .. } = event{
-            //if key pressed 
-            if let glutin::event::WindowEvent::KeyboardInput { device_id, input, is_synthetic }=event{
-                //if game state is generating the planet
-                if let GameState::Generate(ref gen) = game_state{
+            //check game state for the events handled differently based on such
+            //if generating planet
+            if let GameState::Generate(ref gen) = game_state{
+                //if key pressed 
+                if let glutin::event::WindowEvent::KeyboardInput { device_id:_, input, is_synthetic:_ }=event{
                     match input.virtual_keycode{
                         Some(glutin::event::VirtualKeyCode::Return)=> {
                             //creates new camera
                             let dimensions = display.get_framebuffer_dimensions();
                             let cam = graphics::camera::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
                                 glm::vec3(0.0,0.0,5.0), 
-                                glm::vec3(0.0,0.0,0.0),
-                                glm::vec3(0.0,1.0,0.0));
+                                glm::Vec3::zeros(),
+                                glm::Vec3::y());
 
                             let planet = planet::Planet::new(&display, &gen);
                             game_state= GameState::Playing(planet, cam)},
                         _=>()
                     }
                 }
-                //if game state is running the sim
-                else if let GameState::Playing(_,ref mut cam) = game_state{
+            }
+
+            //if running sim
+            else if let GameState::Playing(_,ref mut cam) = game_state{
+                //if mouse wheel scrolled, change camera accordingly
+                if let glutin::event::WindowEvent::MouseWheel { device_id:_, delta, phase:_, modifiers:_ } = event{
+                    if let glutin::event::MouseScrollDelta::LineDelta(_,y) = delta{
+                        //zoom 5% according to direction scrolled
+                        cam.pos *= 1.0+(y*0.05);
+                    }
+                }
+                //if key pressed 
+                else if let glutin::event::WindowEvent::KeyboardInput { device_id:_, input, is_synthetic:_ }=event{
                     match input.virtual_keycode{
                         //zoom in and out
                         Some(glutin::event::VirtualKeyCode::E)=> cam.pos *= 0.95,
@@ -125,17 +138,17 @@ fn main() {
                         _=>()
                     }
                 }
-            }
-            //update camera if window resized and game state is playing
-            else if let glutin::event::WindowEvent::Resized(new_size) = event{
-                if let GameState::Playing(_,ref mut cam) = game_state{
+                //update camera if window resized and game state is playing
+                else if let glutin::event::WindowEvent::Resized(new_size) = event{
                     cam.update_ratio(new_size.width as f32/ new_size.height as f32);
                 }
             }
+
             //if window close event, close window :D
-            else if let glutin::event::WindowEvent::CloseRequested = event{
+            if let glutin::event::WindowEvent::CloseRequested = event{
                 *control_flow = glutin::event_loop::ControlFlow::Exit;
             }
+
             //do egui event
             egui_glium.on_event(&event);
         }
@@ -151,14 +164,14 @@ fn main() {
             //clears buffer for colors and depth
             target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
 
-            //if generating planet
+            //generating planet
             if let GameState::Generate(ref gen_info) = game_state{
                 //handles egui input and what results from it
                 egui_glium.run(&display, |egui_ctx| {
                     menus::planet_create(egui_ctx, &display,&mut game_state);
                 });
             }
-            //if sim running
+            //sim running
             else if let GameState::Playing(ref mut planet,ref mut camera) = game_state{
                 //handles egui input and what results from it
                 egui_glium.run(&display, |egui_ctx| {
