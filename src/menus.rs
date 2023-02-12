@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 //external crates
 use egui::{Context,plot::{Line, Plot, PlotPoints,VLine,Bar, BarChart}};
 use glium::{Display,DrawParameters};
@@ -14,6 +16,22 @@ fn tri_count_at_n(n:u32)->u32{
 //amount of vertices can be found by halving tri_no and adding 2
 fn vert_count_from_tri(tris:u32)->u32{
     tris/2+2
+}
+
+//creates a line for a plot from a given closure that returns an f64 
+fn plot_func<G>(mut input_range:Range<i32>,sample_rate:u32,func:G)->Line
+where G: Fn(f64)->f64{//type G is a function
+    //extend range to required res
+    input_range.start *= sample_rate as i32;
+    input_range.end *= sample_rate as i32;
+
+    //sample points at scale
+    let points: PlotPoints = input_range
+        .map(|i| {
+            //scale back into original range
+            [i as f64/sample_rate as f64, func(i as f64/sample_rate as f64)]
+        }).collect();
+    Line::new(points)
 }
 
 //displays a graph showing the increase in triangles and vertices for each iteration
@@ -71,20 +89,9 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
             ui.label("Triangle Count");
             ui.label(format!("{}",tri_no));
 
-            let tri_counts: PlotPoints = (-10..=(1+gen_info.iterations as i8)*10).map(|i| {
-                let i = i as f64/10.0;
-                //let x = (20*u32::pow(4, i as u32))/2+2;
-                let x = (20.0*f64::powf(4.0, i));
-                [i, x]
-            }).collect();
-            let tri_line = Line::new(tri_counts);
+            let tri_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| 20.0*f64::powf(4.0, x));
 
-            let vert_counts: PlotPoints = (-10..=(1+gen_info.iterations as i8)*10).map(|i| {
-                let i = i as f64/10.0;
-                let x = (20.0*f64::powf(4.0, i))/2.0+2.0;
-                [i, x]
-            }).collect();
-            let vert_line = Line::new(vert_counts);
+            let vert_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| (20.0*f64::powf(4.0, x))/2.0+2.0);
 
             let current = VLine::new(gen_info.iterations as f64);
 
