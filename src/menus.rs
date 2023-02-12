@@ -34,9 +34,40 @@ where G: Fn(f64)->f64{//type G is a function
     Line::new(points)
 }
 
-//displays a graph showing the increase in triangles and vertices for each iteration
-fn iteration_graph(){
+//displays a graph showing the increase in triangles and vertices for each iteration, and a triangle sudivided according to iterations
+fn iteration_info(egui_ctx: &Context,gen_info: &GenInfo){
+    //amount of triangles multiplies by 4 for each iteration, starting at 20 at 0 iters
+    let tri_no = 20*u32::pow(4, gen_info.iterations as u32);
 
+    egui::CentralPanel::default()
+        .show(egui_ctx,|ui| {
+            ui.heading("Shape Subdivision Info");
+            ui.label("Triangle Count");
+            ui.label(format!("{}",tri_no));
+            ui.label("Vertex Count");
+            //amount of vertices can be found by halving tri_no and adding 2
+            ui.label(format!("{}",tri_no/2+2));
+            
+            let tri_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| 20.0*f64::powf(4.0, x));
+
+            let vert_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| (20.0*f64::powf(4.0, x))/2.0+2.0);
+
+            let current = VLine::new(gen_info.iterations as f64);
+
+            Plot::new("my_plot")
+
+                .allow_scroll(false)
+                .allow_zoom(false)
+                .allow_drag(false)
+                //.allow_boxed_zoom(false)
+                //.show_background(false)
+                .show(ui, |plot_ui| {
+                    plot_ui.line(vert_line);
+                    plot_ui.line(tri_line);
+                    plot_ui.vline(current)
+                } );
+                
+        });
 }
 
 //menu for planet creation
@@ -76,39 +107,8 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
                 new_planet = true;
             }
         });
-    
-    //amount of triangles multiplies by 4 for each iteration, starting at 20 at 0 iters
-    let tri_no = 20*u32::pow(4, gen_info.iterations as u32);
-
-    egui::CentralPanel::default()
-        .show(egui_ctx,|ui| {
-            ui.heading("Gen Info");
-            ui.label("Vertex Count");
-            //amount of vertices can be found by halving tri_no and adding 2
-            ui.label(format!("{}",tri_no/2+2));
-            ui.label("Triangle Count");
-            ui.label(format!("{}",tri_no));
-
-            let tri_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| 20.0*f64::powf(4.0, x));
-
-            let vert_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| (20.0*f64::powf(4.0, x))/2.0+2.0);
-
-            let current = VLine::new(gen_info.iterations as f64);
-
-            Plot::new("my_plot")
-                .width(500.0)
-                .view_aspect(0.75)
-                .allow_scroll(false)
-                .allow_zoom(false)
-                .allow_drag(false)
-                //.allow_boxed_zoom(false)
-                //.show_background(false)
-                .show(ui, |plot_ui| {
-                    plot_ui.line(vert_line);
-                    plot_ui.line(tri_line);
-                    plot_ui.vline(current)
-                } );
-        });
+        
+    iteration_info(egui_ctx, gen_info);
 
     if new_planet{
         //creates new camera

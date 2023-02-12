@@ -63,7 +63,7 @@ pub fn indices_to_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
     edges
 }
 
-//does the same as the above, just return directed edges, as a result returns double the amount
+//does the same as the above, just return directed edges, as a result returns double the amount, each edge is ordered the same way as its triangle
 pub fn indices_to_directed_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
     //iterate through indices, for every index, store other two in triangle
     let mut edges:Vec::<(usize,usize)> = Vec::with_capacity(indices.len());

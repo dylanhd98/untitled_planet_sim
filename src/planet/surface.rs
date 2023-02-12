@@ -68,8 +68,8 @@ pub struct Surface{
     //all tectonic plates on the surface
     pub plates: Vec<Plate>,
     //contains indices of all cells not in use
-    pub bank: Vec<usize>,
-    //distace used for cell collisions, absolute closest one can be to aother before one gets destroyed
+    pub bank: HashSet<usize>,
+    //distace used for cell collisions, absolute closest one can be to another before one gets destroyed
     cell_distance: f32,
     //time passed since last triangulation
     since_triangulation:f32,
@@ -134,7 +134,7 @@ impl Surface{
                 cells[target].plate = Some(plate);
             }
 
-            //fill planet with the cells via random fill, if there are plates to even fill with
+            //fill planet with the plates via random fill, if there are plates to even fill with
             while cells.iter().any(|c| !c.plate.is_some()){
                 //get all plate boundries
                 let plate_boundries:Vec<&(usize,usize)> = edges.iter()
@@ -142,8 +142,8 @@ impl Surface{
                     &cells[e.0].plate != &cells[e.1].plate)
                     .collect();
 
+                //extend plate across random boundries 16 times
                 for _ in 0..16{
-                    //extend plate across random boundries 16 times
                     let edge = plate_boundries.choose(&mut rng).unwrap();
                     if cells[edge.0].plate == None{
                         cells[edge.0].plate = cells[edge.1].plate;
@@ -158,7 +158,7 @@ impl Surface{
             cells,
             triangles: shape.indices,
             plates,
-            bank: Vec::with_capacity(shape.vertices.len()/2),
+            bank: HashSet::with_capacity(shape.vertices.len()/2),
             cell_distance,
             since_triangulation:0.0,
             rng,
@@ -198,23 +198,61 @@ impl Surface{
             return;
         }
         self.since_triangulation = 0.0;
+        println!("\n\nNEW TECTONIC ITERATION\nbank contents: {:?}",self.bank);
         
-        //get edges from triangles
+        //get edges from triangles of mesh
         let edges = indices_to_edges(&self.triangles);
 
         //filter edges to get only ones on plate boundries, then test for the collisions
-        let plate_boundries:Vec<&(usize,usize)> = edges.iter()
+        let plate_boundaries:Vec<&(usize,usize)> = edges.iter()
             .filter(|e| 
                 &self.cells[e.0].plate != &self.cells[e.1].plate)
                 .collect();
 
+        //plate boundery edges currently colliding
+        let mut colliding = Vec::with_capacity(plate_boundaries.len());
+        //plate boundry edges where plates are diverging
+        let mut diverging = Vec::with_capacity(plate_boundaries.len());
+        //find and store boundries of each type
+        for edge in plate_boundaries{
+            //get edge length
+            let edge_length = edge_length(&self.cells, edge);
+            //if edge length too low, colliding
+            if edge_length < self.cell_distance{
+                colliding.push(edge);
+            }
+            //if edge too long, diverging
+            else if edge_length > self.cell_distance*1.25{
+                diverging.push(edge);
+            }
+        }
+        //now deal with the different types of boundries
+        for edge in colliding{
+            //sort by density
+            let dense_sorted =
+            if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
+                (edge.0,edge.1)
+            }else{
+                (edge.1,edge.0)
+            };
+            //when two collide remove the denser one, as it subducts
+            self.remove_cell(dense_sorted.0);
+            self.cells[dense_sorted.1].contents.height +=1.0
+        }
+        //handle divering plate boundaries, place new cells at their mid points when able
+        //let banked_cells = self.bank.iter();
+        for (edge,cell) in diverging.into_iter().zip(self.bank.iter()){
+            //self.add_cell(*edge, *cell);
+        }
+        
+        
+/* 
         //for each edge along the plate boundry
-        for edge in plate_boundries{
+        for edge in plate_boundaries{
             //get edge length
             let edge_length = edge_length(&self.cells, edge);
             //if cells collide
             if edge_length < self.cell_distance{
-                //when two collide remove the denser one, as it subducts
                 //sort by density
                 let dense_sorted =
                 if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
@@ -222,7 +260,7 @@ impl Surface{
                 }else{
                     (edge.1,edge.0)
                 };
-
+                //when two collide remove the denser one, as it subducts
                 self.remove_cell(dense_sorted.0);
                 self.cells[dense_sorted.1].contents.height +=1.0
             }
@@ -230,20 +268,7 @@ impl Surface{
             else if edge_length > self.cell_distance*1.25{
                 self.add_cell(*edge);
             }
-        }
-        /* 
-        //retriangulate mesh
-        //project points stereographic
-        let mut all_points:Vec<glm::Vec3> = self.cells.iter()
-            .map(|cell| stereographic(cell.position,&glm::Vec3::y()))
-            .collect();
-        //get indices of all points excluding those in bank
-        let to_triangulate:Vec<u32> = (0..all_points.len()).into_iter()
-            .filter(|x| !self.bank.contains(x))
-            .map(|x| x as u32)
-            .collect();
-
-        self.triangles = bowyer_watson(&mut all_points, &to_triangulate);*/
+        }*/
     }
 
     //remove cell
@@ -281,20 +306,21 @@ impl Surface{
         self.triangles.append(&mut triangulation);
             
         //then marks cell as unused by pushing to the cell bank    
-        self.bank.push(cell);
+        self.bank.insert(cell);
+        println!("Cell removed\nbank contents: {:?}",self.bank);
     }
 
     //adds a new cell to the planet between two other cells
-    pub fn add_cell(&mut self, parents:(usize,usize)){
-        //gets index of new cell to be used if avaliable from bank
-        let cell = match self.bank.pop(){
-            Some(c) => c,
-            None => return, //if no avaliable cells in bank, does nothing
-        };
+    pub fn add_cell(&mut self, parents:(usize,usize),cell:usize){
+        //gets index of new cell from bank to be used if avaliable
+        //let cell = match self.bank.pop(){
+        //    Some(c) => c,
+        //    None => return, //if no avaliable cells in bank, does nothing
+        //};
 
         //get midpoint between the two parent cells
         let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
-        //select random plate of the two to make the new plate belong to
+        //select random plate of the two parents to make the new plate belong to
         let plate = if self.rng.gen(){
             self.cells[parents.0 as usize].plate
         }else{
@@ -309,17 +335,17 @@ impl Surface{
         //removes any triangle containing both parent cells, as these are the ones which will obstruct the new cell, they are also stored for later
         self.triangles = self.triangles.chunks(3)
             .filter(|chunk| {
-                //if triangle contains both parents, insert points into hash set
+                //if triangle contains both parents, insert triangle points into hash set
                 if chunk.contains(&(parents.0 as u32))&&chunk.contains(&(parents.1 as u32)){
-                    surrounding_points.insert(chunk[0]);
-                    surrounding_points.insert(chunk[1]);
-                    surrounding_points.insert(chunk[2]);
+                    for c in chunk.iter(){
+                        surrounding_points.insert(*c);
+                    }
                     false
                 }else{
                     true
                 }
             })
-            .flatten()
+            .flatten()//flatten to remove seperation of triangles
             .map(|n|*n)
             .collect();
 
@@ -329,9 +355,10 @@ impl Surface{
         let mut all_points:Vec<glm::Vec3> = self.cells.iter()
             .map(|cell| stereographic(cell.position,&glm::Vec3::y()))
             .collect();
-        //gets new triangulation 
+        //triangulate points
         let mut triangulation = bowyer_watson(&mut all_points,&mut Vec::from_iter(surrounding_points));
-        //adds new triangles
-        //self.triangles.append(&mut triangulation);
+        //adds new triangles to mesh
+        self.triangles.append(&mut triangulation);
+        println!("Cell added\nbank contents: {:?}",self.bank);
     }
 }
