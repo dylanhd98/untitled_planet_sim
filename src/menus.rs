@@ -6,7 +6,7 @@ use glium::{Display,DrawParameters};
 use nalgebra_glm as glm;
 
 //internal modules
-use crate::{GenInfo, GameState,planet, graphics};
+use crate::{GenInfo, GameState,planet::{self, utils::indices_to_edges}, graphics::{self, shapes::Shape}};
 
 //functions used by menus
 //amount of triangles multiplies by 4 for each iteration, starting at 20 at 0 iters
@@ -34,6 +34,14 @@ where G: Fn(f64)->f64{//type G is a function
     Line::new(points)
 }
 
+//creates a triangle of specified subdivisions,
+fn plot_subdivided_triangle(iterations: u8){
+    //get triangle
+    let tri = Shape::triangle().subdivide(iterations);
+    //seperate into edges
+    let edges = indices_to_edges(&tri.indices);
+}
+
 
 //displays a graph showing the increase in triangles and vertices for each iteration, and a triangle sudivided according to iterations
 fn iteration_info(egui_ctx: &Context,gen_info: &GenInfo){
@@ -59,6 +67,7 @@ fn iteration_info(egui_ctx: &Context,gen_info: &GenInfo){
 
             ui.horizontal(|ui|{
                 Plot::new("subdivision graph")
+                .width(500.0)
                     .allow_scroll(false)
                     .allow_zoom(false)
                     .allow_drag(false)
@@ -71,10 +80,12 @@ fn iteration_info(egui_ctx: &Context,gen_info: &GenInfo){
                     } );
 
                 Plot::new("triangle graph")
+                .width(500.0)
                     .allow_scroll(false)
                     .allow_zoom(false)
                     .allow_drag(false)
                     .allow_boxed_zoom(false)
+                    .show_axes([false;2])
                     .show_background(false)
                     .show(ui, |plot_ui| {
                         plot_ui.line(little_line);

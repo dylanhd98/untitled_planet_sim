@@ -191,6 +191,17 @@ impl Shape{
         }
     }
 
+    pub fn triangle()->Shape{
+        Shape{
+            vertices:vec![
+                glm::vec3(0.0,1.0,0.0),
+                glm::vec3(1.0,-1.0,0.0),
+                glm::vec3(-1.0,-1.0,0.0),
+            ],
+            indices:vec![0,1,2]
+        }
+    }
+
     pub fn heart()->Shape{
     
         let vertices:Vec::<glm::Vec3> = vec![
