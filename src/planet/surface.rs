@@ -198,7 +198,6 @@ impl Surface{
             return;
         }
         self.since_triangulation = 0.0;
-        println!("\n\nNEW TECTONIC ITERATION\nbank contents: {:?}",self.bank);
         
         //get edges from triangles of mesh
         let edges = indices_to_edges(&self.triangles);
@@ -307,7 +306,6 @@ impl Surface{
             
         //then marks cell as unused by pushing to the cell bank    
         self.bank.insert(cell);
-        println!("Cell removed\nbank contents: {:?}",self.bank);
     }
 
     //adds a new cell to the planet between two other cells
@@ -359,6 +357,5 @@ impl Surface{
         let mut triangulation = bowyer_watson(&mut all_points,&mut Vec::from_iter(surrounding_points));
         //adds new triangles to mesh
         self.triangles.append(&mut triangulation);
-        println!("Cell added\nbank contents: {:?}",self.bank);
     }
 }

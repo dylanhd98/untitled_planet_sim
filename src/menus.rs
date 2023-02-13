@@ -34,6 +34,7 @@ where G: Fn(f64)->f64{//type G is a function
     Line::new(points)
 }
 
+
 //displays a graph showing the increase in triangles and vertices for each iteration, and a triangle sudivided according to iterations
 fn iteration_info(egui_ctx: &Context,gen_info: &GenInfo){
     //amount of triangles multiplies by 4 for each iteration, starting at 20 at 0 iters
@@ -52,21 +53,34 @@ fn iteration_info(egui_ctx: &Context,gen_info: &GenInfo){
 
             let vert_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| (20.0*f64::powf(4.0, x))/2.0+2.0);
 
+            let little_line = plot_func(-1..1, 50, |x| x);
+
             let current = VLine::new(gen_info.iterations as f64);
 
-            Plot::new("my_plot")
+            ui.horizontal(|ui|{
+                Plot::new("subdivision graph")
+                    .allow_scroll(false)
+                    .allow_zoom(false)
+                    .allow_drag(false)
+                    .allow_boxed_zoom(false)
+                    //.show_background(false)
+                    .show(ui, |plot_ui| {
+                        plot_ui.line(vert_line);
+                        plot_ui.line(tri_line);
+                        plot_ui.vline(current);
+                    } );
 
-                .allow_scroll(false)
-                .allow_zoom(false)
-                .allow_drag(false)
-                //.allow_boxed_zoom(false)
-                //.show_background(false)
-                .show(ui, |plot_ui| {
-                    plot_ui.line(vert_line);
-                    plot_ui.line(tri_line);
-                    plot_ui.vline(current)
-                } );
-                
+                Plot::new("triangle graph")
+                    .allow_scroll(false)
+                    .allow_zoom(false)
+                    .allow_drag(false)
+                    .allow_boxed_zoom(false)
+                    .show_background(false)
+                    .show(ui, |plot_ui| {
+                        plot_ui.line(little_line);
+                    } );
+            }); 
+
         });
 }
 
