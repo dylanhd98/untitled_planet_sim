@@ -64,6 +64,7 @@ fn main() {
 
      //default settings for planet gen
     let default_gen = planet::GenInfo{
+        menu_state: menus::MenuState::None,
         iterations: 5,
         seed: 1,
         plate_no: 2,

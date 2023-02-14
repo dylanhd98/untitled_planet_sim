@@ -34,6 +34,7 @@ pub enum MapMode{
 
 //info used for generating planet
 pub struct GenInfo{
+    pub menu_state: crate::menus::MenuState,
     pub iterations :u8,
     pub seed:u32,
     pub plate_no:u32,

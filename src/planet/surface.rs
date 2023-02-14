@@ -244,7 +244,6 @@ impl Surface{
             //self.add_cell(*edge, *cell);
         }
         
-        
 /* 
         //for each edge along the plate boundry
         for edge in plate_boundaries{
