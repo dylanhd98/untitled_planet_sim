@@ -1,74 +1,22 @@
 use std::{ops::Range, vec};
 
 //external crates
-use egui::{Context,plot::{Line, Plot,PlotUi, PlotPoints,VLine,Bar, BarChart, Polygon}, epaint::shape_transform};
+use egui::{Context,plot::{Line, Plot,PlotUi, PlotPoints,VLine,Bar, BarChart, Polygon}};
 use glium::{Display,DrawParameters};
 use nalgebra_glm as glm;
 
 //internal modules
-use crate::{GenInfo, GameState,planet::{self, utils::indices_to_edges}, graphics::{self, shapes::Shape}};
+use crate::{GenInfo, GameState,planet, graphics::{self, shapes::Shape}};
 
 pub enum MenuState{
     //nothing being shown on menu
     None,
     //iteration menu shows graph of triangle count and vertex count, and picture of subdivided triangles
-    Iterations(IterationInfo),
+    Iterations(Shape)
 
 }
 
-pub struct IterationInfo{
-    tri_count: u32,
-    vert_count: u32,
-    tri_line: Line,
-    vert_line: Line,
-    iter_line: VLine,
-    triangles: Vec<Polygon>
-}
-impl IterationInfo{
-    pub fn show(&self,egui_ctx: &Context){
-        egui::CentralPanel::default()
-        .show(egui_ctx,|ui| {
-            ui.heading("Shape Subdivision Info");
-            ui.label("Triangle Count");
-            ui.label(format!("{}",self.tri_count));
-            ui.label("Vertex Count");
-            //amount of vertices can be found by halving tri_no and adding 2
-            ui.label(format!("{}",self.vert_count));
 
-            ui.horizontal(|ui|{
-                Plot::new("subdivision graph")
-                    .width(500.0)
-                    .height(500.0)
-                    .allow_scroll(false)
-                    .allow_zoom(false)
-                    .allow_drag(false)
-                    .allow_boxed_zoom(false)
-                    //.show_background(false)
-                    .show(ui, |plot_ui| {
-                        plot_ui.line(self.tri_line);
-                        plot_ui.line(self.vert_line);
-                        plot_ui.vline(self.iter_line.clone());
-                    } );
-
-                Plot::new("triangle graph")
-                    .width(500.0)
-                    .height(500.0)
-                    .allow_scroll(false)
-                    .allow_zoom(false)
-                    .allow_drag(false)
-                    .allow_boxed_zoom(false)
-                    .show_axes([false;2])
-                    .show_background(false)
-                    .show(ui, |plot_ui| {
-                        for poly in self.triangles{
-                            plot_ui.polygon(poly)
-                        }
-                    } );
-            }); 
-
-        });
-    }
-}
 //functions used by menus
 //amount of triangles multiplies by 4 for each iteration, starting at 20 at 0 iters
 fn tri_count_at_n(n:u32)->u32{
@@ -77,6 +25,24 @@ fn tri_count_at_n(n:u32)->u32{
 //amount of vertices can be found by halving tri_no and adding 2
 fn vert_count_from_tri(tris:u32)->u32{
     tris/2+2
+}
+
+//creates lines representing a subdivided triangle, 
+//much more efficient than rendering large amount of polygons as have tested previously
+//as the look of the triangles is just a result of overlapping lines, no actual internal points are specified, much better method
+fn subdivided_tri_lines(iterations:u8)->Vec<Line>{
+    //starts with original clockwise triangle points
+    let tri_points = vec![
+        glm::vec2(1.0, -1.0),
+        glm::Vec2::y(),
+        glm::vec2(-1.0, -1.0)
+    ];
+    //subdivide along original triangles lines to create new points
+    //new points should be ordered clockwise
+    
+    
+
+    //lines points on each line then connected to its own corresponding point on the other two lines
 }
 
 //creates a line for a plot from a given closure that returns an f64 
@@ -93,23 +59,6 @@ where G: Fn(f64)->f64{//type G is a function
             [i as f64/sample_rate as f64, func(i as f64/sample_rate as f64)]
         }).collect();
     Line::new(points)
-}
-
-//creates a triangle of specified subdivisions, returns all 
-fn subdivided_triangle(iterations: u8)->Vec<Polygon>{
-    //first original lines in triangle
-    let tri = Shape::triangle().subdivide(iterations);
-    //turn tri into polygons to be plotted
-    tri.indices.chunks(3)
-        .map(|t| {
-            //turn indices into points
-            let points: PlotPoints = t.iter()
-                .map(|i| [tri.vertices[*i as usize].x as f64,tri.vertices[*i as usize].y as f64])
-                .collect();
-            //use points to create polygon
-            Polygon::new(points).fill_alpha(1.0)
-        })
-        .collect()
 }
 
 //menu for planet creation
@@ -129,29 +78,7 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
         .show(egui_ctx,|ui| {
             ui.label("Shape Subdivisions");
             if ui.add(egui::Slider::new(&mut gen_info.iterations, 0..=7)).changed(){
-
-                let tri_count = 20*u32::pow(4, gen_info.iterations as u32);
-                
-                let vert_count = tri_count/2+2;
-
-                let tri_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| 20.0*f64::powf(4.0, x));
-
-                let vert_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| (20.0*f64::powf(4.0, x))/2.0+2.0);
-
-                let iter_line = VLine::new(gen_info.iterations);
-
-                let triangles = subdivided_triangle(gen_info.iterations);
-
-                let iter_info = IterationInfo{
-                    tri_count,
-                    vert_count,
-                    tri_line,
-                    vert_line,
-                    iter_line,
-                    triangles
-                };
-
-                gen_info.menu_state = MenuState::Iterations(iter_info)
+                gen_info.menu_state = MenuState::Iterations(Shape::triangle().subdivide(gen_info.iterations));
             }
 
             ui.label("Plate Amount");
@@ -173,9 +100,72 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
                 new_planet = true;
             }
         });
+    
         
-    if let MenuState::Iterations(ref info) = &gen_info.menu_state{
-        //info.show(egui_ctx);
+    if let MenuState::Iterations(tri) = &gen_info.menu_state{
+        let tri_count = 20*u32::pow(4, gen_info.iterations as u32);
+                
+        let vert_count = tri_count/2+2;
+
+        let tri_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| 20.0*f64::powf(4.0, x));
+
+        let vert_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| (20.0*f64::powf(4.0, x))/2.0+2.0);
+
+        let iter_line = VLine::new(gen_info.iterations);
+
+        let triangles:Vec<Polygon> = //turn tri into polygons to be plotted
+        tri.indices.chunks(3)
+            .map(|t| {
+                //turn indices into points
+                let points: PlotPoints = t.iter()
+                    .map(|i| [tri.vertices[*i as usize].x as f64,tri.vertices[*i as usize].y as f64])
+                    .collect();
+                //use points to create polygon
+                Polygon::new(points)
+                    .fill_alpha(0.0)
+            })
+            .collect();
+
+        egui::CentralPanel::default()
+        .show(egui_ctx,|ui| {;
+            ui.heading("Shape Subdivision Info");
+            ui.label("Triangle Count");
+            ui.label(format!("{}",tri_count));
+            ui.label("Vertex Count");
+            //amount of vertices can be found by halving tri_no and adding 2
+            ui.label(format!("{}",vert_count));
+
+            ui.horizontal(|ui|{
+                Plot::new("subdivision graph")
+                    .width(500.0)
+                    .height(500.0)
+                    .allow_scroll(false)
+                    .allow_zoom(false)
+                    .allow_drag(false)
+                    .allow_boxed_zoom(false)
+                    .show(ui, |plot_ui| {
+                        plot_ui.line(tri_line);
+                        plot_ui.line(vert_line);
+                        plot_ui.vline(iter_line);
+                    } );
+
+                Plot::new("triangle graph")
+                    .width(500.0)
+                    .height(500.0)
+                    .allow_scroll(false)
+                    .allow_zoom(false)
+                    .allow_drag(false)
+                    .allow_boxed_zoom(false)
+                    .show_axes([false;2])
+                    .show_background(false)
+                    .show(ui, |plot_ui| {
+                        for poly in triangles{
+                            plot_ui.polygon(poly)
+                        }
+                    } );
+            }); 
+
+        });
     }
 
     if new_planet{
