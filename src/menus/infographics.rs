@@ -152,6 +152,9 @@ pub fn axial_tilt_info(egui_ctx: &Context, gen_info: &GenInfo){
 
             Plot::new("axial diagram")
             .view_aspect(1.0)
+            .data_aspect(1.0)
+            .include_y(2.0)
+            .include_y(-2.0)
             .show(ui, |plot_ui| {
                 //create circle
                 let circle:PlotPoints = (-100..100)
