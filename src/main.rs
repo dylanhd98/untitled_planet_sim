@@ -113,6 +113,10 @@ fn main() {
                         //zoom 5% according to direction scrolled
                         cam.pos *= 1.0+(y*0.05);
                     }
+                    else if let glutin::event::MouseScrollDelta::PixelDelta(pos) = delta{
+                        //zoom 0.5% for each pixel scrolled
+                        cam.pos *= 1.0+((pos.y as f32)*0.005);
+                    }
                 }
                 //if key pressed 
                 else if let glutin::event::WindowEvent::KeyboardInput { device_id:_, input, is_synthetic:_ }=event{

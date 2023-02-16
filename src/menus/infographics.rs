@@ -1,7 +1,7 @@
 
 use core::ops::Range;
 //external crates used
-use egui::{Context,plot::{Line, Plot,PlotUi, PlotPoints,VLine,Bar, BarChart, Polygon}};
+use egui::{Context,plot::{Line, Plot,PlotUi, PlotPoints,VLine,Bar, BarChart, Polygon, Legend, Corner}};
 use nalgebra_glm as glm;
 
 use crate::planet::GenInfo;
@@ -74,51 +74,64 @@ where G: Fn(f64)->f64{//type G is a function
     Line::new(points)
 }
 
+//menu showing the user information about subdividing the mesh
 pub fn subdivision_info(egui_ctx: &Context, gen_info: &GenInfo){
+        //amount of triangles that will be generated at current iteration
         let tri_count = 20*u32::pow(4, gen_info.iterations as u32);
-                
+        //amount of vertices that will be generated at current iteration
         let vert_count = tri_count/2+2;
-
+        //plot lines showing the tri count and vertex count at all iterations previous current and one above
+        //intends to show the user why preformance may quickly drop with iterations
         let tri_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| 20.0*f64::powf(4.0, x));
-
         let vert_line = plot_func(-1..(1+gen_info.iterations).into(), 50, |x| (20.0*f64::powf(4.0, x))/2.0+2.0);
-
+        //plot vertical line at value current iteration amount selected, as reference for the user on a graph
         let iter_line = VLine::new(gen_info.iterations);
-
+        //generates lines to be drawn that show what subdivisions on a triangle look like
         let triangle_lines:Vec<Line> = subdivided_tri_lines(gen_info.iterations);
 
         egui::CentralPanel::default()
         .show(egui_ctx,|ui| {
+            //gets dimensons of central panel for later
+            let panel_size = ui.available_size();
             ui.heading("Shape Subdivision Info");
-            ui.label("Triangle Count");
-            ui.label(format!("{}",tri_count));
-            ui.label("Vertex Count");
-            //amount of vertices can be found by halving tri_no and adding 2
-            ui.label(format!("{}",vert_count));
+            ui.separator();
+            ui.label("The amount of times each triangle on the original icosahedron is subdivided, this is done to create a sphereical planet with similarly distanced points at a user specified resolution.");
+            
+            ui.separator();
+            //ui.label("Triangle Count");
+            //ui.label(format!("{}",tri_count));
+            //ui.label("Vertex Count");
+            //ui.label(format!("{}",vert_count));
+            
 
             ui.horizontal(|ui|{
+                //plot graph of amount of triangles and points
                 Plot::new("subdivision graph")
-                    .width(500.0)
-                    .height(500.0)
+                    .width(panel_size.x*0.5)
+                    .height(panel_size.y*0.5)
                     .allow_scroll(false)
                     .allow_zoom(false)
                     .allow_drag(false)
                     .allow_boxed_zoom(false)
+                    .legend(Legend::default().position(Corner::LeftTop).background_alpha(1.0))
                     .show(ui, |plot_ui| {
-                        plot_ui.line(tri_line);
-                        plot_ui.line(vert_line);
-                        plot_ui.vline(iter_line);
+                        plot_ui.line(tri_line.name(format!("Triangle Count ({})",tri_count)));
+                        plot_ui.line(vert_line.name(format!("Vetex Count  ({})",vert_count)));
+                        plot_ui.vline(iter_line.name(format!("Current Iterations ({})",gen_info.iterations)));
                     } );
 
+                //graph displaying subdivided triangle, meant to just look like still image
                 Plot::new("triangle graph")
-                    .width(500.0)
-                    .height(500.0)
+                    .width(panel_size.x*0.5)
+                    .height(panel_size.y*0.5)
                     .allow_scroll(false)
                     .allow_zoom(false)
                     .allow_drag(false)
                     .allow_boxed_zoom(false)
                     .show_axes([false;2])
                     .show_background(false)
+                    .show_y(false)
+                    .show_x(false)
                     .show(ui, |plot_ui| {
                         //plot the lines of the triangle
                         for line in triangle_lines{
@@ -127,5 +140,34 @@ pub fn subdivision_info(egui_ctx: &Context, gen_info: &GenInfo){
                     } );
             }); 
 
+        });
+}
+
+//displays circle and line at angle intersecting with it to represent axial tilt
+pub fn axial_tilt_info(egui_ctx: &Context, gen_info: &GenInfo){
+    egui::CentralPanel::default()
+        .show(egui_ctx, |ui| {
+            ui.heading("Axial Tilt Info");
+            ui.separator();
+
+            Plot::new("axial diagram")
+            .view_aspect(1.0)
+            .show(ui, |plot_ui| {
+                //create circle
+                let circle:PlotPoints = (-100..100)
+                    .map(|x| {
+                        let t =x as f64 * 3.141592653/100.0;
+                        [f64::cos(t),f64::sin(t)]
+                    }).collect();
+                plot_ui.polygon(Polygon::new(circle));
+                //creates line at angle of axis
+                let axis_point = 1.5*glm::vec2(f32::cos(gen_info.axial_tilt), f32::sin(gen_info.axial_tilt));
+                let points = vec![
+                    [axis_point.x as f64,axis_point.y as f64],
+                    [-axis_point.x as f64,-axis_point.y as f64]
+                ];
+                plot_ui.line(Line::new(points))
+            });
+                
         });
 }

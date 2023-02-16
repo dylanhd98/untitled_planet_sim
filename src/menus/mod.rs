@@ -1,7 +1,7 @@
 use std::{ops::Range, vec};
 
 //external crates
-use egui::{Context,plot::{Line, Plot,PlotUi, PlotPoints,VLine,Bar, BarChart, Polygon}};
+use egui::{Context};
 use glium::{Display,DrawParameters};
 use nalgebra_glm as glm;
 
@@ -16,8 +16,9 @@ pub enum MenuState{
     //nothing being shown on menu
     None,
     //menu shows graph of triangle count and vertex count, and picture of subdivided triangles
-    Subdivision
-
+    Subdivision,
+    //menu showing circle and line representing axis
+    AxialTilt,
 }
 
 //menu for planet creation
@@ -44,7 +45,9 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
             ui.add(egui::Slider::new(&mut gen_info.plate_no, 0..=50));
 
             ui.label("Axial Tilt");
-            ui.add(egui::Slider::new(&mut gen_info.axial_tilt, 0.0..=(2.0*3.141592653)));
+            if ui.add(egui::Slider::new(&mut gen_info.axial_tilt, 0.0..=(2.0*3.141592653))).changed(){
+                gen_info.menu_state = MenuState::AxialTilt;
+            }
 
             ui.label("Lapse Rate");
             ui.add(egui::Slider::new(&mut gen_info.lapse_rate, 0.0..=25.0));
@@ -60,10 +63,14 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
             }
         });
     
-    //menu showing information about subdivision of the mesh
-    if let MenuState::Subdivision = &gen_info.menu_state{
-        infographics::subdivision_info(egui_ctx,gen_info);
+    //do menus based on menu state
+    match &gen_info.menu_state {
+        //menu showing information about subdivision of the mesh
+        MenuState::Subdivision => infographics::subdivision_info(egui_ctx,gen_info),
+        MenuState::AxialTilt => infographics::axial_tilt_info(egui_ctx, gen_info),
+        _=>()
     }
+ 
 
     if new_planet{
         //creates new camera

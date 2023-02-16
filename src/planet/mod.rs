@@ -157,9 +157,10 @@ impl Planet{
     }
 
     pub fn draw(&self, target:&mut glium::Frame, program:&glium::Program, params:&glium::DrawParameters,cam:&graphics::camera::Camera){
+        //turn matrices into type gpu will take
         let pers:[[f32;4];4] = cam.perspective.into();
         let view:[[f32;4];4] = cam.view.into();
-
+        //send light pos corrosponding to user choice
         let to_light:[f32;3] = match self.render_data.light_pos{
             LightPosition::Sun=> self.sim_info.to_sun.into(),
             LightPosition::Camera=> cam.pos.normalize().into(),

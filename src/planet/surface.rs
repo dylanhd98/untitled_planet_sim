@@ -241,6 +241,7 @@ impl Surface{
         //handle divering plate boundaries, place new cells at their mid points when able
         //let banked_cells = self.bank.iter();
         for (edge,cell) in diverging.into_iter().zip(self.bank.iter()){
+            //self.bank.remove(cell);
             //self.add_cell(*edge, *cell);
         }
         
