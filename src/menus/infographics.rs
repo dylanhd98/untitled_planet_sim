@@ -151,10 +151,17 @@ pub fn axial_tilt_info(egui_ctx: &Context, gen_info: &GenInfo){
             ui.separator();
 
             Plot::new("axial diagram")
-            .view_aspect(1.0)
             .data_aspect(1.0)
             .include_y(2.0)
             .include_y(-2.0)
+            .include_x(2.0)
+            .include_x(-2.0)
+            .allow_scroll(false)
+            .allow_zoom(false)
+            .allow_drag(false)
+            .allow_boxed_zoom(false)
+            .show_y(false)
+            .show_x(false)
             .show(ui, |plot_ui| {
                 //create circle
                 let circle:PlotPoints = (-100..100)
