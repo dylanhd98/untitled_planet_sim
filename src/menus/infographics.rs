@@ -1,7 +1,8 @@
 
 use core::ops::Range;
+use std::f64;
 //external crates used
-use egui::{Context,plot::{Line, Plot,PlotUi, PlotPoints,VLine,Bar, BarChart, Polygon, Legend, Corner}};
+use egui::{Context,plot::{Line, Plot, PlotPoints,VLine, Polygon, Legend, Corner}, Color32};
 use nalgebra_glm as glm;
 
 use crate::planet::GenInfo;
@@ -72,6 +73,38 @@ where G: Fn(f64)->f64{//type G is a function
             [i as f64/sample_rate as f64, func(i as f64/sample_rate as f64)]
         }).collect();
     Line::new(points)
+}
+
+//plots an arc between two angles on the circumfrence of a circle
+fn plot_arc(pos:[f64;2],radius:f64,start:f64,end:f64)->Line{
+    let step_size = 3.141592653/200.0;
+    let range = if start<end{
+        (start*200.0) as i32..=(end*200.0) as i32
+    }else{
+        (end*200.0) as i32..=(start*200.0) as i32
+    };
+    let arc:PlotPoints = range
+        .map(|x| {
+            let t = x as f64 * step_size;
+            [radius*(f64::cos(t)+pos[0]),radius*(f64::sin(t)+pos[1])]
+        }).collect();
+    Line::new(arc)
+}
+
+//creates line rotated about a point
+fn plot_line(pos:[f64;2],size:f64,rotation:f64){
+    
+}
+
+//creates circle given pos and radius
+fn plot_circle(pos:[f64;2],radius:f64)->Polygon{
+    let step_size = 3.141592653/100.0;
+    let circle:PlotPoints = (-100..100)
+        .map(|x| {
+            let t = x as f64 * step_size;
+            [radius*(f64::cos(t)+pos[0]),radius*(f64::sin(t)+pos[1])]
+        }).collect();
+    Polygon::new(circle)
 }
 
 //menu showing the user information about subdividing the mesh
@@ -152,31 +185,56 @@ pub fn axial_tilt_info(egui_ctx: &Context, gen_info: &GenInfo){
 
             Plot::new("axial diagram")
             .data_aspect(1.0)
-            .include_y(2.0)
-            .include_y(-2.0)
-            .include_x(2.0)
-            .include_x(-2.0)
             .allow_scroll(false)
             .allow_zoom(false)
             .allow_drag(false)
             .allow_boxed_zoom(false)
+            .show_axes([false;2])
+            .show_background(false)
             .show_y(false)
             .show_x(false)
+            .legend(Legend::default().position(Corner::LeftTop))
             .show(ui, |plot_ui| {
-                //create circle
-                let circle:PlotPoints = (-100..100)
-                    .map(|x| {
-                        let t =x as f64 * 3.141592653/100.0;
-                        [f64::cos(t),f64::sin(t)]
-                    }).collect();
-                plot_ui.polygon(Polygon::new(circle));
+                //plot unit circle
+                plot_ui.polygon(plot_circle([0.0,0.0], 1.0)
+                    .color(Color32::LIGHT_BLUE));
+                //plot orbital axis and plane
+                let points = vec![
+                    [0.0,1.5],
+                    [0.0,-1.5]
+                ];
+                plot_ui.line(Line::new(points)
+                    .color(Color32::GRAY)
+                    .name("Orbital Axis"));
+                
+                //plot rotational axis
+                let rotation = (gen_info.axial_tilt+0.5)*3.1415926;
                 //creates line at angle of axis
-                let axis_point = 1.5*glm::vec2(f32::cos(gen_info.axial_tilt), f32::sin(gen_info.axial_tilt));
+                let axis_point = 1.5*glm::vec2(f32::cos(rotation), f32::sin(rotation));
                 let points = vec![
                     [axis_point.x as f64,axis_point.y as f64],
                     [-axis_point.x as f64,-axis_point.y as f64]
                 ];
-                plot_ui.line(Line::new(points))
+                plot_ui.line(Line::new(points)
+                    .color(Color32::LIGHT_RED)
+                    .name("Rotational Axis"));
+                
+                //plot axial tilt
+                plot_ui.line(plot_arc([0.0,0.0], 1.25, 0.5, gen_info.axial_tilt as f64 + 0.5)
+                    .name(format!("Axial Tilt\nRadians ({}π)\nDegrees ({}°)",gen_info.axial_tilt,gen_info.axial_tilt*180.0)));
+
+                
+                //now create equator line
+                let rotation = (gen_info.axial_tilt)*3.1415926;
+                let axis_point = glm::vec2(f32::cos(rotation), f32::sin(rotation));
+                let points = vec![
+                    [axis_point.x as f64,axis_point.y as f64],
+                    [-axis_point.x as f64,-axis_point.y as f64]
+                ];
+                plot_ui.line(Line::new(points)
+                    .color(Color32::LIGHT_GREEN)
+                    .style(egui::plot::LineStyle::dashed_dense())
+                    .name("Equator"));
             });
                 
         });

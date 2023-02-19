@@ -45,7 +45,7 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
             ui.add(egui::Slider::new(&mut gen_info.plate_no, 0..=50));
 
             ui.label("Axial Tilt");
-            if ui.add(egui::Slider::new(&mut gen_info.axial_tilt, 0.0..=(2.0*3.141592653))).changed(){
+            if ui.add(egui::Slider::new(&mut gen_info.axial_tilt, -1.0..=1.0)).changed(){
                 gen_info.menu_state = MenuState::AxialTilt;
             }
 
@@ -71,7 +71,6 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
         _=>()
     }
  
-
     if new_planet{
         //creates new camera
         let dimensions = display.get_framebuffer_dimensions();

@@ -52,11 +52,12 @@ impl Shape{
 
             //for every triangle edge, calculate midpoint,add to new vertices, store index in dictionary with edge indices as the key
             //if edge midpoint already calculated, skip
-            //prevents unessisary calculation and duplicate midpoints. 
+            //prevents unnecessary calculation and duplicate midpoints. 
             let mut midpoints = HashMap::<(u32,u32),u32>::new();
             //for every triangle (every group of 3 indices), check if already calculated
             for tri in self.indices.chunks(3){
                 for i in 0..3{
+                    //order edge so edges with the same points are the same to be used as key
                     let edge = order_edge(tri[i],tri[(i+1)%3]);
 
                     //if edge isnt in dictionary, calculate midpoint, add to vertices, store index in dictionary

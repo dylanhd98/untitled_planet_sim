@@ -68,7 +68,7 @@ fn main() {
         iterations: 5,
         seed: 1,
         plate_no: 2,
-        axial_tilt: 0.4084,
+        axial_tilt: 23.0/180.0,
         lapse_rate:9.8,
         greenhouse_effect: 0.7
     };
