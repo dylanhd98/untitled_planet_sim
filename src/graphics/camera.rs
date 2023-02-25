@@ -27,6 +27,7 @@ impl Camera{
         }
     }
 
+    //updates perspective matrix when aspect ratio changes
     pub fn update_ratio(&mut self,ratio:f32){
         self.perspective = glm::perspective(ratio, std::f32::consts::PI / 4.0, 0.01, 1024.0);
     }

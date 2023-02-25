@@ -115,8 +115,7 @@ impl Surface{
                     let x:f32 = rng.gen_range(0.0..=glm::two_pi());
                     let y:f32 = rng.gen_range(0.0..=glm::two_pi());
                     glm::rotate_y_vec3(
-                        &glm::rotate_x_vec3(&glm::vec3(0.0,1.0,0.0),x), 
-                        y)
+                        &glm::rotate_x_vec3(&glm::vec3(0.0,1.0,0.0),x), y)
                 };
 
                 Plate {

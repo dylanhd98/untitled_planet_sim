@@ -51,11 +51,15 @@ fn main() {
     //set time of start of frame
     let mut frame_time = Instant::now();
     //pos of mouse if middle click pressed previous frame, if wasnt in last frame None is stored
-    let mut midclick_last:Option<glm::Vec2> = None;
+    let mut drag_last:Option<glm::Vec2> = None;
     //mouse position as screen coords with top left of screen being -1,-1 and bottom right being 1,1
     let mut mouse_pos:glm::Vec2 = glm::Vec2::zeros();
     //keep track of size of window
-    let mut window_res:PhysicalSize<u32> = PhysicalSize::new(1, 1);
+    let mut window_res:PhysicalSize<u32> = {
+        let dimensions = display.get_framebuffer_dimensions();
+        PhysicalSize::new(dimensions.0, dimensions.1)
+    };
+    
 
     //compiles shaders from files
     let planet_shader = glium::Program::from_source(&display, 
@@ -134,11 +138,11 @@ fn main() {
                     //if mid button pressed
                     if button == MouseButton::Middle && state == glutin::event::ElementState::Pressed{
                         //record current mouse pos
-                        midclick_last = Some(mouse_pos); 
+                        drag_last = Some(mouse_pos); 
                     }
                     else if button == MouseButton::Middle && state == glutin::event::ElementState::Released{
                         //make last pos none as no longer being held
-                        midclick_last = None; 
+                        drag_last = None; 
                     }
                 }
                 //if key pressed 
@@ -206,14 +210,15 @@ fn main() {
                 });
 
                 //rotate camera based on how dragged by middle click
-                if let Some(last_pos) = midclick_last{
+                if let Some(last_pos) = drag_last{
                     //get difference between last and current pos for drag
                     let drag = mouse_pos-last_pos;
                     let normal = glm::cross(&camera.pos,&glm::Vec3::y());
-                    camera.pos = glm::rotate_vec3(&camera.pos, drag.y, &normal);
-                    camera.pos = glm::rotate_y_vec3(&camera.pos, -drag.x);
+                    //rotate camera around origin using drag
+                    camera.pos = glm::rotate_vec3(&camera.pos, drag.y*3.14159, &normal);
+                    camera.pos = glm::rotate_y_vec3(&camera.pos, -drag.x*3.14159);
                     //record current pos as new
-                    midclick_last = Some(mouse_pos);
+                    drag_last = Some(mouse_pos);
                 }
 
                 //updates camera view based on new pos specified by user input
