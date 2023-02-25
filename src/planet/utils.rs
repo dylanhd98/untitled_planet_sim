@@ -210,12 +210,40 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
         .collect()
 }
 
-//flip algorithm to achieve delauny triangulation
+//flip algorithm to achieve delaunay triangulation, from arbitrary previous one, do not use at large scale
 pub fn flip_triangulate(points:&Vec<glm::Vec3>, triangulation: &Vec<u32>){
     //go through each triangle and compare with neighbouring triangles
-    //if both triangles arent delaunary, flip
+    //if both triangles arent delaunay, flip
     let mut has_flipped = false;
-    
+    //compare each tri with every other
+    for tri_a in triangulation.chunks(3){
+        for tri_b in triangulation.chunks(3){
+            //the point in tri_b that will be tested against tri_a's circumcircle
+            let mut b_point:u32 = 0;
+            //skip tri if the two do not share an edge - share two points
+            let shared_points:u8 = tri_b.iter()
+                .map(|p| {
+                    if tri_a.contains(p){
+                        1
+                    }else{
+                        //record point as not shared
+                        b_point = *p;
+                        0
+                    }
+                })
+                .sum();
+            //skip triangle if no shared edges
+            if shared_points<2{
+                continue;
+            }
+            //test if two triangles are delaunay- if non shared point in tri_b isnt inside tri_a's circumcircle
+            let circumcenter = circumcenter(points, tri_a.into());
+            //test if b_point is closer to circumcenter than any point in tri_a- if so than b_point is within circumcircle nad the tris are not delaunay
+            if glm::magnitude(&(points[tri_a[0] as usize]-circumcenter)) <= glm::magnitude(&(points[b_point as usize]-circumcenter)){
+                
+            }
+        }
+    }
 }
 
 //takes cartesian point on unit sphere, returns it as stereographic, a pole must be specified
