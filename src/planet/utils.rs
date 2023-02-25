@@ -210,6 +210,14 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
         .collect()
 }
 
+//flip algorithm to achieve delauny triangulation
+pub fn flip_triangulate(points:&Vec<glm::Vec3>, triangulation: &Vec<u32>){
+    //go through each triangle and compare with neighbouring triangles
+    //if both triangles arent delaunary, flip
+    let mut has_flipped = false;
+    
+}
+
 //takes cartesian point on unit sphere, returns it as stereographic, a pole must be specified
 pub fn stereographic(point: glm::Vec3,pole: &glm::Vec3)->glm::Vec3{    
     glm::vec3(point.x/(1.0-point.z), point.y/(1.0-point.z), 0.0)

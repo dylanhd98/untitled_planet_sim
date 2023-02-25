@@ -1,5 +1,5 @@
 //external crates
-use glium::{Surface,glutin};
+use glium::{Surface,glutin::{self, event::MouseButton, dpi::{PhysicalPosition, PhysicalSize}}};
 use graphics::camera::Camera;
 use nalgebra_glm as glm;
 use planet::{Planet, GenInfo};
@@ -50,6 +50,12 @@ fn main() {
 
     //set time of start of frame
     let mut frame_time = Instant::now();
+    //pos of mouse if middle click pressed previous frame, if wasnt in last frame None is stored
+    let mut midclick_last:Option<glm::Vec2> = None;
+    //mouse position as screen coords with top left of screen being -1,-1 and bottom right being 1,1
+    let mut mouse_pos:glm::Vec2 = glm::Vec2::zeros();
+    //keep track of size of window
+    let mut window_res:PhysicalSize<u32> = PhysicalSize::new(1, 1);
 
     //compiles shaders from files
     let planet_shader = glium::Program::from_source(&display, 
@@ -62,7 +68,7 @@ fn main() {
         include_str!("../resources/shaders/planet/frag.glsl"),
         None).unwrap();
 
-     //default settings for planet gen
+    //default settings for planet gen
     let default_gen = planet::GenInfo{
         menu_state: menus::MenuState::None,
         iterations: 5,
@@ -73,6 +79,7 @@ fn main() {
         greenhouse_effect: 0.7
     };
 
+    //set starting game state as generating the planet
     let mut game_state = GameState::Generate(default_gen);
 
     //loop forever until close event
@@ -104,7 +111,6 @@ fn main() {
                     }
                 }
             }
-
             //if running sim
             else if let GameState::Playing(_,ref mut cam) = game_state{
                 //if mouse wheel scrolled, change camera accordingly
@@ -116,6 +122,23 @@ fn main() {
                     else if let glutin::event::MouseScrollDelta::PixelDelta(pos) = delta{
                         //zoom 0.5% for each pixel scrolled
                         cam.pos *= 1.0+((pos.y as f32)*0.005);
+                    }
+                }
+                //if mouse moves, record new pos 
+                else if let glutin::event::WindowEvent::CursorMoved { device_id:_, position, modifiers:_ } = event{
+                    //mouse pos but as uv coords, top left of screen being the origin
+                    mouse_pos = glm::vec2(position.x as f32/window_res.width as f32, position.y as f32/window_res.height as f32);
+                }
+                //if mouse input
+                else if let glutin::event::WindowEvent::MouseInput { device_id:_, state, button, modifiers:_  } = event{
+                    //if mid button pressed
+                    if button == MouseButton::Middle && state == glutin::event::ElementState::Pressed{
+                        //record current mouse pos
+                        midclick_last = Some(mouse_pos); 
+                    }
+                    else if button == MouseButton::Middle && state == glutin::event::ElementState::Released{
+                        //make last pos none as no longer being held
+                        midclick_last = None; 
                     }
                 }
                 //if key pressed 
@@ -131,13 +154,11 @@ fn main() {
 
                         //look up and down, for these it creates a rotation axis that is tangent to Y and cam.pos
                         Some(glutin::event::VirtualKeyCode::W)=> cam.pos ={
-                            let up = glm::vec3(0.0,1.0,0.0);
-                            let normal = glm::cross(&cam.pos,&up);
+                            let normal = glm::cross(&cam.pos,&glm::Vec3::y());
                             glm::rotate_vec3(&cam.pos, 0.05, &normal)
                         }, 
                         Some(glutin::event::VirtualKeyCode::S)=> cam.pos = {
-                            let up = glm::vec3(0.0,1.0,0.0);
-                            let normal = glm::cross(&cam.pos,&up);
+                            let normal = glm::cross(&cam.pos,&glm::Vec3::y());
                             glm::rotate_vec3(&cam.pos, -0.05, &normal)
                         },
                         _=>()
@@ -146,6 +167,7 @@ fn main() {
                 //update camera if window resized and game state is playing
                 else if let glutin::event::WindowEvent::Resized(new_size) = event{
                     cam.update_ratio(new_size.width as f32/ new_size.height as f32);
+                    window_res = new_size;
                 }
             }
 
@@ -182,6 +204,17 @@ fn main() {
                 egui_glium.run(&display, |egui_ctx| {
                     menus::playing(egui_ctx,&mut params, planet)
                 });
+
+                //rotate camera based on how dragged by middle click
+                if let Some(last_pos) = midclick_last{
+                    //get difference between last and current pos for drag
+                    let drag = mouse_pos-last_pos;
+                    let normal = glm::cross(&camera.pos,&glm::Vec3::y());
+                    camera.pos = glm::rotate_vec3(&camera.pos, drag.y, &normal);
+                    camera.pos = glm::rotate_y_vec3(&camera.pos, -drag.x);
+                    //record current pos as new
+                    midclick_last = Some(mouse_pos);
+                }
 
                 //updates camera view based on new pos specified by user input
                 camera.update_view();
