@@ -182,6 +182,8 @@ pub fn axial_tilt_info(egui_ctx: &Context, gen_info: &GenInfo){
         .show(egui_ctx, |ui| {
             ui.heading("Axial Tilt Info");
             ui.separator();
+            ui.label("The axial tilt of the planet, the angle between the pole of the planet and the normal of its orbital plane. Determines the seasons of the planet due to the angle the light hits different latitudes differing around  the year.");
+            ui.separator();
 
             Plot::new("axial diagram")
             .data_aspect(1.0)
@@ -223,7 +225,6 @@ pub fn axial_tilt_info(egui_ctx: &Context, gen_info: &GenInfo){
                 plot_ui.line(plot_arc([0.0,0.0], 1.25, 0.5, gen_info.axial_tilt as f64 + 0.5)
                     .name(format!("Axial Tilt\nRadians ({}π)\nDegrees ({}°)",gen_info.axial_tilt,gen_info.axial_tilt*180.0)));
 
-                
                 //now create equator line
                 let rotation = (gen_info.axial_tilt)*3.1415926;
                 let axis_point = glm::vec2(f32::cos(rotation), f32::sin(rotation));

@@ -13,8 +13,8 @@ mod infographics;
 
 //enum for what the menu is showing right now
 pub enum MenuState{
-    //nothing being shown on menu
-    None,
+    //introductory information being shown on menu
+    Intro,
     //menu shows graph of triangle count and vertex count, and picture of subdivided triangles
     Subdivision,
     //menu showing circle and line representing axis
@@ -58,7 +58,8 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
             ui.label("Seed");
             ui.add(egui::DragValue::new(&mut gen_info.seed).speed(0));
             
-            if ui.button("CREATE PLANET").clicked(){
+            ui.label("New Planet");
+            if ui.button("CREATE").clicked(){
                 new_planet = true;
             }
         });
@@ -134,5 +135,9 @@ pub fn playing(egui_ctx: &Context,params: &mut DrawParameters,planet:&mut planet
                 ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Normals, "Normals");
             }
         );
+
+        if ui.button("New Plates").clicked(){
+            planet.surface.fill_plates();
+        }
     });
 }

@@ -104,56 +104,29 @@ impl Surface{
 
         let edges = indices_to_edges(&shape.indices);
 
+        //creates randomized plates for surface
+        let mut plates:Vec<Plate> = (0..gen.plate_no)
+        .map(|_|{
+            //randomized axis the plate moves around
+            let rand_axis = {
+                let x:f32 = rng.gen_range(0.0..=glm::two_pi());
+                let y:f32 = rng.gen_range(0.0..=glm::two_pi());
+                glm::rotate_y_vec3(
+                    &glm::rotate_x_vec3(&glm::vec3(0.0,1.0,0.0),x), y)
+            };
+
+            Plate {
+                axis: rand_axis,
+                density: rng.gen_range(0.0..10.0),//not representative of real value, just used to compare plates
+                speed: rng.gen_range(0.00..0.2)/6371000.0, //done in meters per second, 6371000 is earths radius
+            }
+        })
+         .collect();
+
         //length of edge
         let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude();
 
-        //creates randomized plates for surface
-        let mut plates:Vec<Plate> = (0..gen.plate_no)
-            .map(|_|{
-                //randomized axis the plate moves around
-                let rand_axis = {
-                    let x:f32 = rng.gen_range(0.0..=glm::two_pi());
-                    let y:f32 = rng.gen_range(0.0..=glm::two_pi());
-                    glm::rotate_y_vec3(
-                        &glm::rotate_x_vec3(&glm::vec3(0.0,1.0,0.0),x), y)
-                };
-
-                Plate {
-                    axis: rand_axis,
-                    density: rng.gen_range(0.0..10.0),//not representative of real value, just used to compare plates
-                    speed: rng.gen_range(0.00..0.2)/6371000.0, //done in meters per second, 6371000 is earths radius
-                }
-            })
-            .collect();
-
-        if !plates.is_empty(){
-            //place seed cells randomly for each plate for each to spread out from
-            for plate in 0..plates.len(){
-                let target = rng.gen_range(0..cells.len());
-                cells[target].plate = Some(plate);
-            }
-
-            //fill planet with the plates via random fill, if there are plates to even fill with
-            while cells.iter().any(|c| !c.plate.is_some()){
-                //get all plate boundries
-                let plate_boundries:Vec<&(usize,usize)> = edges.iter()
-                    .filter(|e| 
-                    &cells[e.0].plate != &cells[e.1].plate)
-                    .collect();
-
-                //extend plate across random boundries 16 times
-                for _ in 0..16{
-                    let edge = plate_boundries.choose(&mut rng).unwrap();
-                    if cells[edge.0].plate == None{
-                        cells[edge.0].plate = cells[edge.1].plate;
-                    }else if cells[edge.1].plate == None{
-                        cells[edge.1].plate = cells[edge.0].plate;
-                    }
-                }
-            }
-        }
-        
-        Surface{
+        let mut surface = Surface{
             cells,
             triangles: shape.indices,
             plates,
@@ -161,7 +134,46 @@ impl Surface{
             cell_distance,
             since_triangulation:0.0,
             rng,
+        };
+        surface.fill_plates();
+        surface
+    }
+
+    //generates specified number of plates
+    pub fn fill_plates(&mut self){
+        if !self.plates.is_empty(){
+            //unset plates from all cells
+            self.cells.iter_mut()
+                .for_each(|c| c.plate = None);
+            //get edges to be used to extend plates accross
+            let edges = indices_to_edges(&self.triangles);
+            //place seed cells randomly for each plate for each to spread out from
+            for plate in 0..self.plates.len(){
+                let target = self.rng.gen_range(0..self.cells.len());
+                self.cells[target].plate = Some(plate);
+            }
+            //fill planet with the plates via random fill, if there are plates to even fill with
+            while (0..self.cells.len()).into_iter().any(|c| 
+                !self.cells[c].plate.is_some()&&
+                !self.bank.contains(&c)){
+                //get all plate boundries
+                let plate_boundries:Vec<&(usize,usize)> = edges.iter()
+                    .filter(|e| 
+                    &self.cells[e.0].plate != &self.cells[e.1].plate)
+                    .collect();
+                let extend_no = usize::max(plate_boundries.len()/8, 1);
+                //extend plate across 1/8 of boundries randomly
+                for _ in 0..extend_no{
+                    let edge = plate_boundries.choose(&mut self.rng).unwrap();
+                    if self.cells[edge.0].plate == None{
+                        self.cells[edge.0].plate = self.cells[edge.1].plate;
+                    }else if self.cells[edge.1].plate == None{
+                        self.cells[edge.1].plate = self.cells[edge.0].plate;
+                    }
+                }
+            }
         }
+        
     }
 
     //handles tempereture updating
@@ -234,12 +246,12 @@ impl Surface{
                 (edge.1,edge.0)
             };
             //when two collide remove the denser one, as it subducts
-            self.remove_cell(dense_sorted.0);
-            self.cells[dense_sorted.1].contents.height +=1.0
+            self.remove_cell(dense_sorted.0,dense_sorted.1);
+            self.cells[dense_sorted.1].contents.height +=0.05
         }
         //handle divering plate boundaries, place new cells at their mid points when able
         //let banked_cells = self.bank.iter();
-        for (edge,cell) in diverging.into_iter().zip(self.bank.iter()){
+        for edge in diverging{
             //self.bank.remove(cell);
             //self.add_cell(*edge, *cell);
         }
@@ -270,9 +282,10 @@ impl Surface{
     }
 
     //remove cell
-    pub fn remove_cell(&mut self,cell: usize){
+    pub fn remove_cell(&mut self,cell: usize,provoking: usize){
         //hashset to ensure surrounding points are unique
-        let mut surrounding_points:HashSet<u32> = HashSet::with_capacity(6);
+        //let mut surrounding_points:HashSet<u32> = HashSet::with_capacity(6);
+        let mut surrounding_tris:Vec<u32> = Vec::with_capacity(16);
 
         //filter out triangles that contain cell, record all other points if they do
         self.triangles = self.triangles.chunks(3)
@@ -282,11 +295,10 @@ impl Surface{
                     true
                 }else{
                     //add all surrounding points that arent the cell itself to hashset for triangulation
-                    chunk.iter()
-                        .filter(|x| **x != cell as u32)//make sure ther original cell is excluded
-                        .for_each(|x| {
-                            surrounding_points.insert(*x);//insert points into hashset
-                        });
+                    surrounding_tris.append(
+                       &mut chunk.iter()
+                        .map(|i| *i)
+                        .collect());
                     false
                 }
             })
@@ -294,14 +306,14 @@ impl Surface{
             .map(|n|*n)
             .collect();
 
-        let mut all_points:Vec<glm::Vec3> = self.cells.iter()
-            .map(|cell| stereographic(cell.position,&glm::Vec3::y()))
-            .collect();
+        //let mut all_points:Vec<glm::Vec3> = self.cells.iter()
+        //    .map(|cell| stereographic(cell.position,&glm::Vec3::y()))
+        //    .collect();
 
         //gets new triangulation 
-        let mut triangulation = bowyer_watson(&mut all_points,&mut Vec::from_iter(surrounding_points));
+        //let mut triangulation = bowyer_watson(&mut all_points,&mut Vec::from_iter(surrounding_points));
         //adds new triangles
-        self.triangles.append(&mut triangulation);
+        self.triangles.append(&mut connect_point(surrounding_tris, provoking as u32));
             
         //then marks cell as unused by pushing to the cell bank    
         self.bank.insert(cell);

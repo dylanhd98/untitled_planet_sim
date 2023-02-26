@@ -211,6 +211,7 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
 }
 
 //flip algorithm to achieve delaunay triangulation, from arbitrary previous one, do not use at large scale
+//although has the advantage of being able to specify area being triangulated
 pub fn flip_triangulate(points:&Vec<glm::Vec3>, triangulation: &Vec<u32>){
     //go through each triangle and compare with neighbouring triangles
     //if both triangles arent delaunay, flip
@@ -240,6 +241,7 @@ pub fn flip_triangulate(points:&Vec<glm::Vec3>, triangulation: &Vec<u32>){
             let circumcenter = circumcenter(points, tri_a.into());
             //test if b_point is closer to circumcenter than any point in tri_a- if so than b_point is within circumcircle nad the tris are not delaunay
             if glm::magnitude(&(points[tri_a[0] as usize]-circumcenter)) <= glm::magnitude(&(points[b_point as usize]-circumcenter)){
+                //flip tris
                 
             }
         }
