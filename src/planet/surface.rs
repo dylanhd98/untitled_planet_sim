@@ -193,7 +193,13 @@ impl Surface{
 
     //handles the teconics on the planets surface
     pub fn tectonics(&mut self,years:f32,sim_info: &mut SimInfo){
-        //for every cell with plate info, move according to plate, but also try to stay as far as possible from neighbors of same plate
+        //move cells to center of their neighbors as to maximise distance of each cell to another
+        let connections = indices_to_connections(&self.triangles);
+        for cell in 0..connections.len(){
+            //move all surroungings away from cell
+            
+        }
+        //for every cell with plate info, move according to plate
         for cell in self.cells.iter_mut().filter(|c|c.plate.is_some()){
             //plate cell belongs too
             let plate = &self.plates[cell.plate.unwrap()];
@@ -210,7 +216,7 @@ impl Surface{
         }
         self.since_triangulation = 0.0;
         
-        //get edges from triangles of mesh
+        //get edges 
         let edges = indices_to_edges(&self.triangles);
 
         //filter edges to get only ones on plate boundries, then test for the collisions
