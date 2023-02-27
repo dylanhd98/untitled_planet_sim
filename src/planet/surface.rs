@@ -193,19 +193,25 @@ impl Surface{
 
     //handles the teconics on the planets surface
     pub fn tectonics(&mut self,years:f32,sim_info: &mut SimInfo){
-        //move cells to center of their neighbors as to maximise distance of each cell to another
+        //move cells away from neighbors proportional to how close they are, closer ones have larger impact
+        /* 
         let connections = indices_to_connections(&self.triangles);
-        for cell in 0..self.cells.len(){
-            //vector pointing from surrounding cell to cell, divide by magnitude
-            //sum this vector for all surroundings, add too cell pos
-            let cell_direction:glm::Vec3 = connections[cell].iter()
-                .map(|conn| {
-                    let to_cell = self.cells[cell].position-self.cells[*conn].position;
-                    to_cell/to_cell.magnitude()
-                }).sum();
-            self.cells[cell].position += cell_direction/10000.0;
-            self.cells[cell].position =  self.cells[cell].position.normalize();
-        }
+        let new_positions:Vec<glm::Vec3> = (0..self.cells.len()).into_iter()
+            .map(|c| {
+                //pushed away from neighbours
+                //go through surroundings of cell, get vectors pointing from surrounding cells to cell, divide vectors by magnitude^2 then sum them
+                let direction:glm::Vec3 = connections[c].iter()
+                    .map(|conn| (self.cells[*conn].position-self.cells[c].position)
+                        /self.cells[*conn].position.magnitude_squared())
+                    .sum();
+                (self.cells[c].position + direction/50.0).normalize()
+            })
+            .collect();
+        //apply new positions
+        (0..self.cells.len()).into_iter()
+            .for_each(|c| self.cells[c].position = new_positions[c]); */
+        
+        
         //for every cell with plate info, move according to plate
         for cell in self.cells.iter_mut().filter(|c|c.plate.is_some()){
             //plate cell belongs too
@@ -218,7 +224,7 @@ impl Surface{
 
         //update counter, check if exceeds interval
         if sim_info.triangulation_interval > self.since_triangulation{
-            self.since_triangulation +=years;
+           self.since_triangulation +=years;
             return;
         }
         self.since_triangulation = 0.0;
@@ -231,6 +237,8 @@ impl Surface{
             .filter(|e| 
                 &self.cells[e.0].plate != &self.cells[e.1].plate)
                 .collect();
+            //let plate_boundaries = edges;
+
 
         //plate boundery edges currently colliding
         let mut colliding = Vec::with_capacity(plate_boundaries.len());
@@ -245,7 +253,7 @@ impl Surface{
                 colliding.push(edge);
             }
             //if edge too long, diverging
-            else if edge_length > self.cell_distance*1.25{
+            else if edge_length > self.cell_distance*2.0{
                 diverging.push(edge);
             }
         }
@@ -260,38 +268,23 @@ impl Surface{
             };
             //when two collide remove the denser one, as it subducts
             self.remove_cell(dense_sorted.0,dense_sorted.1);
-            self.cells[dense_sorted.1].contents.height +=0.05
+            self.cells[dense_sorted.1].contents.height +=0.05;
+            //then marks cell as unused by adding to the cell bank    
+            self.bank.insert(dense_sorted.0);
         }
+        //get index of all cells
+        let mut new_cells:Vec<usize> = self.bank.drain().collect();
         //handle divering plate boundaries, place new cells at their mid points when able
-        //let banked_cells = self.bank.iter();
         for edge in diverging{
-            //self.bank.remove(cell);
-            //self.add_cell(*edge, *cell);
+            if let Some(cell) = new_cells.pop(){
+                self.add_cell(*edge,cell);
+            }
+            else{
+                break;
+            }
         }
-        
-/* 
-        //for each edge along the plate boundry
-        for edge in plate_boundaries{
-            //get edge length
-            let edge_length = edge_length(&self.cells, edge);
-            //if cells collide
-            if edge_length < self.cell_distance{
-                //sort by density
-                let dense_sorted =
-                if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
-                    (edge.0,edge.1)
-                }else{
-                    (edge.1,edge.0)
-                };
-                //when two collide remove the denser one, as it subducts
-                self.remove_cell(dense_sorted.0);
-                self.cells[dense_sorted.1].contents.height +=1.0
-            }
-            //if cells split too far, spawn new one at midpoint
-            else if edge_length > self.cell_distance*1.25{
-                self.add_cell(*edge);
-            }
-        }*/
+        new_cells.into_iter().for_each(|c| _=self.bank.insert(c));
+
     }
 
     //remove cell
@@ -319,49 +312,35 @@ impl Surface{
             .map(|n|*n)
             .collect();
 
-        //let mut all_points:Vec<glm::Vec3> = self.cells.iter()
-        //    .map(|cell| stereographic(cell.position,&glm::Vec3::y()))
-        //    .collect();
-
         //gets new triangulation 
         //let mut triangulation = bowyer_watson(&mut all_points,&mut Vec::from_iter(surrounding_points));
         //adds new triangles
         self.triangles.append(&mut connect_point(surrounding_tris, provoking as u32));
-            
-        //then marks cell as unused by pushing to the cell bank    
-        self.bank.insert(cell);
     }
 
     //adds a new cell to the planet between two other cells
     pub fn add_cell(&mut self, parents:(usize,usize),cell:usize){
-        //gets index of new cell from bank to be used if avaliable
-        //let cell = match self.bank.pop(){
-        //    Some(c) => c,
-        //    None => return, //if no avaliable cells in bank, does nothing
-        //};
-
-        //get midpoint between the two parent cells
-        let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
         //select random plate of the two parents to make the new plate belong to
         let plate = if self.rng.gen(){
             self.cells[parents.0 as usize].plate
         }else{
             self.cells[parents.1 as usize].plate
         };
+        //get midpoint between the two parent cells
+        let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
         //use cell from bank as new cell between the parent cells
         self.cells[cell as usize] = Cell::new(glm::normalize(&mid),plate);
 
-        //hashset to ensure surrounding points are unique
-        let mut surrounding_points:HashSet<u32> = HashSet::with_capacity(12);
+        //record surrounging triangles
+        let mut surrounding_tris:Vec<u32> =Vec::with_capacity(16);
 
         //removes any triangle containing both parent cells, as these are the ones which will obstruct the new cell, they are also stored for later
         self.triangles = self.triangles.chunks(3)
             .filter(|chunk| {
-                //if triangle contains both parents, insert triangle points into hash set
+                //if triangle contains both parents, record triangle
                 if chunk.contains(&(parents.0 as u32))&&chunk.contains(&(parents.1 as u32)){
-                    for c in chunk.iter(){
-                        surrounding_points.insert(*c);
-                    }
+                    chunk.iter()
+                        .for_each(|c| surrounding_tris.push(*c));
                     false
                 }else{
                     true
@@ -371,14 +350,8 @@ impl Surface{
             .map(|n|*n)
             .collect();
 
-        //add new cell to hashset aswell, then triangulate
-        surrounding_points.insert(cell as u32);
-        //gets all points projected
-        let mut all_points:Vec<glm::Vec3> = self.cells.iter()
-            .map(|cell| stereographic(cell.position,&glm::Vec3::y()))
-            .collect();
         //triangulate points
-        let mut triangulation = bowyer_watson(&mut all_points,&mut Vec::from_iter(surrounding_points));
+        let mut triangulation = connect_point(surrounding_tris, cell as u32);
         //adds new triangles to mesh
         self.triangles.append(&mut triangulation);
     }
