@@ -195,9 +195,16 @@ impl Surface{
     pub fn tectonics(&mut self,years:f32,sim_info: &mut SimInfo){
         //move cells to center of their neighbors as to maximise distance of each cell to another
         let connections = indices_to_connections(&self.triangles);
-        for cell in 0..connections.len(){
-            //move all surroungings away from cell
-            
+        for cell in 0..self.cells.len(){
+            //vector pointing from surrounding cell to cell, divide by magnitude
+            //sum this vector for all surroundings, add too cell pos
+            let cell_direction:glm::Vec3 = connections[cell].iter()
+                .map(|conn| {
+                    let to_cell = self.cells[cell].position-self.cells[*conn].position;
+                    to_cell/to_cell.magnitude()
+                }).sum();
+            self.cells[cell].position += cell_direction/10000.0;
+            self.cells[cell].position =  self.cells[cell].position.normalize();
         }
         //for every cell with plate info, move according to plate
         for cell in self.cells.iter_mut().filter(|c|c.plate.is_some()){
