@@ -284,6 +284,29 @@ impl Surface{
             }
         }
         new_cells.into_iter().for_each(|c| _=self.bank.insert(c));
+        //now triangulate every point across plate edge
+        //get all points on boundry
+        /*
+        //let boundry_cells = 
+        //filter out triangles connected to those points
+        let mut surrounding_tris = Vec::with_capacity(16);
+            //triangulate every point along plate boundery
+            self.triangles = self.triangles.chunks(3)
+                .filter(|chunk| {
+                    //if triangle contains both parents, record triangle
+                    if chunk.contains(&(edge.0 as u32))||chunk.contains(&(edge.1 as u32)){
+                        chunk.iter()
+                            .for_each(|c| surrounding_tris.push(*c));
+                        false
+                    }else{
+                        true
+                    }
+                })
+                .flatten()//flatten to remove seperation of triangles
+                .map(|n|*n)
+                .collect();
+            let points = self.cells.iter().map(|c|c.position).collect();
+            self.triangles.append(&mut flip_triangulate(&points, surrounding_tris)); */
     }
 
     //remove cell
