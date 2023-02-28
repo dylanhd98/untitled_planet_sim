@@ -89,9 +89,9 @@ fn main() {
     //loop forever until close event
     event_loop.run(move |event, _, control_flow| {
         //defines time per frame
-        //let next_frame_time = std::time::Instant::now() +
-        //    std::time::Duration::from_nanos(16_666_667);
-        //*control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
+        let next_frame_time = std::time::Instant::now() +
+            std::time::Duration::from_nanos(16_666_667);
+        *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
 
         //handle window events
         if let glutin::event::Event::WindowEvent { event, .. } = event{

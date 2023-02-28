@@ -77,7 +77,7 @@ where G: Fn(f64)->f64{//type G is a function
 
 //plots an arc between two angles on the circumfrence of a circle
 fn plot_arc(pos:[f64;2],radius:f64,start:f64,end:f64)->Line{
-    let step_size = 3.141592653/200.0;
+    let step_size = std::f64::consts::PI/200.0;
     let range = if start<end{
         (start*200.0) as i32..=(end*200.0) as i32
     }else{
@@ -98,7 +98,7 @@ fn plot_line(pos:[f64;2],size:f64,rotation:f64){
 
 //creates circle given pos and radius
 fn plot_circle(pos:[f64;2],radius:f64)->Polygon{
-    let step_size = 3.141592653/100.0;
+    let step_size = std::f64::consts::PI/100.0;
     let circle:PlotPoints = (-100..100)
         .map(|x| {
             let t = x as f64 * step_size;
@@ -129,13 +129,7 @@ pub fn subdivision_info(egui_ctx: &Context, gen_info: &GenInfo){
             ui.heading("Shape Subdivision Info");
             ui.separator();
             ui.label("The amount of times each triangle on the original icosahedron is subdivided, this is done to create a sphereical planet with similarly distanced points at a user specified resolution.");
-            
             ui.separator();
-            //ui.label("Triangle Count");
-            //ui.label(format!("{}",tri_count));
-            //ui.label("Vertex Count");
-            //ui.label(format!("{}",vert_count));
-            
 
             ui.horizontal(|ui|{
                 //plot graph of amount of triangles and points
@@ -210,7 +204,7 @@ pub fn axial_tilt_info(egui_ctx: &Context, gen_info: &GenInfo){
                     .name("Orbital Axis"));
                 
                 //plot rotational axis
-                let rotation = (gen_info.axial_tilt+0.5)*3.1415926;
+                let rotation = (gen_info.axial_tilt+0.5)*std::f32::consts::PI;
                 //creates line at angle of axis
                 let axis_point = 1.5*glm::vec2(f32::cos(rotation), f32::sin(rotation));
                 let points = vec![
@@ -226,7 +220,7 @@ pub fn axial_tilt_info(egui_ctx: &Context, gen_info: &GenInfo){
                     .name(format!("Axial Tilt\nRadians ({}π)\nDegrees ({}°)",gen_info.axial_tilt,gen_info.axial_tilt*180.0)));
 
                 //now create equator line
-                let rotation = (gen_info.axial_tilt)*3.1415926;
+                let rotation = (gen_info.axial_tilt)*std::f32::consts::PI;
                 let axis_point = glm::vec2(f32::cos(rotation), f32::sin(rotation));
                 let points = vec![
                     [axis_point.x as f64,axis_point.y as f64],

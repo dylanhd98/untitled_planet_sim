@@ -217,8 +217,10 @@ pub fn flip_triangulate(points:&Vec<glm::Vec3>, triangulation: &Vec<u32>){
     //if both triangles arent delaunay, flip
     let mut has_flipped = false;
     //compare each tri with every other
-    for tri_a in triangulation.chunks(3){
-        for tri_b in triangulation.chunks(3){
+    for a_start in (0..triangulation.len()).into_iter().step_by(3){
+        let tri_a = &triangulation[a_start..a_start+3];
+        for b_start in (0..triangulation.len()).into_iter().step_by(3){
+            let tri_b = &triangulation[b_start..b_start+3];
             //the point in tri_b that will be tested against tri_a's circumcircle
             let mut b_point:u32 = 0;
             //skip tri if the two do not share an edge - share two points
@@ -233,8 +235,8 @@ pub fn flip_triangulate(points:&Vec<glm::Vec3>, triangulation: &Vec<u32>){
                     }
                 })
                 .sum();
-            //skip triangle if no shared edges
-            if shared_points<2{
+            //skip triangle if no shared edges or is just the same triangle
+            if shared_points != 2{
                 continue;
             }
             //test if two triangles are delaunay- if non shared point in tri_b isnt inside tri_a's circumcircle
@@ -242,7 +244,8 @@ pub fn flip_triangulate(points:&Vec<glm::Vec3>, triangulation: &Vec<u32>){
             //test if b_point is closer to circumcenter than any point in tri_a- if so than b_point is within circumcircle nad the tris are not delaunay
             if glm::magnitude(&(points[tri_a[0] as usize]-circumcenter)) <= glm::magnitude(&(points[b_point as usize]-circumcenter)){
                 //flip tris
-                
+                //triangulation[a_start] = 0;
+                has_flipped = true;
             }
         }
     }
