@@ -174,7 +174,6 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
             .filter(|tri| {
                 //check if new point is within the circumcircle
                 let circumcenter = circumcenter(all_points,tri.to_vec());
-                //println!("circumcenter: {}",circumcenter);
                 if circumcenter == glm::vec3(f32::NAN, f32::NAN, f32::NAN){
                     println!(">:(");
                 }
@@ -212,43 +211,59 @@ pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Ve
 
 //flip algorithm to achieve delaunay triangulation, from arbitrary previous one, do not use at large scale
 //although has the advantage of being able to specify area being triangulated
-pub fn flip_triangulate(points:&Vec<glm::Vec3>, triangulation: &Vec<u32>){
+pub fn flip_triangulate(points:&Vec<glm::Vec3>,mut triangulation: Vec<u32>)->Vec<u32>{
     //go through each triangle and compare with neighbouring triangles
     //if both triangles arent delaunay, flip
-    let mut has_flipped = false;
-    //compare each tri with every other
-    for a_start in (0..triangulation.len()).into_iter().step_by(3){
-        let tri_a = &triangulation[a_start..a_start+3];
-        for b_start in (0..triangulation.len()).into_iter().step_by(3){
-            let tri_b = &triangulation[b_start..b_start+3];
-            //the point in tri_b that will be tested against tri_a's circumcircle
-            let mut b_point:u32 = 0;
-            //skip tri if the two do not share an edge - share two points
-            let shared_points:u8 = tri_b.iter()
-                .map(|p| {
-                    if tri_a.contains(p){
-                        1
-                    }else{
-                        //record point as not shared
-                        b_point = *p;
-                        0
+    let mut has_flipped = true;
+    while has_flipped{
+        has_flipped = false;
+        //compare each tri with every other
+        for a_start in (0..triangulation.len()).into_iter().step_by(3){
+            for b_start in (0..triangulation.len()).into_iter().step_by(3){
+                //turn ranges representing triangles into indices
+                let indices:Vec<u32> = [[a_start..a_start+3],[b_start..b_start+3]].concat()
+                    .into_iter()
+                    .flat_map(|r| r.map(|i| i as u32).collect::<Vec<u32>>())
+                    .collect();
+                //get all directional edges of two triangles
+                let edges = indices_to_directed_edges(&indices);
+                //remove any double edges - are internal, counting how many edges are dublicate ones
+                //gets points from remaining edges
+                let mut duplicate_edges = 0;
+                let tri_points:Vec<u32> = edges.iter()
+                    .filter(|edge| {
+                        //check if any member of edges isnt the flipped varient of current edge
+                        if !edges.iter().any(|e| edge == &&(e.1,e.0)) {
+                            duplicate_edges+=1;
+                            true
+                        }
+                        else{
+                            false
+                        }
+                    })
+                    .flat_map(|e| [e.0 as u32,e.1 as u32])
+                    .collect();
+                
+                //skip triangle if no shared edges or is just the same triangle
+                //should be only one shared edge between the two, thus two duplicates
+                if duplicate_edges != 2{
+                    continue;
+                }
+                //test if two triangles are delaunay- if non shared point in tri b isnt inside tri a's circumcircle
+                let circumcenter = circumcenter(points, tri_points[0..3].to_vec());
+                //test if b_point is closer to circumcenter than any point in tri_a- if so than b_point is within circumcircle nad the tris are not delaunay
+                if glm::magnitude(&(points[tri_points[0] as usize]-circumcenter)) <= glm::magnitude(&(points[tri_points[3] as usize]-circumcenter)){
+                    //flip tris, shift edges over
+                    for offset in 0..3{
+                        triangulation[a_start+offset] = tri_points[1+offset];
+                        triangulation[b_start+offset] = tri_points[(4+offset)%6];
                     }
-                })
-                .sum();
-            //skip triangle if no shared edges or is just the same triangle
-            if shared_points != 2{
-                continue;
-            }
-            //test if two triangles are delaunay- if non shared point in tri_b isnt inside tri_a's circumcircle
-            let circumcenter = circumcenter(points, tri_a.into());
-            //test if b_point is closer to circumcenter than any point in tri_a- if so than b_point is within circumcircle nad the tris are not delaunay
-            if glm::magnitude(&(points[tri_a[0] as usize]-circumcenter)) <= glm::magnitude(&(points[b_point as usize]-circumcenter)){
-                //flip tris
-                //triangulation[a_start] = 0;
-                has_flipped = true;
+                    has_flipped = true;
+                }
             }
         }
     }
+    triangulation
 }
 
 //takes cartesian point on unit sphere, returns it as stereographic, a pole must be specified

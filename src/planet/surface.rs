@@ -284,7 +284,6 @@ impl Surface{
             }
         }
         new_cells.into_iter().for_each(|c| _=self.bank.insert(c));
-
     }
 
     //remove cell
@@ -313,9 +312,9 @@ impl Surface{
             .collect();
 
         //gets new triangulation 
-        //let mut triangulation = bowyer_watson(&mut all_points,&mut Vec::from_iter(surrounding_points));
+        let mut triangulation =  connect_point(surrounding_tris, provoking as u32);
         //adds new triangles
-        self.triangles.append(&mut connect_point(surrounding_tris, provoking as u32));
+        self.triangles.append(&mut triangulation);
     }
 
     //adds a new cell to the planet between two other cells
