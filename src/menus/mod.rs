@@ -66,7 +66,7 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
     
     //do menus based on menu state
     match &gen_info.menu_state {
-        //menu showing information about subdivision of the mesh
+        MenuState::Intro => infographics::intro_info(egui_ctx),
         MenuState::Subdivision => infographics::subdivision_info(egui_ctx,gen_info),
         MenuState::AxialTilt => infographics::axial_tilt_info(egui_ctx, gen_info),
         _=>()
@@ -131,6 +131,7 @@ pub fn playing(egui_ctx: &Context,params: &mut DrawParameters,planet:&mut planet
                 ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Height, "Height");
                 ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Temperature, "Temperature");
                 ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Humidity, "Humidity");
+                ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Water, "Water");
                 ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Relief, "Relief");
                 ui.selectable_value(&mut planet.render_data.map_mode, planet::MapMode::Normals, "Normals");
             }

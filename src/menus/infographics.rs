@@ -7,6 +7,8 @@ use nalgebra_glm as glm;
 
 use crate::planet::GenInfo;
 
+//UTILITY FUNCTIONS FOR INFO MENUS
+
 //creates lines representing a subdivided triangle, 
 //much more efficient than rendering large amount of polygons as have tested previously
 //as the look of the triangles is just a result of overlapping lines, no actual internal points are specified, much better method
@@ -105,6 +107,19 @@ fn plot_circle(pos:[f64;2],radius:f64)->Polygon{
             [radius*(f64::cos(t)+pos[0]),radius*(f64::sin(t)+pos[1])]
         }).collect();
     Polygon::new(circle)
+}
+
+//ACTUALL MENUS DISPLAYING THE INFORMATION
+
+//diplays general information about the sim
+pub fn intro_info(egui_ctx: &Context){
+    egui::CentralPanel::default()
+    .show(egui_ctx, |ui| {
+        ui.heading("Untitled Planet Sim");
+        ui.separator();
+        ui.heading("Controls");
+        ui.label("To move the camera you can use both mouse and keyboard.\nTo move the camera you can click and drag with middle or right click, or use wasd.\nTo zoom you can scroll or press e and q to zoom in and out respectivly.");
+    });
 }
 
 //menu showing the user information about subdividing the mesh

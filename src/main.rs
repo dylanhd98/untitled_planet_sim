@@ -67,10 +67,10 @@ fn main() {
         include_str!("../resources/shaders/planet/frag.glsl"),
         Some(include_str!("../resources/shaders/planet/geom.glsl"))).unwrap();
 
-    let map_shader = glium::Program::from_source(&display, 
+    /*let map_shader = glium::Program::from_source(&display, 
         include_str!("../resources/shaders/map/vert.glsl"), 
         include_str!("../resources/shaders/planet/frag.glsl"),
-        None).unwrap();
+        None).unwrap();*/
 
     //default settings for planet gen
     let default_gen = planet::GenInfo{
@@ -135,12 +135,12 @@ fn main() {
                 }
                 //if mouse input
                 else if let glutin::event::WindowEvent::MouseInput { device_id:_, state, button, modifiers:_  } = event{
-                    //if mid button pressed
-                    if button == MouseButton::Middle && state == glutin::event::ElementState::Pressed{
+                    //if mid or right button pressed
+                    if (button == MouseButton::Middle||button == MouseButton::Right) && state == glutin::event::ElementState::Pressed{
                         //record current mouse pos
                         drag_last = Some(mouse_pos); 
                     }
-                    else if button == MouseButton::Middle && state == glutin::event::ElementState::Released{
+                    else if (button == MouseButton::Middle||button == MouseButton::Right) && state == glutin::event::ElementState::Released{
                         //make last pos none as no longer being held
                         drag_last = None; 
                     }
@@ -209,7 +209,7 @@ fn main() {
                     menus::playing(egui_ctx,&mut params, planet)
                 });
 
-                //rotate camera based on how dragged by middle click
+                //rotate camera based on how dragged
                 if let Some(last_pos) = drag_last{
                     //get difference between last and current pos for drag
                     let drag = mouse_pos-last_pos;

@@ -8,6 +8,7 @@ in VS_OUT {
     float humidity;
     float temperature;
     float height;
+    float water;
 } gs_in[];
 
 //out for frag
@@ -15,6 +16,7 @@ out vec3 v_normal;
 out float v_humidity;
 out float v_temperature;
 out float v_height;
+out float v_water;
 
 
 void main() {
@@ -36,6 +38,7 @@ void main() {
         v_humidity = gs_in[i].humidity;
         v_temperature = gs_in[i].temperature;
         v_height = gs_in[i].height;
+        v_water = gs_in[i].water;
         EmitVertex();
     }
     EndPrimitive();

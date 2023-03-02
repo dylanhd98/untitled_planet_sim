@@ -28,6 +28,7 @@ pub enum MapMode{
     Height,
     Temperature,
     Humidity,
+    Water,
     Relief,
     Normals,
 }

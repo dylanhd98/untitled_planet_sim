@@ -10,19 +10,21 @@ use crate::graphics::shapes;
 use super::{GenInfo, SimInfo,utils::*};
 
 
-//data for each cell on the planet, for rendering
+//data for each cell on the planet, this data is sent to gpu
 #[derive(Copy, Clone)]
 pub struct CellData {
-    //position in space of cell, should be normalized
+    //position in space of cell
     pub position: [f32;3],
     //height of land in cell from sea level, in km, should be in range -10km to 10-km
     pub height: f32,
-    //absolute humidity, as g/m^3, range of 0 to 100
+    //absolute humidity, as g/m^3
     pub humidity: f32,
-    //temperature, in degrees C, range of -50 to 50
+    //percentage water the cell is
+    pub water: f32,
+    //temperature, in degrees C
     pub temperature: f32
 }
-glium::implement_vertex!(CellData,position,height,humidity,temperature);
+glium::implement_vertex!(CellData,position,height,humidity,water,temperature);
 
 //data for every plate
 pub struct Plate{
@@ -32,6 +34,9 @@ pub struct Plate{
     density: f32,
     //cm per year, avg is 5-15, earth rad = 6,371km,
     speed: f32,
+}
+impl Plate{
+    
 }
 
 //data relating to the cell
@@ -51,11 +56,31 @@ impl Cell{
                 position: pos.into(),
                 height: -10.0,
                 humidity: 0.0,
+                water: 0.0,
                 temperature: 0.0
             },
             position:pos,
             plate: plate
         }
+    }
+    //creates a new cell with perlin noise
+    pub fn from_perlin(position:glm::Vec3,plate: Option<usize>,perlin: Perlin)->Cell{
+        let height = octive_noise(perlin, &position, 2.5, 7, 0.6, 2.5)*10.0;
+        Cell{
+            contents: CellData{
+                position: position.into(),
+                //multiplied by 10 to get hight in the -10km to 10km range
+                height,
+                //humidity to be in range 0 to 100, so (perlin+1)*50
+                humidity: (octive_noise(perlin, &(position+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5)+1.0)*50.0,
+                //initial water content just bases on sea level
+                water: if height<0.0 {1.0} else {0.0},
+                //temp set to zero bc its raised almost immedietely in the sim
+                temperature: 0.0,
+            },
+            position,
+            plate
+        }   
     }
 }
 
@@ -85,19 +110,7 @@ impl Surface{
             //generates cells with perlin noise
             shape.vertices.clone().into_iter()
             .map(|pos|
-                Cell{
-                    contents: CellData{
-                        position: pos.into(),
-                        //multiplied by 10 to get hight in the -10km to 10km range
-                        height: octive_noise(perlin, &pos, 2.5, 7, 0.6, 2.5)*10.0,
-                        //humidity to be in range 0 to 100, so (perlin+1)*50
-                        humidity: (octive_noise(perlin, &(pos+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5)+1.0)*50.0,
-                        //temp set to zero bc its raised almost immedietely in the sim
-                        temperature: 0.0,
-                    },
-                    position: pos,
-                    plate: None
-                }
+                Cell::from_perlin(pos, None, perlin)
             )
             .collect()
         };
@@ -209,8 +222,8 @@ impl Surface{
             .collect();
         //apply new positions
         (0..self.cells.len()).into_iter()
-            .for_each(|c| self.cells[c].position = new_positions[c]); */
-        
+            .for_each(|c| self.cells[c].position = new_positions[c]); 
+        */
         
         //for every cell with plate info, move according to plate
         for cell in self.cells.iter_mut().filter(|c|c.plate.is_some()){
@@ -238,7 +251,6 @@ impl Surface{
                 &self.cells[e.0].plate != &self.cells[e.1].plate)
                 .collect();
             //let plate_boundaries = edges;
-
 
         //plate boundery edges currently colliding
         let mut colliding = Vec::with_capacity(plate_boundaries.len());

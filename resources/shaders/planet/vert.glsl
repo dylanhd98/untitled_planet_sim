@@ -7,6 +7,7 @@ in vec3 position;
 in float height;
 in float humidity;
 in float temperature;
+in float water;
 
 //data for geometry shader
 out VS_OUT {
@@ -14,6 +15,7 @@ out VS_OUT {
     float humidity;
     float temperature;
     float height;
+    float water;
 } vs_out;
 
 //uniforms
@@ -25,6 +27,7 @@ void main() {
     vs_out.humidity = humidity;
     vs_out.temperature = temperature;
     vs_out.height = height;
+    vs_out.water = water;
 
     vec3 new_pos = position;
     if(height>0.0){
