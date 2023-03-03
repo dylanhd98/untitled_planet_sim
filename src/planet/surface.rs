@@ -36,7 +36,22 @@ pub struct Plate{
     speed: f32,
 }
 impl Plate{
-    
+    //creates new random plate
+    pub fn random(rng:&mut ThreadRng)->Plate{
+        //randomized axis the plate moves around
+        let rand_axis = {
+            let x:f32 = rng.gen_range(-std::f32::consts::PI..=std::f32::consts::PI);
+            let y:f32 = rng.gen_range(-std::f32::consts::PI..=std::f32::consts::PI);
+            glm::rotate_y_vec3(
+                &glm::rotate_x_vec3(&glm::Vec3::y(),x), y)
+        };
+
+        Plate {
+            axis: rand_axis,
+            density: rng.gen_range(0.0..10.0),//not representative of real value, just used to compare plates
+            speed: rng.gen_range(0.00..0.2)/6371000.0, //done in meters per second, 6371000 is earths radius
+        }
+    }
 }
 
 //data relating to the cell
@@ -73,7 +88,7 @@ impl Cell{
                 height,
                 //humidity to be in range 0 to 100, so (perlin+1)*50
                 humidity: (octive_noise(perlin, &(position+glm::vec3(0.0,100.0,0.0)), 2.25, 5, 0.55, 2.5)+1.0)*50.0,
-                //initial water content just bases on sea level
+                //initial water content just based on sea level
                 water: if height<0.0 {1.0} else {0.0},
                 //temp set to zero bc its raised almost immedietely in the sim
                 temperature: 0.0,
@@ -120,19 +135,7 @@ impl Surface{
         //creates randomized plates for surface
         let mut plates:Vec<Plate> = (0..gen.plate_no)
         .map(|_|{
-            //randomized axis the plate moves around
-            let rand_axis = {
-                let x:f32 = rng.gen_range(0.0..=glm::two_pi());
-                let y:f32 = rng.gen_range(0.0..=glm::two_pi());
-                glm::rotate_y_vec3(
-                    &glm::rotate_x_vec3(&glm::vec3(0.0,1.0,0.0),x), y)
-            };
-
-            Plate {
-                axis: rand_axis,
-                density: rng.gen_range(0.0..10.0),//not representative of real value, just used to compare plates
-                speed: rng.gen_range(0.00..0.2)/6371000.0, //done in meters per second, 6371000 is earths radius
-            }
+            Plate::random(&mut rng)
         })
          .collect();
 
@@ -280,7 +283,7 @@ impl Surface{
             };
             //when two collide remove the denser one, as it subducts
             self.remove_cell(dense_sorted.0,dense_sorted.1);
-            self.cells[dense_sorted.1].contents.height +=0.05;
+            self.cells[dense_sorted.1].contents.height +=0.1;
             //then marks cell as unused by adding to the cell bank    
             self.bank.insert(dense_sorted.0);
         }
