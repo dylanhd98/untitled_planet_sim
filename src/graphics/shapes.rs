@@ -16,13 +16,13 @@ pub struct Shape{
     pub indices:Vec::<u32>
 }
 impl Shape{
+    //new shape from given vertices and indices
     pub fn new(vertices:Vec::<glm::Vec3>,indices:Vec::<u32>)->Shape{
         Shape{
             vertices,
             indices
         }
     }
-
     //multiplies every vert by number
     pub fn scale(mut self,scale:f32)->Shape{
         self.vertices=self.vertices
@@ -40,7 +40,6 @@ impl Shape{
             .collect();
         self
     }
-
     //turns every triangle into 4 smaller ones
     //only works if all indexing is done in the same direction of rotation
     pub fn subdivide(mut self,iterations:u8)->Shape{
@@ -94,7 +93,7 @@ impl Shape{
         println!("points: {}, triangles: {}, triangles per point: {}",self.vertices.len(),self.indices.len()/3,(self.indices.len()/3) as f32/self.vertices.len() as f32);
         self
     }
-
+    //creates icosphere
     pub fn icosahedron()->Shape{
         let ratio = (1.0+f32::sqrt(5.0))/2.0;//golden ratio
     
@@ -148,7 +147,7 @@ impl Shape{
         }
     
     }
-    
+    //creates cube
     pub fn cube()->Shape{
     
         let vertices:Vec::<glm::Vec3> = vec![

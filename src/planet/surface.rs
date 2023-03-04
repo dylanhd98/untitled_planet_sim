@@ -6,7 +6,7 @@ use nalgebra_glm as glm;
 use rand::{Rng, seq::SliceRandom, rngs::ThreadRng};
 
 //internal crates
-use crate::graphics::shapes;
+use crate::graphics::shapes::{self, Shape};
 use super::{GenInfo, SimInfo,utils::*};
 
 
@@ -19,7 +19,7 @@ pub struct CellData {
     pub height: f32,
     //absolute humidity, as g/m^3
     pub humidity: f32,
-    //percentage water the cell is
+    //percentage water coverage 
     pub water: f32,
     //temperature, in degrees C
     pub temperature: f32
@@ -29,11 +29,11 @@ glium::implement_vertex!(CellData,position,height,humidity,water,temperature);
 //data for every plate
 pub struct Plate{
     //axis around which the plate rotates
-    axis: glm::Vec3,
+    pub axis: glm::Vec3,
     //density of plates determines which will overlap another and nature of collision
-    density: f32,
+    pub density: f32,
     //cm per year, avg is 5-15, earth rad = 6,371km,
-    speed: f32,
+    pub speed: f32,
 }
 impl Plate{
     //creates new random plate
@@ -61,11 +61,13 @@ pub struct Cell{
     //physical position of cell
     pub position: glm::Vec3,
     //plate that the cell belongs too
-    pub plate: Option<usize>
+    pub plate: Option<usize>,
+    //index of cell on the original stored mesh
+    pub base_index: u32
 }
 impl Cell{
     //creates effectivly blank cell at pos
-    pub fn new(pos:glm::Vec3,plate: Option<usize>)->Cell{
+    pub fn new(pos:glm::Vec3,base_index:u32,plate: Option<usize>)->Cell{
         Cell { 
             contents: CellData { 
                 position: pos.into(),
@@ -75,11 +77,12 @@ impl Cell{
                 temperature: 0.0
             },
             position:pos,
-            plate: plate
+            plate,
+            base_index,
         }
     }
     //creates a new cell with perlin noise
-    pub fn from_perlin(position:glm::Vec3,plate: Option<usize>,perlin: Perlin)->Cell{
+    pub fn from_perlin(position:glm::Vec3,base_index: u32,plate: Option<usize>,perlin: Perlin)->Cell{
         let height = octive_noise(perlin, &position, 2.5, 7, 0.6, 2.5)*10.0;
         Cell{
             contents: CellData{
@@ -94,13 +97,16 @@ impl Cell{
                 temperature: 0.0,
             },
             position,
-            plate
+            plate,
+            base_index
         }   
     }
 }
 
 //contains all data for the surface of the planet
 pub struct Surface{
+    //base mesh containing the orignal planet shape
+    pub base_mesh: Shape,
     //every cell
     pub cells: Vec<Cell>,
     //triangle data, u32 as thats whats needed for passing to gpu
@@ -110,11 +116,11 @@ pub struct Surface{
     //contains indices of all cells not in use
     pub bank: HashSet<usize>,
     //distace used for cell collisions, absolute closest one can be to another before one gets destroyed
-    cell_distance: f32,
+    pub cell_distance: f32,
     //time passed since last triangulation
-    since_triangulation:f32,
+    pub since_triangulation:f32,
     //random generator for surface
-    rng: ThreadRng,
+    pub rng: ThreadRng,
 }
 impl Surface{
     pub fn new(shape: shapes::Shape,gen: &GenInfo)->Surface{
@@ -125,11 +131,11 @@ impl Surface{
             //generates cells with perlin noise
             shape.vertices.clone().into_iter()
             .map(|pos|
-                Cell::from_perlin(pos, None, perlin)
+                Cell::from_perlin(pos,0 ,None, perlin)
             )
             .collect()
         };
-
+        //get edges from mesh
         let edges = indices_to_edges(&shape.indices);
 
         //creates randomized plates for surface
@@ -139,14 +145,19 @@ impl Surface{
         })
          .collect();
 
-        //length of edge
+        //length of edge to be used to determine collision
         let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude();
+        //bank for recording unused vertices
+        let bank = HashSet::with_capacity(shape.vertices.len()/2);
+        
+        let triangles = shape.indices.clone();
 
         let mut surface = Surface{
+            base_mesh: shape,
             cells,
-            triangles: shape.indices,
+            triangles,
             plates,
-            bank: HashSet::with_capacity(shape.vertices.len()/2),
+            bank,
             cell_distance,
             since_triangulation:0.0,
             rng,
@@ -192,138 +203,6 @@ impl Surface{
         
     }
 
-    //handles tempereture updating
-    pub fn temperature(&mut self,years:f32,sim_info: &SimInfo){
-        //latitude that gets maximum sunlight from the sun
-        let sun_max = glm::dot(&sim_info.to_sun, &sim_info.axis);
-
-        //updates temp for each
-        for cell in self.cells.iter_mut(){
-            //amount of light recieved as percentage compared to ideal
-            //calculates latitude and gets its distance from the ideal/max 
-            let light_angle_multiplier = glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(&cell.position,&sim_info.axis)), 0.0);
-            //multiplies ideal temp by angle, then takes lapse rate*height away if above sea level
-            cell.contents.temperature = ((40.0*light_angle_multiplier)-(glm::max2_scalar(cell.contents.height,0.0)*sim_info.lapse_rate))*sim_info.greenhouse_effect;
-        }
-    }
-
-    //handles the teconics on the planets surface
-    pub fn tectonics(&mut self,years:f32,sim_info: &mut SimInfo){
-        //move cells away from neighbors proportional to how close they are, closer ones have larger impact
-        /* 
-        let connections = indices_to_connections(&self.triangles);
-        let new_positions:Vec<glm::Vec3> = (0..self.cells.len()).into_iter()
-            .map(|c| {
-                //pushed away from neighbours
-                //go through surroundings of cell, get vectors pointing from surrounding cells to cell, divide vectors by magnitude^2 then sum them
-                let direction:glm::Vec3 = connections[c].iter()
-                    .map(|conn| (self.cells[*conn].position-self.cells[c].position)
-                        /self.cells[*conn].position.magnitude_squared())
-                    .sum();
-                (self.cells[c].position + direction/50.0).normalize()
-            })
-            .collect();
-        //apply new positions
-        (0..self.cells.len()).into_iter()
-            .for_each(|c| self.cells[c].position = new_positions[c]); 
-        */
-        
-        //for every cell with plate info, move according to plate
-        for cell in self.cells.iter_mut().filter(|c|c.plate.is_some()){
-            //plate cell belongs too
-            let plate = &self.plates[cell.plate.unwrap()];
-            //translate according to plate
-            cell.position = glm::rotate_vec3(&cell.position, plate.speed*years, &plate.axis);
-            //put cell pos into cell data
-            cell.contents.position=cell.position.into();
-        }
-
-        //update counter, check if exceeds interval
-        if sim_info.triangulation_interval > self.since_triangulation{
-           self.since_triangulation +=years;
-            return;
-        }
-        self.since_triangulation = 0.0;
-        
-        //get edges 
-        let edges = indices_to_edges(&self.triangles);
-
-        //filter edges to get only ones on plate boundries, then test for the collisions
-        let plate_boundaries:Vec<&(usize,usize)> = edges.iter()
-            .filter(|e| 
-                &self.cells[e.0].plate != &self.cells[e.1].plate)
-                .collect();
-            //let plate_boundaries = edges;
-
-        //plate boundery edges currently colliding
-        let mut colliding = Vec::with_capacity(plate_boundaries.len());
-        //plate boundry edges where plates are diverging
-        let mut diverging = Vec::with_capacity(plate_boundaries.len());
-        //find and store boundries of each type
-        for edge in plate_boundaries{
-            //get edge length
-            let edge_length = edge_length(&self.cells, edge);
-            //if edge length too low, colliding
-            if edge_length < self.cell_distance{
-                colliding.push(edge);
-            }
-            //if edge too long, diverging
-            else if edge_length > self.cell_distance*2.0{
-                diverging.push(edge);
-            }
-        }
-        //now deal with the different types of boundries
-        for edge in colliding{
-            //sort by density
-            let dense_sorted =
-            if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
-                (edge.0,edge.1)
-            }else{
-                (edge.1,edge.0)
-            };
-            //when two collide remove the denser one, as it subducts
-            self.remove_cell(dense_sorted.0,dense_sorted.1);
-            self.cells[dense_sorted.1].contents.height +=0.1;
-            //then marks cell as unused by adding to the cell bank    
-            self.bank.insert(dense_sorted.0);
-        }
-        //get index of all cells
-        let mut new_cells:Vec<usize> = self.bank.drain().collect();
-        //handle divering plate boundaries, place new cells at their mid points when able
-        for edge in diverging{
-            if let Some(cell) = new_cells.pop(){
-                self.add_cell(*edge,cell);
-            }
-            else{
-                break;
-            }
-        }
-        new_cells.into_iter().for_each(|c| _=self.bank.insert(c));
-        //now triangulate every point across plate edge
-        //get all points on boundry
-        /*
-        //let boundry_cells = 
-        //filter out triangles connected to those points
-        let mut surrounding_tris = Vec::with_capacity(16);
-            //triangulate every point along plate boundery
-            self.triangles = self.triangles.chunks(3)
-                .filter(|chunk| {
-                    //if triangle contains both parents, record triangle
-                    if chunk.contains(&(edge.0 as u32))||chunk.contains(&(edge.1 as u32)){
-                        chunk.iter()
-                            .for_each(|c| surrounding_tris.push(*c));
-                        false
-                    }else{
-                        true
-                    }
-                })
-                .flatten()//flatten to remove seperation of triangles
-                .map(|n|*n)
-                .collect();
-            let points = self.cells.iter().map(|c|c.position).collect();
-            self.triangles.append(&mut flip_triangulate(&points, surrounding_tris)); */
-    }
-
     //remove cell
     pub fn remove_cell(&mut self,cell: usize,provoking: usize){
         //hashset to ensure surrounding points are unique
@@ -355,6 +234,37 @@ impl Surface{
         self.triangles.append(&mut triangulation);
     }
 
+    //adds a new cell to planet using a provoking edge belonging to one plate
+    pub fn add_cell_new(&mut self,edge:(usize,usize),cell:usize){
+        //get base mesh indices of cells on edge
+        let base_edge = (self.cells[edge.0].base_index,self.cells[edge.1].base_index);
+        //use base indices to search base mesh for triangle that edge exists in 
+        //and return index of the third point
+        let third_index:Option<u32> = self.base_mesh.indices.chunks(3)
+            .find_map(|t| {
+                //skip tri if doesnt contain both
+                if !t.contains(&base_edge.0)||!t.contains(&base_edge.0){
+                    return None;
+                }
+                for i in 0..3{
+                    //check if edge is anywhere in triangle
+                    if t[i] == base_edge.0 && t[(i+1)%3] == base_edge.1{
+                        //return third point
+                        return Some(t[(i+2)%3]);
+                    }
+                }
+                None
+            });
+        //use index of new point to get pos of new point
+        if let Some(index) = third_index {
+            //get position of new cell
+            let new_pos = self.base_mesh.vertices[index as usize];
+            //use new pos to create new cell
+            self.cells[index as usize] = Cell::new(new_pos, index, self.cells[edge.0].plate);
+            //put new cell into planet mesh by connecting to provoking edge
+        }
+    }
+
     //adds a new cell to the planet between two other cells
     pub fn add_cell(&mut self, parents:(usize,usize),cell:usize){
         //select random plate of the two parents to make the new plate belong to
@@ -366,7 +276,7 @@ impl Surface{
         //get midpoint between the two parent cells
         let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
         //use cell from bank as new cell between the parent cells
-        self.cells[cell as usize] = Cell::new(glm::normalize(&mid),plate);
+        self.cells[cell as usize] = Cell::new(glm::normalize(&mid),0,plate);
 
         //record surrounging triangles
         let mut surrounding_tris:Vec<u32> =Vec::with_capacity(16);
