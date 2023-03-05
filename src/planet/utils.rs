@@ -266,6 +266,22 @@ pub fn flip_triangulate(points:&Vec<glm::Vec3>,mut triangulation: Vec<u32>)->Vec
     triangulation
 }
 
+//triangulates a y-monotone polygon, given the polygon provided is arranged counter-clockwise
+pub fn monotone_poly(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>){
+    //find index of top and bottom of polygon
+    let top = polygon.iter().max_by(|a,b| 
+        points[**a].y
+        .total_cmp(&points[**b].y))
+        .unwrap();
+    let bottom = polygon.iter().min_by(|a,b| 
+        points[**a].y
+        .total_cmp(&points[**b].y)).unwrap();
+    //use this information in combination with the knowlege the polygon is counter clockwise to get monotone chains
+    let left= 10..0;
+
+    panic!("top:{} ({})\nbottom:{} ({})",top,points[*top],bottom,points[*bottom]);
+}
+
 //takes cartesian point on unit sphere, returns it as stereographic, a pole must be specified
 pub fn stereographic(point: glm::Vec3,pole: &glm::Vec3)->glm::Vec3{    
     glm::vec3(point.x/(1.0-point.z), point.y/(1.0-point.z), 0.0)

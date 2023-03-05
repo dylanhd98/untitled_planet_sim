@@ -23,7 +23,7 @@ pub enum MenuState{
 
 //menu for planet creation
 pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameState){
-
+    
     let mut new_planet = false;
     let gen_info;
 

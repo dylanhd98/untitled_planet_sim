@@ -3,7 +3,7 @@
 use nalgebra_glm as glm;
 
 //internal modules
-use crate::planet::utils;
+use crate::planet::utils::{self, monotone_poly};
 
 //testing the connect_point function, should return 
 #[test]
@@ -45,4 +45,21 @@ fn circumcenter_correct_location(){
 
     assert_eq!(result_a,expected_a);
     assert_eq!(result_b,expected_b);
+}
+
+#[test]
+fn monotone_poly_triangulation(){
+    let test_points = vec![
+        glm::vec3(0.0, 100.0, 0.0),
+        glm::vec3(-5.0, 80.0, 0.0),
+        glm::vec3(-8.0, 0.0, 0.0),
+        glm::vec3(-5.0, -70.0, 0.0),
+        glm::vec3(0.0, -100.0, 0.0),
+        glm::vec3(5.0, -70.0, 0.0),
+        glm::vec3(5.0, 0.0, 0.0),
+        glm::vec3(5.0, 80.0, 0.0)];
+
+    let polygon = (0..test_points.len()).collect();
+
+    monotone_poly(&test_points, polygon)
 }

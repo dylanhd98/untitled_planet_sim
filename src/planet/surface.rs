@@ -143,7 +143,7 @@ impl Surface{
         .map(|_|{
             Plate::random(&mut rng)
         })
-         .collect();
+        .collect();
 
         //length of edge to be used to determine collision
         let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude();
@@ -260,7 +260,7 @@ impl Surface{
             //get position of new cell
             let new_pos = self.base_mesh.vertices[index as usize];
             //use new pos to create new cell
-            self.cells[index as usize] = Cell::new(new_pos, index, self.cells[edge.0].plate);
+            self.cells[cell] = Cell::new(new_pos, index, self.cells[edge.0].plate);
             //put new cell into planet mesh by connecting to provoking edge
         }
     }
