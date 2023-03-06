@@ -299,8 +299,16 @@ pub fn monotone_poly(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
     ordered_points.sort_by(|a,b| points[a.0].y.total_cmp(&points[b.0].y));
 
     //now go through points, if 3 points turn in towards center of triangle, push three as triangle to triangulation if so and remove middle point of three from ordered points
-    let held_points:Vec<usize> = Vec::with_capacity(polygon.len());
-
+    let mut held_points:Vec<usize> = Vec::with_capacity(polygon.len());
+    held_points.push(ordered_points.pop().unwrap().0);
+    let second = ordered_points.pop().unwrap();
+    held_points.push(second.0);
+    let mut last_side = second.1; 
+    //go from largest y value to smallest
+    for p in ordered_points.into_iter().rev(){
+        //check if next point is in same chain as previous
+        
+    }
 
     triangulation
     //panic!("top:{}\nbottom:{}\npoints:{:?}",polygon[top],polygon[bottom],ordered_points);
