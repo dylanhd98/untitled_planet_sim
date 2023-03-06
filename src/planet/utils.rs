@@ -5,6 +5,12 @@ use noise::{NoiseFn, Perlin, Seedable};
 //use internal crates
 use crate::planet::surface::Cell;
 
+#[derive(Debug)]
+enum Side{
+    Left,
+    Right
+}
+
 //handles perlin noise for generating base
 pub fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistance:f32, lacunarity:f32)->f32{
     let mut noise_value = 0.0;
@@ -267,19 +273,37 @@ pub fn flip_triangulate(points:&Vec<glm::Vec3>,mut triangulation: Vec<u32>)->Vec
 }
 
 //triangulates a y-monotone polygon, given the polygon provided is arranged counter-clockwise
-pub fn monotone_poly(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>){
-    //find index of top and bottom of polygon
-    let top = polygon.iter().max_by(|a,b| 
-        points[**a].y
-        .total_cmp(&points[**b].y))
+pub fn monotone_poly(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
+    //triangulation of the inside of polygon
+    let mut triangulation:Vec<u32> = Vec::with_capacity((polygon.len()-2)*3);
+    //find index of top and bottom of polygon in polygon vec
+    let top = (0..polygon.len()).into_iter().max_by(|a,b| 
+        points[polygon[*a]].y
+        .total_cmp(&points[polygon[*b]].y))
         .unwrap();
-    let bottom = polygon.iter().min_by(|a,b| 
-        points[**a].y
-        .total_cmp(&points[**b].y)).unwrap();
-    //use this information in combination with the knowlege the polygon is counter clockwise to get monotone chains
-    let left= 10..0;
+    let bottom = (0..polygon.len()).into_iter().min_by(|a,b| 
+        points[polygon[*a]].y
+        .total_cmp(&points[polygon[*b]].y))
+        .unwrap();
+    //use this information in combination with the knowledge the polygon is counter clockwise to find which chain it belongs to
+    //order all points while storing what chain they belong to
+    let mut ordered_points:Vec<(usize,Side)> = (0..polygon.len()).into_iter()
+        .map(|i| {//determines which chain it belongs too
+            if i>=top&&i<=bottom{
+                (polygon[i],Side::Left)
+            }else{
+                (polygon[i],Side::Right)
+            }
+        })
+        .collect();
+    ordered_points.sort_by(|a,b| points[a.0].y.total_cmp(&points[b.0].y));
 
-    panic!("top:{} ({})\nbottom:{} ({})",top,points[*top],bottom,points[*bottom]);
+    //now go through points, if 3 points turn in towards center of triangle, push three as triangle to triangulation if so and remove middle point of three from ordered points
+    let held_points:Vec<usize> = Vec::with_capacity(polygon.len());
+
+
+    triangulation
+    //panic!("top:{}\nbottom:{}\npoints:{:?}",polygon[top],polygon[bottom],ordered_points);
 }
 
 //takes cartesian point on unit sphere, returns it as stereographic, a pole must be specified

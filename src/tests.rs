@@ -47,9 +47,12 @@ fn circumcenter_correct_location(){
     assert_eq!(result_b,expected_b);
 }
 
+//tests if polygon triangulation of y-monotone polygon works correctly
 #[test]
 fn monotone_poly_triangulation(){
     let test_points = vec![
+        glm::vec3(0.0, 10880.0, 0.0),
+        glm::vec3(0.0, 10880.0, 0.0),
         glm::vec3(0.0, 100.0, 0.0),
         glm::vec3(-5.0, 80.0, 0.0),
         glm::vec3(-8.0, 0.0, 0.0),
@@ -57,9 +60,13 @@ fn monotone_poly_triangulation(){
         glm::vec3(0.0, -100.0, 0.0),
         glm::vec3(5.0, -70.0, 0.0),
         glm::vec3(5.0, 0.0, 0.0),
-        glm::vec3(5.0, 80.0, 0.0)];
+        glm::vec3(5.0, 80.0, 0.0),
+        glm::vec3(0.0, 10880.0, 0.0),
+        glm::vec3(0.0, 10880.0, 0.0),
+        glm::vec3(0.0, 10880.0, 0.0),
+        glm::vec3(0.0, 10880.0, 0.0),];
 
-    let polygon = (0..test_points.len()).collect();
+    let polygon = (2..8+2).collect();
 
-    monotone_poly(&test_points, polygon)
+    monotone_poly(&test_points, polygon);
 }
