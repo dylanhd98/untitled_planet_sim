@@ -41,82 +41,44 @@ impl super::surface::Surface{
         }
         self.since_triangulation = 0.0;
         
-        //get edges 
-        let edges = indices_to_edges(&self.triangles);
+        //different types of boundary triangles
+        let mut divergent:Vec<u32> = Vec::with_capacity(self.triangles.len()/3);
+        let mut convergent:Vec<u32> = Vec::with_capacity(self.triangles.len()/3);
+        let mut transform:Vec<u32> = Vec::with_capacity(self.triangles.len()/3);
 
-        //filter edges to get only ones on plate boundries, then test for the collisions
-        let plate_boundaries:Vec<&(usize,usize)> = edges.iter()
-            .filter(|e| 
-                &self.cells[e.0].plate != &self.cells[e.1].plate)
-                .collect();
-            //let plate_boundaries = edges;
+        //filter boundary triangles out of mesh, record them
+        self.triangles = self.triangles.chunks(3)
+            .filter(|t| {
+                //filter out triangles that contain cells in more than one plate, store seperately
+                let plate = self.cells[t[0] as usize].plate;
+                if t.iter().all(|i| self.cells[*i as usize].plate==plate){
+                    true
+                }else{
+                    //evaluate boundry type of triangle and store appropriately
+                    //use perimeter^2 of triangle to determine boundry type
+                    let sqr_perim = 
+                        (self.cells[0].position-self.cells[1].position).magnitude_squared()+
+                        (self.cells[1].position-self.cells[2].position).magnitude_squared()+
+                        (self.cells[2].position-self.cells[0].position).magnitude_squared();
 
-        //plate boundery edges currently colliding
-        let mut colliding = Vec::with_capacity(plate_boundaries.len());
-        //plate boundry edges where plates are diverging
-        let mut diverging = Vec::with_capacity(plate_boundaries.len());
-        //find and store boundries of each type
-        for edge in plate_boundaries{
-            //get edge length
-            let edge_length = edge_length(&self.cells, edge);
-            //if edge length too low, colliding
-            if edge_length < self.cell_distance{
-                colliding.push(edge);
-            }
-            //if edge too long, diverging
-            else if edge_length > self.cell_distance*2.0{
-                diverging.push(edge);
-            }
-        }
-        //now deal with the different types of boundries
-        for edge in colliding{
-            //sort by density
-            let dense_sorted =
-            if self.plates[self.cells[edge.0].plate.unwrap()].density<self.plates[self.cells[edge.1].plate.unwrap()].density{
-                (edge.0,edge.1)
-            }else{
-                (edge.1,edge.0)
-            };
-            //when two collide remove the denser one, as it subducts
-            self.remove_cell(dense_sorted.0,dense_sorted.1);
-            self.cells[dense_sorted.1].contents.height +=0.1;
-            //then marks cell as unused by adding to the cell bank    
-            self.bank.insert(dense_sorted.0);
-        }
-        //get index of all cells
-        let mut new_cells:Vec<usize> = self.bank.drain().collect();
-        //handle divering plate boundaries, place new cells at their mid points when able
-        for edge in diverging{
-            if let Some(cell) = new_cells.pop(){
-                self.add_cell(*edge,cell);
-            }
-            else{
-                break;
-            }
-        }
-        new_cells.into_iter().for_each(|c| _=self.bank.insert(c));
-        //now triangulate every point across plate edge
-        //get all points on boundry
-        /*
-        //let boundry_cells = 
-        //filter out triangles connected to those points
-        let mut surrounding_tris = Vec::with_capacity(16);
-            //triangulate every point along plate boundery
-            self.triangles = self.triangles.chunks(3)
-                .filter(|chunk| {
-                    //if triangle contains both parents, record triangle
-                    if chunk.contains(&(edge.0 as u32))||chunk.contains(&(edge.1 as u32)){
-                        chunk.iter()
-                            .for_each(|c| surrounding_tris.push(*c));
-                        false
-                    }else{
-                        true
+                    if sqr_perim/3.0 < self.cell_distance{
+                        t.iter().for_each(|x| convergent.push(*x));
                     }
-                })
-                .flatten()//flatten to remove seperation of triangles
-                .map(|n|*n)
-                .collect();
-            let points = self.cells.iter().map(|c|c.position).collect();
-            self.triangles.append(&mut flip_triangulate(&points, surrounding_tris)); */
+                    else if sqr_perim/3.0 > self.cell_distance*2.0{
+                        t.iter().for_each(|x| divergent.push(*x));
+                    }else{
+                        t.iter().for_each(|x| transform.push(*x));
+                    }
+                    false
+                }
+            })
+            .flatten()
+            .map(|x| *x)
+            .collect();
+
+        //act on boundary triangles based what they are catigorized as
+        
+
+        //triangulate new boundary triangles, insert into mesh
     }
 }
