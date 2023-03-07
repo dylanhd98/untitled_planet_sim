@@ -17,8 +17,12 @@ pub enum MenuState{
     Intro,
     //menu shows graph of triangle count and vertex count, and picture of subdivided triangles
     Subdivision,
+    //shows amount of plates as divisions on circle
+    Plates,
     //menu showing circle and line representing axis
     AxialTilt,
+    //displays the lapse rate, the rate at which temp drops with hight
+    LapseRate
 }
 
 //menu for planet creation
@@ -42,7 +46,9 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
             }
 
             ui.label("Plate Amount");
-            ui.add(egui::Slider::new(&mut gen_info.plate_no, 0..=50));
+            if ui.add(egui::Slider::new(&mut gen_info.plate_no, 1..=100)).changed(){
+                gen_info.menu_state = MenuState::Plates;
+            }
 
             ui.label("Axial Tilt");
             if ui.add(egui::Slider::new(&mut gen_info.axial_tilt, -1.0..=1.0)).changed(){
@@ -50,7 +56,9 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
             }
 
             ui.label("Lapse Rate");
-            ui.add(egui::Slider::new(&mut gen_info.lapse_rate, 0.0..=25.0));
+            if ui.add(egui::Slider::new(&mut gen_info.lapse_rate, 0.0..=25.0)).changed(){
+                gen_info.menu_state = MenuState::LapseRate;
+            }
 
             ui.label("Greenhouse Effect");
             ui.add(egui::Slider::new(&mut gen_info.greenhouse_effect, 0.0..=1.0));
@@ -68,7 +76,9 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
     match &gen_info.menu_state {
         MenuState::Intro => infographics::intro_info(egui_ctx),
         MenuState::Subdivision => infographics::subdivision_info(egui_ctx,gen_info),
+        MenuState::Plates=> infographics::plate_info(egui_ctx, gen_info),
         MenuState::AxialTilt => infographics::axial_tilt_info(egui_ctx, gen_info),
+        MenuState::LapseRate => infographics::lapse_rate_info(egui_ctx),
         _=>()
     }
  

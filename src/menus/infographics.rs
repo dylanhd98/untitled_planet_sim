@@ -249,3 +249,48 @@ pub fn axial_tilt_info(egui_ctx: &Context, gen_info: &GenInfo){
                 
         });
 }
+
+//plate menu showing amount of plates as slices of circle
+pub fn plate_info(egui_ctx: &Context, gen_info: &GenInfo){
+    egui::CentralPanel::default()
+        .show(egui_ctx, |ui| {
+            ui.heading("Plate Number Info");
+            ui.separator();
+            ui.label("The amount of plates generated on the planets surface. Here the amount of plates is visualised as slices on a circle.");
+            ui.separator();
+
+            Plot::new("axial diagram")
+            .data_aspect(1.0)
+            .allow_scroll(false)
+            .allow_zoom(false)
+            .allow_drag(false)
+            .allow_boxed_zoom(false)
+            .show_axes([false;2])
+            .show_background(false)
+            .show_y(false)
+            .show_x(false)
+            .show(ui, |plot_ui| {
+                //plot unit circle
+                plot_ui.polygon(plot_circle([0.0,0.0], 1.0)
+                    .color(Color32::LIGHT_BLUE));
+                //plot plates
+                let step_size:f64 = glm::two_pi::<f64>()/gen_info.plate_no as f64;
+                for i in 0..=gen_info.plate_no{
+                    //now create equator line
+                    let rotation = step_size*i as f64;
+                    let axis_point = glm::vec2(f64::cos(rotation), f64::sin(rotation));
+                    let points = vec![
+                        [axis_point.x as f64,axis_point.y as f64],
+                        [0.0,0.0]
+                    ];
+                    plot_ui.line(Line::new(points)
+                        .color(Color32::LIGHT_GREEN)
+                        .style(egui::plot::LineStyle::dashed_dense()));
+                    }
+            });
+        });
+}
+
+pub fn lapse_rate_info(egui_ctx: &Context){
+    
+}

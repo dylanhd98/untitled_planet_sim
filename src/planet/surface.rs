@@ -149,7 +149,7 @@ impl Surface{
         let cell_distance = (cells[edges[0].0].position - cells[edges[0].1].position).magnitude();
         //bank for recording unused vertices
         let bank = HashSet::with_capacity(shape.vertices.len()/2);
-        
+        //store triangles for planet
         let triangles = shape.indices.clone();
 
         let mut surface = Surface{

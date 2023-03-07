@@ -77,8 +77,21 @@ impl super::surface::Surface{
             .collect();
 
         //act on boundary triangles based what they are catigorized as
-        
+    
+        //add new cells according to base mesh
+        for tri in divergent.chunks(3){
+            //find edge with two points of the same plate in tri to be used create new one
+            let shared_plate = tri.iter().zip(tri.iter().skip(1))
+                .find(|edge| self.cells[*edge.0 as usize].plate == self.cells[*edge.1 as usize].plate);
+            if let Some(edge) = shared_plate{
+                //add new cell that corrosponds to the next point in the virtual mesh's 
+                
+            }else{
+                continue;
+            }
+        }
 
         //triangulate new boundary triangles, insert into mesh
+        self.triangles.append(&mut transform);
     }
 }
