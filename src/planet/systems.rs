@@ -1,6 +1,8 @@
 //managing all the planets systems
 //implimented on surface in new module for better structuring
 
+use std::collections::HashSet;
+
 //external crates
 use nalgebra_glm as glm;
 //internal modules
@@ -18,7 +20,7 @@ impl super::surface::Surface{
             //calculates latitude and gets its distance from the ideal/max 
             let light_angle_multiplier = glm::max2_scalar(1.0-f32::abs(sun_max- glm::dot(&cell.position,&sim_info.axis)), 0.0);
             //multiplies ideal temp by angle, then takes lapse rate*height away if above sea level
-            cell.contents.temperature = ((40.0*light_angle_multiplier)-(glm::max2_scalar(cell.contents.height,0.0)*sim_info.lapse_rate))*sim_info.greenhouse_effect;
+            cell.contents.temperature = ((sim_info.base_temp*light_angle_multiplier)-(glm::max2_scalar(cell.contents.height,0.0)*sim_info.lapse_rate));
         }
     }
 
@@ -77,7 +79,8 @@ impl super::surface::Surface{
             .collect();
 
         //act on boundary triangles based what they are catigorized as
-    
+        //records cells already added
+        //let newly_added = HashSet::new();
         //add new cells according to base mesh
         for tri in divergent.chunks(3){
             //find edge with two points of the same plate in tri to be used create new one

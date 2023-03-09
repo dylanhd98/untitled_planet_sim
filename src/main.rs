@@ -80,7 +80,7 @@ fn main() {
         plate_no: 2,
         axial_tilt: 23.0/180.0,
         lapse_rate:9.8,
-        greenhouse_effect: 0.7
+        base_temp: 30.0
     };
 
     //set starting game state as generating the planet

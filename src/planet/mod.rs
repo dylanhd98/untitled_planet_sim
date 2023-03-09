@@ -42,7 +42,7 @@ pub struct GenInfo{
     pub plate_no:u32,
     pub axial_tilt:f32,
     pub lapse_rate: f32,
-    pub greenhouse_effect:f32
+    pub base_temp:f32
 }
 
 //information for the general running of the simulation, not specific to cells or surface
@@ -53,10 +53,8 @@ pub struct SimInfo{
     pub triangulation_interval: f32,
     //how much temp falls with altitude, C/km
     pub lapse_rate: f32,
-    //percentage of energy retained from the sun
-    pub greenhouse_effect:f32,
-    //luminosity of the sun
-    //pub solar_luminosity:f32,
+    //ideal temp of planet
+    pub base_temp:f32,
     //planet's axis
     pub axis: glm::Vec3,
     //vector pointing to orbital center
@@ -128,8 +126,7 @@ impl Planet{
                 years_per_second: 0.0, 
                 triangulation_interval: 1_000_000.0,
                 lapse_rate: gen.lapse_rate,
-                //solar_luminosity: 1.0,
-                greenhouse_effect: gen.greenhouse_effect, 
+                base_temp: gen.base_temp, 
                 axis: axis, 
                 to_sun: glm::vec3(1.0,0.0,0.0),
             }

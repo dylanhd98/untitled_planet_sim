@@ -60,8 +60,8 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
                 gen_info.menu_state = MenuState::LapseRate;
             }
 
-            ui.label("Greenhouse Effect");
-            ui.add(egui::Slider::new(&mut gen_info.greenhouse_effect, 0.0..=1.0));
+            ui.label("Base Temperature");
+            ui.add(egui::Slider::new(&mut gen_info.base_temp, -100.0..=100.0));
 
             ui.label("Seed");
             ui.add(egui::DragValue::new(&mut gen_info.seed).speed(0));
@@ -110,8 +110,8 @@ pub fn playing(egui_ctx: &Context,params: &mut DrawParameters,planet:&mut planet
         ui.label("Lapse Rate");
         ui.add(egui::Slider::new(&mut planet.sim_info.lapse_rate, 0.0..=25.0));
 
-        ui.label("Greenhouse Effect");
-        ui.add(egui::Slider::new(&mut planet.sim_info.greenhouse_effect, 0.0..=1.0));
+        ui.label("Base Temperature");
+        ui.add(egui::Slider::new(&mut planet.sim_info.base_temp, -100.0..=100.0));
 
         ui.label("Light Source");
         egui::ComboBox::from_id_source("lighting")
