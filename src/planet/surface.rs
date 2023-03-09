@@ -235,7 +235,7 @@ impl Surface{
     }
 
     //adds a new cell to planet using a provoking edge belonging to one plate
-    pub fn add_cell_new(&mut self,edge:(usize,usize),cell:usize){
+    pub fn add_cell(&mut self,edge:(usize,usize),cell:usize){
         //get base mesh indices of cells on edge
         let base_edge = (self.cells[edge.0].base_index,self.cells[edge.1].base_index);
         //use base indices to search base mesh for triangle that edge exists in 
@@ -262,11 +262,13 @@ impl Surface{
             //use new pos to create new cell
             self.cells[cell] = Cell::new(new_pos, index, self.cells[edge.0].plate);
             //put new cell into planet mesh by connecting to provoking edge
+            self.triangles.append(&mut vec![edge.0 as u32,edge.1 as u32,cell as u32]);
+            println!("Added");
         }
     }
 
     //adds a new cell to the planet between two other cells
-    pub fn add_cell(&mut self, parents:(usize,usize),cell:usize){
+    pub fn add_cell_old(&mut self, parents:(usize,usize),cell:usize){
         //select random plate of the two parents to make the new plate belong to
         let plate = if self.rng.gen(){
             self.cells[parents.0 as usize].plate

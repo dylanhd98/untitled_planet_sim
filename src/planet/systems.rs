@@ -79,20 +79,40 @@ impl super::surface::Surface{
             .collect();
 
         //act on boundary triangles based what they are catigorized as
-        //records cells already added
-        //let newly_added = HashSet::new();
+
+        //remove cells in converging
+        for tri in convergent.chunks(3){
+            //TEMPORARY OBVIOUSLY, REMOVE ALL CELLS AND TRI
+            self.bank.insert(tri[0] as usize);
+            //self.triangles = self.triangles.as_chunks(3).filter(predicate);
+        }
+
+        //records cells already added 
+        let mut newly_added:HashSet<u32> = HashSet::new();
+        //get cells that can be added to mesh
+        let mut bank_cells:Vec<usize> = self.bank.drain().collect();
         //add new cells according to base mesh
         for tri in divergent.chunks(3){
+            //get index of cell to be added to mesh
+            let cell_to_add = if let Some(cell) = bank_cells.pop(){
+                cell
+            }else{
+                continue;
+            };
             //find edge with two points of the same plate in tri to be used create new one
             let shared_plate = tri.iter().zip(tri.iter().skip(1))
                 .find(|edge| self.cells[*edge.0 as usize].plate == self.cells[*edge.1 as usize].plate);
             if let Some(edge) = shared_plate{
                 //add new cell that corrosponds to the next point in the virtual mesh's 
+                println!("Adding");
+                self.add_cell((*edge.0 as usize,*edge.1 as usize), cell_to_add);
+                //connect new cell to edge as triangle
                 
             }else{
                 continue;
             }
         }
+        //add remaining unused cells back to bank
 
         //triangulate new boundary triangles, insert into mesh
         self.triangles.append(&mut transform);
