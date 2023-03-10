@@ -58,18 +58,23 @@ impl super::surface::Surface{
                 }else{
                     //evaluate boundry type of triangle and store appropriately
                     //use perimeter^2 of triangle to determine boundry type
-                    let sqr_perim = 
-                        (self.cells[0].position-self.cells[1].position).magnitude_squared()+
-                        (self.cells[1].position-self.cells[2].position).magnitude_squared()+
-                        (self.cells[2].position-self.cells[0].position).magnitude_squared();
+                    let sqr_perim:f32 = t.iter().zip(t.iter().skip(1))
+                    .map(|e| (self.cells[*e.0 as usize].position-self.cells[*e.1 as usize].position).magnitude_squared())
+                    .sum();
 
-                    if sqr_perim/3.0 < self.cell_distance{
+                    println!("\n\nperim^2: {}\nperim/3: {}\ncell: {}\ncell^2: {}\n3*cell^2: {}",sqr_perim,sqr_perim/3.0,self.cell_distance,self.cell_distance*self.cell_distance,self.cell_distance*self.cell_distance*3.0);
+
+                    if sqr_perim/3.0 < self.cell_distance*self.cell_distance*0.5{
                         t.iter().for_each(|x| convergent.push(*x));
+                        println!("Converging");
                     }
-                    else if sqr_perim/3.0 > self.cell_distance*2.0{
+                    else if sqr_perim/3.0 > self.cell_distance*self.cell_distance*1.25{
                         t.iter().for_each(|x| divergent.push(*x));
-                    }else{
+                        println!("Diverging");
+                    }
+                    else{
                         t.iter().for_each(|x| transform.push(*x));
+                        println!("Transform");
                     }
                     false
                 }
@@ -79,15 +84,15 @@ impl super::surface::Surface{
             .collect();
 
         //act on boundary triangles based what they are catigorized as
-
+        println!("Converging:{:?}\nTransform:{:?}\nDivergent:{:?}",convergent.len(),transform.len(),divergent.len());
         //remove cells in converging
         for tri in convergent.chunks(3){
             //TEMPORARY OBVIOUSLY, REMOVE ALL CELLS AND TRI
             self.bank.insert(tri[0] as usize);
             //self.triangles = self.triangles.as_chunks(3).filter(predicate);
         }
-
-        //records cells already added 
+        println!("{:?} in bank",self.bank.len());
+        //records cells already added to prevent duplicates
         let mut newly_added:HashSet<u32> = HashSet::new();
         //get cells that can be added to mesh
         let mut bank_cells:Vec<usize> = self.bank.drain().collect();
@@ -97,6 +102,7 @@ impl super::surface::Surface{
             let cell_to_add = if let Some(cell) = bank_cells.pop(){
                 cell
             }else{
+                println!("no cell in bank ({} in bank)",bank_cells.len());
                 continue;
             };
             //find edge with two points of the same plate in tri to be used create new one
@@ -104,15 +110,14 @@ impl super::surface::Surface{
                 .find(|edge| self.cells[*edge.0 as usize].plate == self.cells[*edge.1 as usize].plate);
             if let Some(edge) = shared_plate{
                 //add new cell that corrosponds to the next point in the virtual mesh's 
-                println!("Adding");
                 self.add_cell((*edge.0 as usize,*edge.1 as usize), cell_to_add);
-                //connect new cell to edge as triangle
-                
             }else{
+                println!("shared plate not found :(");
                 continue;
             }
         }
         //add remaining unused cells back to bank
+        self.bank = HashSet::from_iter(bank_cells.into_iter());
 
         //triangulate new boundary triangles, insert into mesh
         self.triangles.append(&mut transform);

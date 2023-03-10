@@ -124,7 +124,7 @@ impl Planet{
             sim_info: 
             SimInfo { 
                 years_per_second: 0.0, 
-                triangulation_interval: 1_000_000.0,
+                triangulation_interval: 1_000_.0,
                 lapse_rate: gen.lapse_rate,
                 base_temp: gen.base_temp, 
                 axis: axis, 
