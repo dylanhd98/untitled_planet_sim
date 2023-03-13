@@ -62,19 +62,14 @@ impl super::surface::Surface{
                     .map(|e| (self.cells[*e.0 as usize].position-self.cells[*e.1 as usize].position).magnitude_squared())
                     .sum();
 
-                    println!("\n\nperim^2: {}\nperim/3: {}\ncell: {}\ncell^2: {}\n3*cell^2: {}",sqr_perim,sqr_perim/3.0,self.cell_distance,self.cell_distance*self.cell_distance,self.cell_distance*self.cell_distance*3.0);
-
                     if sqr_perim/3.0 < self.cell_distance*self.cell_distance*0.5{
                         t.iter().for_each(|x| convergent.push(*x));
-                        println!("Converging");
                     }
                     else if sqr_perim/3.0 > self.cell_distance*self.cell_distance*1.25{
                         t.iter().for_each(|x| divergent.push(*x));
-                        println!("Diverging");
                     }
                     else{
                         t.iter().for_each(|x| transform.push(*x));
-                        println!("Transform");
                     }
                     false
                 }
@@ -84,7 +79,7 @@ impl super::surface::Surface{
             .collect();
 
         //act on boundary triangles based what they are catigorized as
-        println!("Converging:{:?}\nTransform:{:?}\nDivergent:{:?}",convergent.len(),transform.len(),divergent.len());
+        println!("\nConverging:{:?}\nTransform:{:?}\nDivergent:{:?}",convergent.len(),transform.len(),divergent.len());
         //remove cells in converging
         for tri in convergent.chunks(3){
             //TEMPORARY OBVIOUSLY, REMOVE ALL CELLS AND TRI
@@ -116,6 +111,9 @@ impl super::surface::Surface{
                 continue;
             }
         }
+
+        //turn triangles into polygons
+
         //add remaining unused cells back to bank
         self.bank = HashSet::from_iter(bank_cells.into_iter());
 

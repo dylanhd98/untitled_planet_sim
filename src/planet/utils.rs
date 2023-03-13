@@ -6,6 +6,7 @@ use noise::{NoiseFn, Perlin, Seedable};
 use crate::planet::surface::Cell;
 
 #[derive(Debug)]
+#[derive(PartialEq)]
 enum Side{
     Left,
     Right
@@ -151,6 +152,11 @@ pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
         .map(|edge|  vec![edge.0 as u32,edge.1 as u32,target])
         .flatten()
         .collect()
+}
+
+//takes chain and points, then returns triangles connecting point to triangles
+pub fn connect_to_chain(){
+
 }
 
 //implementation of the bowyer watson alg, producing indices
@@ -305,13 +311,16 @@ pub fn monotone_poly(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
     held_points.push(second.0);
     let mut last_side = second.1; 
     //go from largest y value to smallest
-    for p in ordered_points.into_iter().rev(){
+    for point in ordered_points.into_iter().rev(){
         //check if next point is in same chain as previous
-        
+        if last_side == point.1{
+            
+        }else{
+            //else attach all previous points to new point as triangles
+             
+        }
     }
-
     triangulation
-    //panic!("top:{}\nbottom:{}\npoints:{:?}",polygon[top],polygon[bottom],ordered_points);
 }
 
 //takes cartesian point on unit sphere, returns it as stereographic, a pole must be specified

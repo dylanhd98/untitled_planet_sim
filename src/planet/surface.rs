@@ -34,6 +34,7 @@ pub struct Plate{
     pub density: f32,
     //cm per year, avg is 5-15, earth rad = 6,371km,
     pub speed: f32,
+   // pub mat:glm::
 }
 impl Plate{
     //creates new random plate
@@ -202,7 +203,7 @@ impl Surface{
         }
     }
 
-    //remove cell
+    //remove cell from mesh
     pub fn remove_cell(&mut self,cell: usize,provoking: usize){
         //hashset to ensure surrounding points are unique
         //let mut surrounding_points:HashSet<u32> = HashSet::with_capacity(6);
@@ -250,6 +251,7 @@ impl Surface{
                     //check if edge is anywhere in triangle
                     if t[i] == base_edge.0 && t[(i+1)%3] == base_edge.1{
                         //return third point
+                        println!("");
                         return Some(t[(i+2)%3]);
                     }
                 }
@@ -265,47 +267,8 @@ impl Surface{
             println!("Adding, tris now: {}",self.triangles.len());
             self.triangles.append(&mut vec![edge.0 as u32,edge.1 as u32,cell as u32]);
             println!("Added, tris now: {}",self.triangles.len());
-            println!("SUCCESS");
         }else{
-            println!("No Thrid index");
+            println!("No Thrid index >:(");
         }
-    }
-
-    //adds a new cell to the planet between two other cells
-    pub fn add_cell_old(&mut self, parents:(usize,usize),cell:usize){
-        //select random plate of the two parents to make the new plate belong to
-        let plate = if self.rng.gen(){
-            self.cells[parents.0 as usize].plate
-        }else{
-            self.cells[parents.1 as usize].plate
-        };
-        //get midpoint between the two parent cells
-        let mid = (self.cells[parents.0 as usize].position+self.cells[parents.1 as usize].position)*0.5;
-        //use cell from bank as new cell between the parent cells
-        self.cells[cell as usize] = Cell::new(glm::normalize(&mid),0,plate);
-
-        //record surrounging triangles
-        let mut surrounding_tris:Vec<u32> =Vec::with_capacity(16);
-
-        //removes any triangle containing both parent cells, as these are the ones which will obstruct the new cell, they are also stored for later
-        self.triangles = self.triangles.chunks(3)
-            .filter(|chunk| {
-                //if triangle contains both parents, record triangle
-                if chunk.contains(&(parents.0 as u32))&&chunk.contains(&(parents.1 as u32)){
-                    chunk.iter()
-                        .for_each(|c| surrounding_tris.push(*c));
-                    false
-                }else{
-                    true
-                }
-            })
-            .flatten()//flatten to remove seperation of triangles
-            .map(|n|*n)
-            .collect();
-
-        //triangulate points
-        let mut triangulation = connect_point(surrounding_tris, cell as u32);
-        //adds new triangles to mesh
-        self.triangles.append(&mut triangulation);
     }
 }
