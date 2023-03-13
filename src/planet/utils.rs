@@ -305,20 +305,38 @@ pub fn monotone_poly(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
     ordered_points.sort_by(|a,b| points[a.0].y.total_cmp(&points[b.0].y));
 
     //now go through points, if 3 points turn in towards center of triangle, push three as triangle to triangulation if so and remove middle point of three from ordered points
-    let mut held_points:Vec<usize> = Vec::with_capacity(polygon.len());
-    held_points.push(ordered_points.pop().unwrap().0);
+    let mut current_points:Vec<usize> = Vec::with_capacity(polygon.len());
+    current_points.push(ordered_points.pop().unwrap().0);
     let second = ordered_points.pop().unwrap();
-    held_points.push(second.0);
+    current_points.push(second.0);
     let mut last_side = second.1; 
     //go from largest y value to smallest
+    let mut temp_count_remove_this_you_fool = 3;
     for point in ordered_points.into_iter().rev(){
         //check if next point is in same chain as previous
+        println!("Point {}, current side: {:?}, last side: {:?}",temp_count_remove_this_you_fool,point.1,last_side);
+        temp_count_remove_this_you_fool += 1;
         if last_side == point.1{
-            
+            //check
         }else{
+            println!("side not same as last");
             //else attach all previous points to new point as triangles
-             
+            while current_points.len()>2{
+                //take tri out
+                let tri:Vec<usize> = current_points.drain(current_points.len()-3..).collect();
+                //add tri to triangulation, ensure is counter-clockwise
+                if last_side == Side::Right{
+                    triangulation.append(&mut tri.iter().map(|i| *i as u32).collect());
+                }else{
+                    triangulation.append(&mut tri.iter().map(|i| *i as u32).rev().collect());
+                }
+                //pushes points back, excluding middle point
+                current_points.push(tri[0]);
+                current_points.push(tri[2]);
+            }
         }
+        current_points.push(point.0);
+        last_side = point.1;
     }
     triangulation
 }

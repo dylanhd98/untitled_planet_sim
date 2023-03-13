@@ -2,10 +2,10 @@
 use core::ops::Range;
 use std::f64;
 //external crates used
-use egui::{Context,plot::{Line, Plot, PlotPoints,VLine, Polygon, Legend, Corner}, Color32};
+use egui::{Context,plot::{Line, Plot, PlotPoints,VLine, Polygon, Legend, Corner, self}, Color32};
 use nalgebra_glm as glm;
 
-use crate::planet::GenInfo;
+use crate::planet::{GenInfo, utils::monotone_poly};
 
 //UTILITY FUNCTIONS FOR INFO MENUS
 
@@ -293,4 +293,53 @@ pub fn plate_info(egui_ctx: &Context, gen_info: &GenInfo){
 
 pub fn lapse_rate_info(egui_ctx: &Context){
     
+}
+
+pub fn testing(egui_ctx: &Context){
+    egui::CentralPanel::default()
+        .show(egui_ctx, |ui| {
+            Plot::new("axial diagram")
+            .show(ui, |plot_ui| {
+                let test_points = vec![
+                    glm::vec3(0.0, 100.0, 0.0),
+                    glm::vec3(-5.0, 80.0, 0.0),
+                    glm::vec3(-9.0, 50.0, 0.0),
+                    glm::vec3(-8.0, 0.0, 0.0),
+                    glm::vec3(-5.0, -70.0, 0.0),
+                    glm::vec3(0.0, -100.0, 0.0),
+                    glm::vec3(5.0, -70.0, 0.0),
+                    glm::vec3(8.0, -5.0, 0.0),
+                    glm::vec3(5.0, 80.0, 0.0),
+                ];
+                let test_poly:Vec<usize> = (0..test_points.len()).collect();
+
+                let base = Polygon::new(PlotPoints::new(
+                    test_poly.iter()
+                    .map(|p| {
+                        [test_points[*p as usize].x as f64,test_points[*p as usize].y as f64]
+                    })
+                    .collect()));
+
+                let result_tris = monotone_poly(&test_points, test_poly);
+
+                let polygons:Vec<Polygon> = result_tris.chunks(3)
+                    .map(|t| {
+                        let points = PlotPoints::new(
+                            t.iter()
+                            .map(|p| {
+                                [test_points[*p as usize].x as f64,test_points[*p as usize].y as f64]
+                            })
+                            .collect());
+                        Polygon::new(points)
+                    })
+                    .collect();
+
+
+                //plot_ui.polygon(base);
+                for poly in polygons{
+                    plot_ui.polygon(poly);
+                }
+                println!("result tris {}",result_tris.len());
+            });
+        });
 }

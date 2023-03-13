@@ -22,7 +22,9 @@ pub enum MenuState{
     //menu showing circle and line representing axis
     AxialTilt,
     //displays the lapse rate, the rate at which temp drops with hight
-    LapseRate
+    LapseRate,
+    //display the base temp
+    BaseTemp
 }
 
 //menu for planet creation
@@ -61,7 +63,9 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
             }
 
             ui.label("Base Temperature");
-            ui.add(egui::Slider::new(&mut gen_info.base_temp, -100.0..=100.0));
+            if ui.add(egui::Slider::new(&mut gen_info.base_temp, -100.0..=100.0)).changed(){
+                gen_info.menu_state = MenuState::BaseTemp;
+            }
 
             ui.label("Seed");
             ui.add(egui::DragValue::new(&mut gen_info.seed).speed(0));
@@ -79,6 +83,7 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
         MenuState::Plates=> infographics::plate_info(egui_ctx, gen_info),
         MenuState::AxialTilt => infographics::axial_tilt_info(egui_ctx, gen_info),
         MenuState::LapseRate => infographics::lapse_rate_info(egui_ctx),
+        MenuState::BaseTemp => infographics::testing(egui_ctx)
     }
  
     if new_planet{
