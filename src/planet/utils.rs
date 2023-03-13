@@ -317,24 +317,34 @@ pub fn monotone_poly(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
         println!("Point {}, current side: {:?}, last side: {:?}",temp_count_remove_this_you_fool,point.1,last_side);
         temp_count_remove_this_you_fool += 1;
         if last_side == point.1{
-            //check
-        }else{
-            println!("side not same as last");
-            //else attach all previous points to new point as triangles
-            while current_points.len()>2{
-                //take tri out
-                let tri:Vec<usize> = current_points.drain(current_points.len()-3..).collect();
-                //add tri to triangulation, ensure is counter-clockwise
-                if last_side == Side::Right{
-                    triangulation.append(&mut tri.iter().map(|i| *i as u32).collect());
-                }else{
-                    triangulation.append(&mut tri.iter().map(|i| *i as u32).rev().collect());
-                }
-                //pushes points back, excluding middle point
-                current_points.push(tri[0]);
-                current_points.push(tri[2]);
+            //test if angle internal to the polygon between points is <180, if so triangulate 
+            //take edge from polygon to be connected to
+            let edge:Vec<usize> = current_points.drain(current_points.len()-2..current_points.len()).collect(); 
+            //ensure triangle is clockwise
+            if point.1 == Side::Left{
+                triangulation.append(&mut vec![edge[0] as u32,edge[1] as u32,point.0 as u32]);
+            }else{
+                triangulation.append(&mut vec![edge[1] as u32,edge[0] as u32,point.0 as u32]);
             }
+            //push first point as that is still in polygon
+            current_points.push(edge[0]);
+        }else{
+            //else attach all previous points to new point as triangles
+            //get all points along chain
+            let chain:Vec<usize> = current_points.drain(0..).collect();
+            //go through chain, connecting point to it
+            for (a,b) in chain.iter().zip(chain.iter().skip(1)){
+                //add tri to triangulation, ensure is counter-clockwise
+                if point.1 == Side::Left{
+                    triangulation.append(&mut vec![*a as u32,*b as u32,point.0 as u32]);
+                }else{
+                    triangulation.append(&mut vec![*b as u32,*a as u32,point.0 as u32]);
+                }
+            }
+            //add last chain member back as still part of polgyon
+            current_points.push(*chain.last().unwrap());
         }
+        //push point and record last side
         current_points.push(point.0);
         last_side = point.1;
     }

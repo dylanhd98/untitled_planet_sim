@@ -304,12 +304,15 @@ pub fn testing(egui_ctx: &Context){
                     glm::vec3(0.0, 100.0, 0.0),
                     glm::vec3(-5.0, 80.0, 0.0),
                     glm::vec3(-9.0, 50.0, 0.0),
+                    glm::vec3(-15.0, 10.0, 0.0),
                     glm::vec3(-8.0, 0.0, 0.0),
                     glm::vec3(-5.0, -70.0, 0.0),
+                    glm::vec3(-8.0, -80.0, 0.0),
                     glm::vec3(0.0, -100.0, 0.0),
-                    glm::vec3(5.0, -70.0, 0.0),
+                    glm::vec3(5.0, -72.0, 0.0),
                     glm::vec3(8.0, -5.0, 0.0),
-                    glm::vec3(5.0, 80.0, 0.0),
+                    glm::vec3(10.0, 70.0, 0.0),
+                    glm::vec3(5.0, 75.0, 0.0),
                 ];
                 let test_poly:Vec<usize> = (0..test_points.len()).collect();
 
@@ -335,7 +338,7 @@ pub fn testing(egui_ctx: &Context){
                     .collect();
 
 
-                //plot_ui.polygon(base);
+                plot_ui.polygon(base.fill_alpha(0.0));
                 for poly in polygons{
                     plot_ui.polygon(poly);
                 }
