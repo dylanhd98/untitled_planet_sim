@@ -34,7 +34,8 @@ pub struct Plate{
     pub density: f32,
     //cm per year, avg is 5-15, earth rad = 6,371km,
     pub speed: f32,
-   // pub mat:glm::
+    //matrix recording the translation of all points in this plates in respect to their original, base positions
+    pub translation: glm::TMat4<f32>
 }
 impl Plate{
     //creates new random plate
@@ -51,6 +52,7 @@ impl Plate{
             axis: rand_axis,
             density: rng.gen_range(0.0..10.0),//not representative of real value, just used to compare plates
             speed: rng.gen_range(0.00..0.2)/6371000.0, //done in meters per second, 6371000 is earths radius
+            translation: glm::identity(),//sets translation as identity as upon creation of plate there is no translation
         }
     }
 }
@@ -130,9 +132,9 @@ impl Surface{
         let mut cells:Vec<Cell> = {
             let perlin = Perlin::new(gen.seed);
             //generates cells with perlin noise
-            shape.vertices.clone().into_iter()
-            .map(|pos|
-                Cell::from_perlin(pos,0 ,None, perlin)
+            shape.vertices.clone().into_iter().zip(0..shape.vertices.len())
+            .map(|(pos,index)|
+                Cell::from_perlin(pos,index as u32 ,None, perlin)
             )
             .collect()
         };
@@ -237,32 +239,22 @@ impl Surface{
     //adds a new cell to planet using a provoking edge belonging to one plate
     pub fn add_cell(&mut self,edge:(usize,usize),cell:usize){
         println!("New Cell Adding...");
-        //get base mesh indices of cells on edge
-        let base_edge = (self.cells[edge.0].base_index,self.cells[edge.1].base_index);
-        //use base indices to search base mesh for triangle that edge exists in 
-        //and return index of the third point
-        let third_index:Option<u32> = self.base_mesh.indices.chunks(3)
-            .find_map(|t| {
-                //skip tri if doesnt contain both
-                if !t.contains(&base_edge.0)||!t.contains(&base_edge.0){
-                    return None;
-                }
-                for i in 0..3{
-                    //check if edge is anywhere in triangle
-                    if t[i] == base_edge.0 && t[(i+1)%3] == base_edge.1{
-                        //return third point
-                        println!("");
-                        return Some(t[(i+2)%3]);
-                    }
-                }
-                None
-            });
+        //get index of new pos
+        let third_index = self.third_point(edge);
         //use index of new point to get pos of new point
         if let Some(index) = third_index {
-            //get position of new cell
-            let new_pos = self.base_mesh.vertices[index as usize];
-            //use new pos to create new cell
-            self.cells[cell] = Cell::new(new_pos, index, self.cells[edge.0].plate);
+            let plate = self.cells[edge.0].plate;
+            //use index to find new pos, transform by plate
+            let mut pos = self.base_mesh.vertices[index as usize];
+            pos = (self.plates[plate.unwrap()].translation*glm::vec3_to_vec4(&pos)).xyz();
+            //use new pos to create new cell in same plate as edge
+            println!("NEW CELL @{:?}",pos);
+            println!("pos of edges:\n{:?}\n{:?}",self.cells[edge.0].position,self.cells[edge.1].position);
+            println!("Distance:{}",(pos-self.cells[edge.0].position).magnitude());
+            if (pos-self.cells[edge.0].position).magnitude()>0.3{
+                panic!("AAAAAAAAAAAAA");
+            }
+            self.cells[cell] = Cell::new(pos, index, self.cells[edge.0].plate);
             //put new cell into planet mesh by connecting to provoking edge
             println!("Adding, tris now: {}",self.triangles.len());
             self.triangles.append(&mut vec![edge.0 as u32,edge.1 as u32,cell as u32]);
@@ -270,5 +262,29 @@ impl Surface{
         }else{
             println!("No Thrid index >:(");
         }
+    }
+
+    //takes edge on planet and returns the index of the 3rd point in the triangle that should exist according to base mesh
+    pub fn third_point(&self,edge:(usize,usize))->Option<u32>{
+        //get base indices of edge
+        let base_edge = (self.cells[edge.0].base_index,self.cells[edge.1].base_index);
+        //use base indices to search base mesh for triangle that edge exists in 
+        //and return index of the third point
+        self.base_mesh.indices.chunks(3)
+            .find_map(|t| {
+                //skip tri if doesnt contain both
+                if !t.contains(&base_edge.0)||!t.contains(&base_edge.0){
+                    return None;
+                }
+                //go through each edge on tri
+                for i in 0..3{
+                    //check if edge is anywhere in triangle
+                    if t[i] == base_edge.0 && t[(i+1)%3] == base_edge.1{
+                        //return third point
+                        return Some(t[(i+2)%3]);
+                    }
+                }
+                None
+            })
     }
 }

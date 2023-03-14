@@ -311,11 +311,8 @@ pub fn monotone_poly(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
     current_points.push(second.0);
     let mut last_side = second.1; 
     //go from largest y value to smallest
-    let mut temp_count_remove_this_you_fool = 3;
     for point in ordered_points.into_iter().rev(){
         //check if next point is in same chain as previous
-        println!("Point {}, current side: {:?}, last side: {:?}",temp_count_remove_this_you_fool,point.1,last_side);
-        temp_count_remove_this_you_fool += 1;
         if last_side == point.1{
             //test if angle internal to the polygon between points is <180, if so triangulate 
             //take edge from polygon to be connected to

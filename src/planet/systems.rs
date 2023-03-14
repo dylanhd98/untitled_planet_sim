@@ -13,7 +13,6 @@ impl super::surface::Surface{
     pub fn temperature(&mut self,years:f32,sim_info: &SimInfo){
         //latitude that gets maximum sunlight from the sun
         let sun_max = glm::dot(&sim_info.to_sun, &sim_info.axis);
-
         //updates temp for each
         for cell in self.cells.iter_mut(){
             //amount of light recieved as percentage compared to ideal
@@ -34,6 +33,10 @@ impl super::surface::Surface{
             cell.position = glm::rotate_vec3(&cell.position, plate.speed*years, &plate.axis);
             //put cell pos into cell data
             cell.contents.position=cell.position.into();
+        }
+        //update plates internal translation matrices aswell
+        for plate in self.plates.iter_mut(){
+            plate.translation = glm::rotate(&plate.translation, plate.speed*years,  &plate.axis);
         }
 
         //update counter, check if exceeds interval
@@ -79,14 +82,12 @@ impl super::surface::Surface{
             .collect();
 
         //act on boundary triangles based what they are catigorized as
-        println!("\nConverging:{:?}\nTransform:{:?}\nDivergent:{:?}",convergent.len(),transform.len(),divergent.len());
+        //println!("\nConverging:{:?}\nTransform:{:?}\nDivergent:{:?}",convergent.len(),transform.len(),divergent.len());
         //remove cells in converging
         for tri in convergent.chunks(3){
-            //TEMPORARY OBVIOUSLY, REMOVE ALL CELLS AND TRI
+            //remove most dense cell
             self.bank.insert(tri[0] as usize);
-            //self.triangles = self.triangles.as_chunks(3).filter(predicate);
         }
-        println!("{:?} in bank",self.bank.len());
         //records cells already added to prevent duplicates
         let mut newly_added:HashSet<u32> = HashSet::new();
         //get cells that can be added to mesh
@@ -97,7 +98,7 @@ impl super::surface::Surface{
             let cell_to_add = if let Some(cell) = bank_cells.pop(){
                 cell
             }else{
-                println!("no cell in bank ({} in bank)",bank_cells.len());
+                //no free space for new cell
                 continue;
             };
             //find edge with two points of the same plate in tri to be used create new one
@@ -107,12 +108,14 @@ impl super::surface::Surface{
                 //add new cell that corrosponds to the next point in the virtual mesh's 
                 self.add_cell((*edge.0 as usize,*edge.1 as usize), cell_to_add);
             }else{
-                println!("shared plate not found :(");
+                //no shared plate found
                 continue;
             }
         }
 
         //turn triangles into polygons
+
+        //triangulate polygons
 
         //add remaining unused cells back to bank
         self.bank = HashSet::from_iter(bank_cells.into_iter());

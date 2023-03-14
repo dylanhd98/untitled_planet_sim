@@ -309,7 +309,7 @@ pub fn testing(egui_ctx: &Context){
                     glm::vec3(-5.0, -70.0, 0.0),
                     glm::vec3(-8.0, -80.0, 0.0),
                     glm::vec3(0.0, -100.0, 0.0),
-                    glm::vec3(5.0, -72.0, 0.0),
+                    glm::vec3(5.0, -62.0, 0.0),
                     glm::vec3(8.0, -5.0, 0.0),
                     glm::vec3(10.0, 70.0, 0.0),
                     glm::vec3(5.0, 75.0, 0.0),
@@ -342,7 +342,6 @@ pub fn testing(egui_ctx: &Context){
                 for poly in polygons{
                     plot_ui.polygon(poly);
                 }
-                println!("result tris {}",result_tris.len());
             });
         });
 }
