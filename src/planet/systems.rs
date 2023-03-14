@@ -87,6 +87,7 @@ impl super::surface::Surface{
         for tri in convergent.chunks(3){
             //remove most dense cell
             self.bank.insert(tri[0] as usize);
+            
         }
         //records cells already added to prevent duplicates
         let mut newly_added:HashSet<u32> = HashSet::new();

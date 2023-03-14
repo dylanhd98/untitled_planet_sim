@@ -238,7 +238,6 @@ impl Surface{
 
     //adds a new cell to planet using a provoking edge belonging to one plate
     pub fn add_cell(&mut self,edge:(usize,usize),cell:usize){
-        println!("New Cell Adding...");
         //get index of new pos
         let third_index = self.third_point(edge);
         //use index of new point to get pos of new point
@@ -248,19 +247,9 @@ impl Surface{
             let mut pos = self.base_mesh.vertices[index as usize];
             pos = (self.plates[plate.unwrap()].translation*glm::vec3_to_vec4(&pos)).xyz();
             //use new pos to create new cell in same plate as edge
-            println!("NEW CELL @{:?}",pos);
-            println!("pos of edges:\n{:?}\n{:?}",self.cells[edge.0].position,self.cells[edge.1].position);
-            println!("Distance:{}",(pos-self.cells[edge.0].position).magnitude());
-            if (pos-self.cells[edge.0].position).magnitude()>0.3{
-                panic!("AAAAAAAAAAAAA");
-            }
             self.cells[cell] = Cell::new(pos, index, self.cells[edge.0].plate);
             //put new cell into planet mesh by connecting to provoking edge
-            println!("Adding, tris now: {}",self.triangles.len());
             self.triangles.append(&mut vec![edge.0 as u32,edge.1 as u32,cell as u32]);
-            println!("Added, tris now: {}",self.triangles.len());
-        }else{
-            println!("No Thrid index >:(");
         }
     }
 

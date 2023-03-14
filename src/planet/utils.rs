@@ -133,6 +133,11 @@ pub fn clockwiseify(points: &Vec<glm::Vec3>,mut tri: Vec<u32>)->Vec<u32>{
     tri
 }
 
+//returns if 3 points are in clockwise order
+pub fn is_clockwise(points: &Vec<glm::Vec3>,mut tri: Vec<u32>){
+
+}
+
 //takes surrounding triangles and a target point, returns new traingles all connecting surrounding edges to target
 pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
     //divide tris into edges
@@ -152,11 +157,6 @@ pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
         .map(|edge|  vec![edge.0 as u32,edge.1 as u32,target])
         .flatten()
         .collect()
-}
-
-//takes chain and points, then returns triangles connecting point to triangles
-pub fn connect_to_chain(){
-
 }
 
 //implementation of the bowyer watson alg, producing indices
@@ -314,17 +314,21 @@ pub fn monotone_poly(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
     for point in ordered_points.into_iter().rev(){
         //check if next point is in same chain as previous
         if last_side == point.1{
-            //test if angle internal to the polygon between points is <180, if so triangulate 
-            //take edge from polygon to be connected to
-            let edge:Vec<usize> = current_points.drain(current_points.len()-2..current_points.len()).collect(); 
-            //ensure triangle is clockwise
-            if point.1 == Side::Left{
-                triangulation.append(&mut vec![edge[0] as u32,edge[1] as u32,point.0 as u32]);
-            }else{
-                triangulation.append(&mut vec![edge[1] as u32,edge[0] as u32,point.0 as u32]);
+            //while last 3 points have rotational direction in line with what side theyre on
+            let mut is_correct = true;
+            while is_correct{
+                //take edge from polygon to be connected to
+                let edge:Vec<usize> = current_points.drain(current_points.len()-2..current_points.len()).collect(); 
+                //get if edge connected to triangle and point 
+                //ensure triangle is clockwise
+                if point.1 == Side::Left{
+                    triangulation.append(&mut vec![edge[0] as u32,edge[1] as u32,point.0 as u32]);
+                }else{
+                    triangulation.append(&mut vec![edge[1] as u32,edge[0] as u32,point.0 as u32]);
+                }
+                //push first point as that is still in polygon
+                current_points.push(edge[0]);
             }
-            //push first point as that is still in polygon
-            current_points.push(edge[0]);
         }else{
             //else attach all previous points to new point as triangles
             //get all points along chain
