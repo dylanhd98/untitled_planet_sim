@@ -3,7 +3,7 @@
 use nalgebra_glm as glm;
 
 //internal modules
-use crate::planet::utils::{self, monotone_poly};
+use crate::planet::utils::{self, *};
 
 //testing the connect_point function, should return 
 #[test]
@@ -68,5 +68,5 @@ fn monotone_poly_triangulation(){
 
     let polygon = (2..8+2).collect();
 
-    monotone_poly(&test_points, polygon);
+    triangulate_monotone(&test_points, polygon);
 }

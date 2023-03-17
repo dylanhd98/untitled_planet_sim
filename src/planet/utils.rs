@@ -278,8 +278,33 @@ pub fn flip_triangulate(points:&Vec<glm::Vec3>,mut triangulation: Vec<u32>)->Vec
     triangulation
 }
 
+/* 
+//takes a polygon, triangulates it outputting triangulation
+pub fn triangulate_polygon(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
+    //turn polygon into y-monotone polygons
+    //triangulate each y-monotone, add to triangulation
+    poly_to_monotone(points, polygon).into_iter()
+        .map(|monotone| triangulate_monotone(points, polygon))
+        .flatten()
+        .collect()
+}
+
+//returns the edge immedietly to the left of the vertex
+pub fn left_edge(){
+    
+}
+
+//takes polygon, returns vec of y-monotone polygons
+pub fn poly_to_monotone(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<Vec<usize>>{
+    //first order points in polygon by height 
+    let mut ordered_points:Vec<usize> = polygon.clone();
+    ordered_points.sort_by(|a,b| points[*a].y.total_cmp(&points[*b].y));
+    //go through each find edge to left of vec
+    
+}*/
+
 //triangulates a y-monotone polygon, given the polygon provided is arranged counter-clockwise
-pub fn monotone_poly(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
+pub fn triangulate_monotone(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
     //triangulation of the inside of polygon
     let mut triangulation:Vec<u32> = Vec::with_capacity((polygon.len()-2)*3);
     //find index of top and bottom of polygon in polygon vec
@@ -314,19 +339,27 @@ pub fn monotone_poly(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
     for point in ordered_points.into_iter().rev(){
         //check if next point is in same chain as previous
         if last_side == point.1{
-            //while last 3 points have rotational direction in line with what side theyre on
-            let mut is_correct = true;
-            while is_correct{
-                //take edge from polygon to be connected to
-                let edge:Vec<usize> = current_points.drain(current_points.len()-2..current_points.len()).collect(); 
-                //get if edge connected to triangle and point 
-                //ensure triangle is clockwise
-                if point.1 == Side::Left{
-                    triangulation.append(&mut vec![edge[0] as u32,edge[1] as u32,point.0 as u32]);
-                }else{
-                    triangulation.append(&mut vec![edge[1] as u32,edge[0] as u32,point.0 as u32]);
-                }
+            //take edge from polygon to be connected to
+            let edge:Vec<usize> = current_points.drain(current_points.len()-2..current_points.len()).collect(); 
+            //if last 3 points have rotational direction in line with what side theyre on, and on same line as last point
+            let order = glm::Mat3::new(
+                points[edge[0]].x,points[edge[0]].y,1.0,
+                points[edge[1]].x,points[edge[1]].y, 1.0,
+                points[point.0].x,points[point.0].y, 1.0
+            ).determinant();
+            if order>0.0 && point.1 == Side::Left{//if on left chain and counter-clockwise
+                //ensure triangle is counter clockwise and attach
+                triangulation.append(&mut vec![edge[0] as u32,edge[1] as u32,point.0 as u32]);
                 //push first point as that is still in polygon
+                current_points.push(edge[0]);
+            }else if order<0.0 && point.1 == Side::Right{
+                //ensure triangle is counter clockwise and attach
+                triangulation.append(&mut vec![edge[1] as u32,edge[0] as u32,point.0 as u32]);
+                //push first point as that is still in polygon
+                current_points.push(edge[0]);
+            }else{
+                //else no triangles are added so push both points on edge back
+                current_points.push(edge[1]);
                 current_points.push(edge[0]);
             }
         }else{

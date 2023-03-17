@@ -5,7 +5,7 @@ use std::f64;
 use egui::{Context,plot::{Line, Plot, PlotPoints,VLine, Polygon, Legend, Corner, self}, Color32};
 use nalgebra_glm as glm;
 
-use crate::planet::{GenInfo, utils::monotone_poly};
+use crate::planet::{GenInfo, utils::*};
 
 //UTILITY FUNCTIONS FOR INFO MENUS
 
@@ -309,6 +309,7 @@ pub fn testing(egui_ctx: &Context){
                     glm::vec3(-5.0, -70.0, 0.0),
                     glm::vec3(-8.0, -80.0, 0.0),
                     glm::vec3(0.0, -100.0, 0.0),
+                    glm::vec3(15.0, -100.0, 0.0),
                     glm::vec3(5.0, -62.0, 0.0),
                     glm::vec3(8.0, -5.0, 0.0),
                     glm::vec3(10.0, 70.0, 0.0),
@@ -323,7 +324,7 @@ pub fn testing(egui_ctx: &Context){
                     })
                     .collect()));
 
-                let result_tris = monotone_poly(&test_points, test_poly);
+                let result_tris = triangulate_monotone(&test_points, test_poly);
 
                 let polygons:Vec<Polygon> = result_tris.chunks(3)
                     .map(|t| {
