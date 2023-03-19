@@ -9,9 +9,10 @@ use crate::planet::surface::Cell;
 
 #[derive(Debug)]
 #[derive(PartialEq)]
-enum Side{
-    Left,
-    Right
+pub enum Orientation{
+    Clockwise,
+    CounterClockwise,
+    Collinear
 }
 
 //handles perlin noise for generating base
@@ -87,13 +88,6 @@ pub fn indices_to_directed_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
     edges
 }
 
-//gets length of an edge between cells
-pub fn edge_length(cells: &Vec<Cell>, edge:&(usize,usize))->f32{
-    (cells[edge.0].position - 
-        cells[edge.1].position)
-        .magnitude()
-}
-
 //gets circumcenter of triangle
 pub fn circumcenter(points: &Vec<glm::Vec3>, tri: Vec<u32>)->glm::Vec3{
     //vectors pointing along triangle edges, and their cross product, for calculation
@@ -111,34 +105,28 @@ pub fn circumcenter(points: &Vec<glm::Vec3>, tri: Vec<u32>)->glm::Vec3{
     points[tri[0] as usize]-to_circumcenter
 }
 
-//center of mass of triangle
-pub fn centroid(points: &Vec<glm::Vec3>,tri: &Vec<u32>)->glm::Vec3{
-    tri.iter()
-        .map(|i| points[*i as usize])
-        .fold(glm::vec3(0.0, 0.0, 0.0), |acc,x| acc+x)
-        /3.0       
-}
-
-//returns clockwise varient of triangle
-pub fn clockwiseify(points: &Vec<glm::Vec3>,mut tri: Vec<u32>)->Vec<u32>{
-    let a = points[tri[0] as usize];
-    let b = points[tri[1] as usize];
-    let c = points[tri[2] as usize];
-
-    let n = glm::cross(&(b-a), &(c-a));
-
-    let centroid = centroid(points, &tri);
-
-    if glm::dot(&n,&centroid)<0.0{
-        tri.reverse();
+//gets orientation of 3 2d vectors
+pub fn tri_orientation(a:glm::Vec2,b:glm::Vec2,c:glm::Vec2)->Orientation{
+    //determinant of this matrix used to find rotational direction of tri
+    //if greater than zero, is counter clockwise
+    //if less than, is clockwise
+    //if zero, is collinear
+    match glm::Mat3::new(
+        a.x,a.y,1.0,
+        b.x,b.y, 1.0,
+        c.x,c.y, 1.0
+    ).determinant().total_cmp(&0.0){
+        std::cmp::Ordering::Greater=>Orientation::CounterClockwise,
+        std::cmp::Ordering::Less=>Orientation::Clockwise,
+        std::cmp::Ordering::Equal=>Orientation::Collinear,
     }
-    tri
 }
 
-//returns if 3 points are in clockwise order
-pub fn is_clockwise(points: &Vec<glm::Vec3>,mut tri: Vec<u32>){
+//takes two edges, returns if they intersect
+pub fn do_edges_intersect(){
 
 }
+
 
 //takes surrounding triangles and a target point, returns new traingles all connecting surrounding edges to target
 pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
@@ -170,16 +158,11 @@ pub fn tris_at_threshold(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>, thresh
     for i in 0..polygon.len(){
         //indices of points in tri
         let tri:Vec<usize> = (0..=2).into_iter()
-            .map(|x| (i+x)%3)
+            .map(|x| (i+x)%polygon.len())
             .collect();
-        //determinant of this matrix used to find rotational direction of tri
-        let order = glm::Mat3::new(
-            points[tri[0]].x,points[tri[0]].y,1.0,
-            points[tri[1]].x,points[tri[1]].y, 1.0,
-            points[tri[2]].x,points[tri[2]].y, 1.0
-        ).determinant();
-        //if potential triangle is clockwise or line, skip
-        if order<=0.0{
+
+        //if potential triangle is not counterclockwise (either colinear or clockwise), skip
+        if tri_orientation(points[tri[0]].xy(), points[tri[1]].xy(), points[tri[2]].xy()) != Orientation::CounterClockwise{
             continue;
         }
         //get vectors for calculating angle, b as origin
@@ -189,8 +172,7 @@ pub fn tris_at_threshold(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>, thresh
         if btoa.angle(&btoc)>threshold{
             continue;
         }
-        //if doesnt contain any points, add tri to triangles
-        
+        //if new edge doesnt intersect with anything, add tri
     }
 
     triangles
