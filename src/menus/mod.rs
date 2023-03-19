@@ -83,13 +83,13 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
         MenuState::Plates=> infographics::plate_info(egui_ctx, gen_info),
         MenuState::AxialTilt => infographics::axial_tilt_info(egui_ctx, gen_info),
         MenuState::LapseRate => infographics::lapse_rate_info(egui_ctx),
-        MenuState::BaseTemp => infographics::testing(egui_ctx)
+        MenuState::BaseTemp => infographics::base_temp_info(egui_ctx)
     }
  
     if new_planet{
         //creates new camera
         let dimensions = display.get_framebuffer_dimensions();
-        let cam = graphics::camera::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
+        let cam = graphics::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
             glm::vec3(0.0,0.0,5.0), 
             glm::Vec3::zeros(),
             glm::Vec3::y());

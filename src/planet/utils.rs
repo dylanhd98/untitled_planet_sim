@@ -1,3 +1,5 @@
+use std::ops::BitOrAssign;
+
 //external crates
 use nalgebra_glm as glm;
 use noise::{NoiseFn, Perlin, Seedable};
@@ -159,230 +161,39 @@ pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
         .collect()
 }
 
-//implementation of the bowyer watson alg, producing indices
-//works in 2d on z=0, to be done on local areas of the planet
-pub fn bowyer_watson(all_points:&mut Vec<glm::Vec3>,point_indices:&Vec<u32>)->Vec<u32>{
-    //create vec of indices
-    let mut indices:Vec<u32> = Vec::with_capacity(point_indices.len()*6);
-
-    //first a clockwise super triangle is made encompassing all points 
-    all_points.append(&mut vec![
-        glm::vec3(0.0, 1_000.0, 0.0),
-        glm::vec3(1_000.0, -1_000.0, 0.0),
-        glm::vec3(-1_000.0, -1_000.0, 0.0)]);
-
-    //store its indices so it can be removed later
-    let super_tri= all_points.len()-3;
-    indices.append(&mut vec![super_tri as u32,(super_tri+1) as u32,(super_tri+2) as u32]);
-
-    //for every point, add it and check if it is inside any tris circumcircle
-    //if it is, remove those triangles and attach the point to their edges
-    for point_no in point_indices{
-        //gets points pos
-        let point = all_points[*point_no as usize];
-        let mut bad_triangles = Vec::with_capacity(indices.len());
-        //filter out triangles whos circumcircle contains point, record triangles seperately
-        indices = indices.chunks(3)
-            .filter(|tri| {
-                //check if new point is within the circumcircle
-                let circumcenter = circumcenter(all_points,tri.to_vec());
-                if circumcenter == glm::vec3(f32::NAN, f32::NAN, f32::NAN){
-                    println!(">:(");
-                }
-                //radius of circumcircle
-                let radius = (circumcenter-all_points[tri[0] as usize]).magnitude();
-                //if less than radius, point is inside circumcircle
-                if (circumcenter-point).magnitude()<radius{
-                    //record triangle
-                    bad_triangles.append(&mut tri.to_vec());
-                    false
-                }else{
-                    true
-                }
-            })
-            .flatten()
-            .map(|x| *x)
+//takes a polygon, adds triangles between edges at or less than a specified threshold angle in radians
+pub fn tris_at_threshold(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>, threshold: f32)->Vec<u32>{
+    //go through every pair of connected edges in polygon, if angle between them inside polygon is less than angle given, add tri
+    //do not add triangle if contains any other point in triangle
+    let mut triangles:Vec<u32> = Vec::new();
+    //loop through every two edges
+    for i in 0..polygon.len(){
+        //indices of points in tri
+        let tri:Vec<usize> = (0..=2).into_iter()
+            .map(|x| (i+x)%3)
             .collect();
-        //connect point to hole left by bad triangles
-        let mut new_tris = connect_point(bad_triangles,*point_no);
-        //add new triangles to triangulation
-        indices.append(&mut new_tris);
-    }
-
-    //then remove supertri points
-    all_points.drain(super_tri..);
-
-    //return triangles, removing those containing super triangle points
-    indices.chunks(3)
-        //check if any triangle contains index of supertriangle
-        .filter(|triangle| !triangle.into_iter().any(|point| point>=&(super_tri as u32)))
-        .flatten()
-        .map(|x| *x)
-        .collect()
-}
-
-//flip algorithm to achieve delaunay triangulation, from arbitrary previous one, do not use at large scale
-//although has the advantage of being able to specify area being triangulated
-pub fn flip_triangulate(points:&Vec<glm::Vec3>,mut triangulation: Vec<u32>)->Vec<u32>{
-    //go through each triangle and compare with neighbouring triangles
-    //if both triangles arent delaunay, flip
-    let mut has_flipped = true;
-    while has_flipped{
-        has_flipped = false;
-        //compare each tri with every other
-        for a_start in (0..triangulation.len()).into_iter().step_by(3){
-            for b_start in (0..triangulation.len()).into_iter().step_by(3){
-                //turn ranges representing triangles into indices
-                let indices:Vec<u32> = [[a_start..a_start+3],[b_start..b_start+3]].concat()
-                    .into_iter()
-                    .flat_map(|r| r.map(|i| i as u32).collect::<Vec<u32>>())
-                    .collect();
-                //get all directional edges of two triangles
-                let edges = indices_to_directed_edges(&indices);
-                //remove any double edges - are internal, counting how many edges are dublicate ones
-                //gets points from remaining edges
-                let mut duplicate_edges = 0;
-                let tri_points:Vec<u32> = edges.iter()
-                    .filter(|edge| {
-                        //check if any member of edges isnt the flipped varient of current edge
-                        if !edges.iter().any(|e| edge == &&(e.1,e.0)) {
-                            duplicate_edges+=1;
-                            true
-                        }
-                        else{
-                            false
-                        }
-                    })
-                    .flat_map(|e| [e.0 as u32,e.1 as u32])
-                    .collect();
-                
-                //skip triangle if no shared edges or is just the same triangle
-                //should be only one shared edge between the two, thus two duplicates
-                if duplicate_edges != 2{
-                    continue;
-                }
-                //test if two triangles are delaunay- if non shared point in tri b isnt inside tri a's circumcircle
-                let circumcenter = circumcenter(points, tri_points[0..3].to_vec());
-                //test if b_point is closer to circumcenter than any point in tri_a- if so than b_point is within circumcircle nad the tris are not delaunay
-                if glm::magnitude(&(points[tri_points[0] as usize]-circumcenter)) <= glm::magnitude(&(points[tri_points[3] as usize]-circumcenter)){
-                    //flip tris, shift edges over
-                    for offset in 0..3{
-                        triangulation[a_start+offset] = tri_points[1+offset];
-                        triangulation[b_start+offset] = tri_points[(4+offset)%6];
-                    }
-                    has_flipped = true;
-                }
-            }
+        //determinant of this matrix used to find rotational direction of tri
+        let order = glm::Mat3::new(
+            points[tri[0]].x,points[tri[0]].y,1.0,
+            points[tri[1]].x,points[tri[1]].y, 1.0,
+            points[tri[2]].x,points[tri[2]].y, 1.0
+        ).determinant();
+        //if potential triangle is clockwise or line, skip
+        if order<=0.0{
+            continue;
         }
-    }
-    triangulation
-}
-
-/* 
-//takes a polygon, triangulates it outputting triangulation
-pub fn triangulate_polygon(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
-    //turn polygon into y-monotone polygons
-    //triangulate each y-monotone, add to triangulation
-    poly_to_monotone(points, polygon).into_iter()
-        .map(|monotone| triangulate_monotone(points, polygon))
-        .flatten()
-        .collect()
-}
-
-//returns the edge immedietly to the left of the vertex
-pub fn left_edge(){
-    
-}
-
-//takes polygon, returns vec of y-monotone polygons
-pub fn poly_to_monotone(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<Vec<usize>>{
-    //first order points in polygon by height 
-    let mut ordered_points:Vec<usize> = polygon.clone();
-    ordered_points.sort_by(|a,b| points[*a].y.total_cmp(&points[*b].y));
-    //go through each find edge to left of vec
-    
-}*/
-
-//triangulates a y-monotone polygon, given the polygon provided is arranged counter-clockwise
-pub fn triangulate_monotone(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>)->Vec<u32>{
-    //triangulation of the inside of polygon
-    let mut triangulation:Vec<u32> = Vec::with_capacity((polygon.len()-2)*3);
-    //find index of top and bottom of polygon in polygon vec
-    let top = (0..polygon.len()).into_iter().max_by(|a,b| 
-        points[polygon[*a]].y
-        .total_cmp(&points[polygon[*b]].y))
-        .unwrap();
-    let bottom = (0..polygon.len()).into_iter().min_by(|a,b| 
-        points[polygon[*a]].y
-        .total_cmp(&points[polygon[*b]].y))
-        .unwrap();
-    //use this information in combination with the knowledge the polygon is counter clockwise to find which chain it belongs to
-    //order all points while storing what chain they belong to
-    let mut ordered_points:Vec<(usize,Side)> = (0..polygon.len()).into_iter()
-        .map(|i| {//determines which chain it belongs too
-            if i>=top&&i<=bottom{
-                (polygon[i],Side::Left)
-            }else{
-                (polygon[i],Side::Right)
-            }
-        })
-        .collect();
-    ordered_points.sort_by(|a,b| points[a.0].y.total_cmp(&points[b.0].y));
-
-    //now go through points, if 3 points turn in towards center of triangle, push three as triangle to triangulation if so and remove middle point of three from ordered points
-    let mut current_points:Vec<usize> = Vec::with_capacity(polygon.len());
-    current_points.push(ordered_points.pop().unwrap().0);
-    let second = ordered_points.pop().unwrap();
-    current_points.push(second.0);
-    let mut last_side = second.1; 
-    //go from largest y value to smallest
-    for point in ordered_points.into_iter().rev(){
-        //check if next point is in same chain as previous
-        if last_side == point.1{
-            //take edge from polygon to be connected to
-            let edge:Vec<usize> = current_points.drain(current_points.len()-2..current_points.len()).collect(); 
-            //if last 3 points have rotational direction in line with what side theyre on, and on same line as last point
-            let order = glm::Mat3::new(
-                points[edge[0]].x,points[edge[0]].y,1.0,
-                points[edge[1]].x,points[edge[1]].y, 1.0,
-                points[point.0].x,points[point.0].y, 1.0
-            ).determinant();
-            if order>0.0 && point.1 == Side::Left{//if on left chain and counter-clockwise
-                //ensure triangle is counter clockwise and attach
-                triangulation.append(&mut vec![edge[0] as u32,edge[1] as u32,point.0 as u32]);
-                //push first point as that is still in polygon
-                current_points.push(edge[0]);
-            }else if order<0.0 && point.1 == Side::Right{
-                //ensure triangle is counter clockwise and attach
-                triangulation.append(&mut vec![edge[1] as u32,edge[0] as u32,point.0 as u32]);
-                //push first point as that is still in polygon
-                current_points.push(edge[0]);
-            }else{
-                //else no triangles are added so push both points on edge back
-                current_points.push(edge[1]);
-                current_points.push(edge[0]);
-            }
-        }else{
-            //else attach all previous points to new point as triangles
-            //get all points along chain
-            let chain:Vec<usize> = current_points.drain(0..).collect();
-            //go through chain, connecting point to it
-            for (a,b) in chain.iter().zip(chain.iter().skip(1)){
-                //add tri to triangulation, ensure is counter-clockwise
-                if point.1 == Side::Left{
-                    triangulation.append(&mut vec![*a as u32,*b as u32,point.0 as u32]);
-                }else{
-                    triangulation.append(&mut vec![*b as u32,*a as u32,point.0 as u32]);
-                }
-            }
-            //add last chain member back as still part of polgyon
-            current_points.push(*chain.last().unwrap());
+        //get vectors for calculating angle, b as origin
+        let btoa = points[tri[0]]-points[tri[1]];
+        let btoc = points[tri[2]]-points[tri[1]];
+        //if angle greater than specifed, continue
+        if btoa.angle(&btoc)>threshold{
+            continue;
         }
-        //push point and record last side
-        current_points.push(point.0);
-        last_side = point.1;
+        //if doesnt contain any points, add tri to triangles
+        
     }
-    triangulation
+
+    triangles
 }
 
 //takes cartesian point on unit sphere, returns it as stereographic, a pole must be specified

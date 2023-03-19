@@ -1,9 +1,11 @@
 //external crates
 use glium::{Surface,glutin::{self, event::MouseButton, dpi::{PhysicalPosition, PhysicalSize}}};
-use graphics::camera::Camera;
 use nalgebra_glm as glm;
-use planet::{Planet, GenInfo};
 use std::time::{Duration, Instant};
+
+//internal modules used
+use graphics::Camera;
+use planet::{Planet, GenInfo};
 
 //child modules
 #[cfg(test)]
@@ -67,11 +69,6 @@ fn main() {
         include_str!("../resources/shaders/planet/frag.glsl"),
         Some(include_str!("../resources/shaders/planet/geom.glsl"))).unwrap();
 
-    /*let map_shader = glium::Program::from_source(&display, 
-        include_str!("../resources/shaders/map/vert.glsl"), 
-        include_str!("../resources/shaders/planet/frag.glsl"),
-        None).unwrap();*/
-
     //default settings for planet gen
     let default_gen = planet::GenInfo{
         menu_state: menus::MenuState::Intro,
@@ -104,7 +101,7 @@ fn main() {
                         Some(glutin::event::VirtualKeyCode::Return)=> {
                             //creates new camera
                             let dimensions = display.get_framebuffer_dimensions();
-                            let cam = graphics::camera::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
+                            let cam = graphics::Camera::new(dimensions.0 as f32/dimensions.1 as f32, 
                                 glm::vec3(0.0,0.0,5.0), 
                                 glm::Vec3::zeros(),
                                 glm::Vec3::y());

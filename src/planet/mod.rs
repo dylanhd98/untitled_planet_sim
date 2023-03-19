@@ -155,7 +155,7 @@ impl Planet{
         self.render_data.indices= glium::IndexBuffer::new(display,glium::index::PrimitiveType::TrianglesList, &self.surface.triangles).unwrap();        ;
     }
 
-    pub fn draw(&self, target:&mut glium::Frame, program:&glium::Program, params:&glium::DrawParameters,cam:&graphics::camera::Camera){
+    pub fn draw(&self, target:&mut glium::Frame, program:&glium::Program, params:&glium::DrawParameters,cam:&graphics::Camera){
         //turn matrices into type gpu will take
         let pers:[[f32;4];4] = cam.perspective.into();
         let view:[[f32;4];4] = cam.view.into();
