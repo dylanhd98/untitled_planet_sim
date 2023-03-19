@@ -15,7 +15,7 @@ pub enum Orientation{
     Collinear
 }
 
-//handles perlin noise for generating base
+//handles perlin octive noise for generating more detailed features
 pub fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persistance:f32, lacunarity:f32)->f32{
     let mut noise_value = 0.0;
     let mut amplitude = 1.0;
@@ -35,6 +35,27 @@ pub fn octive_noise(perlin: Perlin, pos:&glm::Vec3, scale:f32, octives:u8, persi
     noise_value
 }
 
+//takes cartesian point on unit sphere, returns it as stereographic 2d projection 
+pub fn stereographic(point: &glm::Vec3)->glm::Vec2{    
+    glm::vec2(point.x/(1.0-point.z), point.y/(1.0-point.z))
+}
+
+//takes a set of points, returns their steriographic projection, a normalized "pole" must be defined as a focus point of the projection
+pub fn stereographic_project(points: &Vec<glm::Vec3>, pole:glm::Vec3)->Vec<glm::Vec2>{
+    //create rotation matrix used to center pole in projection
+    let cross = glm::cross(&pole,&glm::Vec3::y()).normalize();
+    let angle = glm::Vec3::y().angle(&pole);
+    let rotation_mat = glm::rotation(angle, &cross);
+
+    //rotate and apply projection to all points
+    points.iter()
+        .map(|p| {
+            let rotated= (rotation_mat*glm::vec3_to_vec4(p)).xyz();
+            stereographic(&rotated)
+        })
+        .collect()
+}
+
 //get connections of every cell
 pub fn indices_to_connections(indices: &Vec<u32>)->Vec<Vec<usize>>{
     //iterate through indices, for every index, store other two in triangle
@@ -51,7 +72,7 @@ pub fn indices_to_connections(indices: &Vec<u32>)->Vec<Vec<usize>>{
     connections
 }
 
-//gets all edges, like the above but can be used more efficiently i think
+//gets all edges in the mesh
 pub fn indices_to_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
     //iterate through indices, for every index, store other two in triangle
     let mut edges:Vec::<(usize,usize)> = Vec::with_capacity(indices.len());
@@ -72,7 +93,7 @@ pub fn indices_to_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
     edges
 }
 
-//does the same as the above, just return directed edges, as a result returns double the amount, each edge is ordered the same way as its triangle
+//does the same as the above, but return directed edges, as a result returns double the amount, each edge is ordered the same way as its triangle
 pub fn indices_to_directed_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
     //iterate through indices, for every index, store other two in triangle
     let mut edges:Vec::<(usize,usize)> = Vec::with_capacity(indices.len());
@@ -127,11 +148,10 @@ pub fn do_edges_intersect(a:(glm::Vec2,glm::Vec2),b:(glm::Vec2,glm::Vec2))->bool
     (tri_orientation(b.0, b.1, a.1) != tri_orientation(b.0, b.1, a.0))
 }
 
-//takes triangles, turns them into a polygon describing the 
+//takes triangles, turns them into a polygon describing the external edges of the triangles
 //pub fn triangles_to_polygon(tris:Vec<u32>)->Vec<usize>{
 
 //}
-
 
 //takes surrounding triangles and a target point, returns new traingles all connecting surrounding edges to target
 pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
@@ -155,7 +175,7 @@ pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
 }
 
 //takes a polygon, adds triangles between edges at or less than a specified threshold angle in radians
-pub fn tris_at_threshold(points:&Vec<glm::Vec3>,polygon: Vec<usize>, threshold: f32)->Vec<u32>{
+pub fn tris_at_threshold(points:&Vec<glm::Vec2>,polygon: Vec<usize>, threshold: f32)->Vec<u32>{
     //go through every pair of connected edges in polygon, if angle between them inside polygon is less than angle given, add tri
     //do not add triangle if contains any other point in triangle
     let mut triangles:Vec<u32> = Vec::new();
@@ -191,7 +211,7 @@ pub fn tris_at_threshold(points:&Vec<glm::Vec3>,polygon: Vec<usize>, threshold: 
             })
             .any(|edge| 
                 do_edges_intersect(edge, (points[tri[0]].xy(),points[tri[2]].xy()))){
-            //record middle index of tri, so that no future tri can connect to it
+            //record middle index of tri as now "covered" by an edge, so that no future tri can connect to it
             avoid_points.insert(tri[1]);
             //add triangle to resultant triangulation
             triangles.append(&mut tri.into_iter().map(|i| polygon[i] as u32).collect());
@@ -201,7 +221,3 @@ pub fn tris_at_threshold(points:&Vec<glm::Vec3>,polygon: Vec<usize>, threshold: 
     triangles
 }
 
-//takes cartesian point on unit sphere, returns it as stereographic, a pole must be specified
-pub fn stereographic(point: glm::Vec3,pole: &glm::Vec3)->glm::Vec3{    
-    glm::vec3(point.x/(1.0-point.z), point.y/(1.0-point.z), 0.0)
-}

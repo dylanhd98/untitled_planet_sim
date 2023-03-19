@@ -301,19 +301,19 @@ pub fn base_temp_info(egui_ctx: &Context, gen_info: &GenInfo){
             Plot::new("axial diagram")
             .show(ui, |plot_ui| {
                 let test_points = vec![
-                    glm::vec3(0.0, 100.0, 0.0),
-                    glm::vec3(-5.0, 80.0, 0.0),
-                    glm::vec3(-9.0, 50.0, 0.0),
-                    glm::vec3(-15.0, 10.0, 0.0),
-                    glm::vec3(-8.0, 0.0, 0.0),
-                    glm::vec3(-5.0, -70.0, 0.0),
-                    glm::vec3(-8.0, -80.0, 0.0),
-                    glm::vec3(0.0, -100.0, 0.0),
-                    glm::vec3(15.0, -100.0, 0.0),
-                    glm::vec3(5.0, -62.0, 0.0),
-                    glm::vec3(8.0, -5.0, 0.0),
-                    glm::vec3(10.0, 70.0, 0.0),
-                    glm::vec3(5.0, 75.0, 0.0),
+                    glm::vec2(0.0, 100.0),
+                    glm::vec2(-5.0, 80.0),
+                    glm::vec2(-9.0, 50.0),
+                    glm::vec2(-15.0, 10.0),
+                    glm::vec2(-8.0, 0.0),
+                    glm::vec2(-5.0, -70.0),
+                    glm::vec2(-8.0, -80.0),
+                    glm::vec2(0.0, -100.0),
+                    glm::vec2(25.0, -100.0),
+                    glm::vec2(5.0, -92.0),
+                    glm::vec2(8.0, -5.0),
+                    glm::vec2(10.0, 70.0),
+                    glm::vec2(5.0, 75.0),
                 ];
                 let test_poly:Vec<usize> = (0..test_points.len()).collect();
 

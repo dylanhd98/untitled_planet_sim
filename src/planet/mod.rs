@@ -140,7 +140,7 @@ impl Planet{
         //one year is 360 days here for simplicity
         self.sim_info.to_sun= glm::rotate_y_vec3(&self.sim_info.to_sun, years_past*(std::f32::consts::PI*2.0));
         
-        //extract data needed for rendering out
+        //extract data, needed for rendering, out
         let surface_contents:Vec<CellData> = self.surface.cells.iter()
             .map(|c|
                 c.contents
