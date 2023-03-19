@@ -85,8 +85,6 @@ pub struct Planet{
 }
 impl Planet{
     pub fn new(display:&glium::Display, gen:&GenInfo)->Planet{
-        //creats rng
-        let mut rng = rand::thread_rng();
         //tilts planet axis as specified around the z
         let axis = glm::rotate_z_vec3( &glm::vec3(0.0,1.0,0.0),gen.axial_tilt);
 

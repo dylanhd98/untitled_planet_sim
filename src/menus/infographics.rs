@@ -295,9 +295,54 @@ pub fn lapse_rate_info(egui_ctx: &Context){
     
 }
 
-pub fn base_temp_info(egui_ctx: &Context){
+pub fn base_temp_info(egui_ctx: &Context, gen_info: &GenInfo){
     egui::CentralPanel::default()
         .show(egui_ctx, |ui| {
-            
+            Plot::new("axial diagram")
+            .show(ui, |plot_ui| {
+                let test_points = vec![
+                    glm::vec3(0.0, 100.0, 0.0),
+                    glm::vec3(-5.0, 80.0, 0.0),
+                    glm::vec3(-9.0, 50.0, 0.0),
+                    glm::vec3(-15.0, 10.0, 0.0),
+                    glm::vec3(-8.0, 0.0, 0.0),
+                    glm::vec3(-5.0, -70.0, 0.0),
+                    glm::vec3(-8.0, -80.0, 0.0),
+                    glm::vec3(0.0, -100.0, 0.0),
+                    glm::vec3(15.0, -100.0, 0.0),
+                    glm::vec3(5.0, -62.0, 0.0),
+                    glm::vec3(8.0, -5.0, 0.0),
+                    glm::vec3(10.0, 70.0, 0.0),
+                    glm::vec3(5.0, 75.0, 0.0),
+                ];
+                let test_poly:Vec<usize> = (0..test_points.len()).collect();
+
+                let base = Polygon::new(PlotPoints::new(
+                    test_poly.iter()
+                    .map(|p| {
+                        [test_points[*p as usize].x as f64,test_points[*p as usize].y as f64]
+                    })
+                    .collect()));
+
+                let result_tris = tris_at_threshold(&test_points, test_poly, gen_info.axial_tilt*std::f32::consts::PI);
+
+                let polygons:Vec<Polygon> = result_tris.chunks(3)
+                    .map(|t| {
+                        let points = PlotPoints::new(
+                            t.iter()
+                            .map(|p| {
+                                [test_points[*p as usize].x as f64,test_points[*p as usize].y as f64]
+                            })
+                            .collect());
+                        Polygon::new(points)
+                    })
+                    .collect();
+
+
+                plot_ui.polygon(base.fill_alpha(0.0));
+                for poly in polygons{
+                    plot_ui.polygon(poly);
+                }
+            });
         });
 }

@@ -1,4 +1,4 @@
-use std::ops::BitOrAssign;
+use std::collections::HashSet;
 
 //external crates
 use nalgebra_glm as glm;
@@ -53,7 +53,6 @@ pub fn indices_to_connections(indices: &Vec<u32>)->Vec<Vec<usize>>{
 
 //gets all edges, like the above but can be used more efficiently i think
 pub fn indices_to_edges(indices: &Vec<u32>)->Vec<(usize,usize)>{
-    //TODO: FIND MORE EFFICIENT WAY TO DO THIS, IM SURE THERE IS ONE
     //iterate through indices, for every index, store other two in triangle
     let mut edges:Vec::<(usize,usize)> = Vec::with_capacity(indices.len());
     //for each triangle
@@ -123,9 +122,15 @@ pub fn tri_orientation(a:glm::Vec2,b:glm::Vec2,c:glm::Vec2)->Orientation{
 }
 
 //takes two edges, returns if they intersect
-pub fn do_edges_intersect(){
-
+pub fn do_edges_intersect(a:(glm::Vec2,glm::Vec2),b:(glm::Vec2,glm::Vec2))->bool{
+    (tri_orientation(a.0, a.1, b.1) != tri_orientation(a.0, a.1, b.0))&&
+    (tri_orientation(b.0, b.1, a.1) != tri_orientation(b.0, b.1, a.0))
 }
+
+//takes triangles, turns them into a polygon describing the 
+//pub fn triangles_to_polygon(tris:Vec<u32>)->Vec<usize>{
+
+//}
 
 
 //takes surrounding triangles and a target point, returns new traingles all connecting surrounding edges to target
@@ -150,19 +155,21 @@ pub fn connect_point(tris:Vec<u32>, target: u32)->Vec<u32>{
 }
 
 //takes a polygon, adds triangles between edges at or less than a specified threshold angle in radians
-pub fn tris_at_threshold(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>, threshold: f32)->Vec<u32>{
+pub fn tris_at_threshold(points:&Vec<glm::Vec3>,polygon: Vec<usize>, threshold: f32)->Vec<u32>{
     //go through every pair of connected edges in polygon, if angle between them inside polygon is less than angle given, add tri
     //do not add triangle if contains any other point in triangle
     let mut triangles:Vec<u32> = Vec::new();
-    //loop through every two edges
+    //record middle indices of tri when added, as to avoid future tris from containing them
+    let mut avoid_points:HashSet<usize> = HashSet::new();
+    //loop through every two edges/potential triangle
     for i in 0..polygon.len(){
         //indices of points in tri
         let tri:Vec<usize> = (0..=2).into_iter()
             .map(|x| (i+x)%polygon.len())
             .collect();
-
-        //if potential triangle is not counterclockwise (either colinear or clockwise), skip
-        if tri_orientation(points[tri[0]].xy(), points[tri[1]].xy(), points[tri[2]].xy()) != Orientation::CounterClockwise{
+        //if tri contains point marked avoid, or if is not counterclockwise (either colinear or clockwise), skip
+        if avoid_points.contains(&tri[0])|| avoid_points.contains(&tri[2])||
+            tri_orientation(points[tri[0]].xy(), points[tri[1]].xy(), points[tri[2]].xy()) != Orientation::CounterClockwise{
             continue;
         }
         //get vectors for calculating angle, b as origin
@@ -172,7 +179,23 @@ pub fn tris_at_threshold(points:&Vec<glm::Vec3>, mut polygon: Vec<usize>, thresh
         if btoa.angle(&btoc)>threshold{
             continue;
         }
-        //if new edge doesnt intersect with anything, add tri
+        //if new edge doesnt intersect with any other edge in polygon and added tris, add tri
+        if !polygon.iter().zip(polygon.iter().skip(1))
+            .filter_map(|(a,b)| {
+                //filter out edges that share points with tri
+                if !tri.contains(a) && !tri.contains(b){
+                    Some((points[*a].xy(),points[*b].xy()))
+                }else {
+                    None
+                }
+            })
+            .any(|edge| 
+                do_edges_intersect(edge, (points[tri[0]].xy(),points[tri[2]].xy()))){
+            //record middle index of tri, so that no future tri can connect to it
+            avoid_points.insert(tri[1]);
+            //add triangle to resultant triangulation
+            triangles.append(&mut tri.into_iter().map(|i| polygon[i] as u32).collect());
+        }
     }
 
     triangles

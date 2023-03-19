@@ -81,9 +81,9 @@ pub fn planet_create(egui_ctx: &Context,display: &Display,game_state: &mut GameS
         MenuState::Intro => infographics::intro_info(egui_ctx),
         MenuState::Subdivision => infographics::subdivision_info(egui_ctx,gen_info),
         MenuState::Plates=> infographics::plate_info(egui_ctx, gen_info),
-        MenuState::AxialTilt => infographics::axial_tilt_info(egui_ctx, gen_info),
+        MenuState::AxialTilt => infographics::base_temp_info(egui_ctx, gen_info),
         MenuState::LapseRate => infographics::lapse_rate_info(egui_ctx),
-        MenuState::BaseTemp => infographics::base_temp_info(egui_ctx)
+        MenuState::BaseTemp => infographics::base_temp_info(egui_ctx, gen_info)
     }
  
     if new_planet{
